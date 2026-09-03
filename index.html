@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#07111f" />
+  <title>Mis Tareas</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Organizador personal</p>
+        <h1>Mis Tareas</h1>
+      </div>
+      <div class="top-actions">
+        <button id="notifyBtn" class="icon-btn" title="Activar notificaciones">🔔</button>
+        <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
+        <button id="openTaskBtn" class="add-top" title="Nueva tarea">＋</button>
+      </div>
+    </header>
+
+    <section class="week-strip" id="weekStrip"></section>
+
+    <nav class="view-tabs">
+      <button data-view="calendar" class="view-tab">Calendario</button>
+      <button data-view="day" class="view-tab active">Día</button>
+      <button data-view="week" class="view-tab">Semana</button>
+      <button data-view="gantt" class="view-tab">Gantt</button>
+    </nav>
+
+    <main>
+      <section id="dayView" class="view active">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Vista diaria</p>
+            <h2 id="selectedDateTitle"></h2>
+          </div>
+          <button id="todayBtn" class="ghost-btn">Hoy</button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid"></div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Próximas</h3>
+              <p>Ordenadas de la más cercana a vencer a la más lejana.</p>
+            </div>
+            <select id="pendingFilter" class="select">
+              <option value="all">Todas</option>
+              <option value="today">Hoy</option>
+              <option value="upcoming">Próximas</option>
+              <option value="recurring">Recurrentes</option>
+            </select>
+          </div>
+          <div id="pendingList" class="task-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3 class="green">Completadas</h3>
+              <p>Las tareas marcadas quedan registradas aquí.</p>
+            </div>
+          </div>
+          <div id="completedList" class="task-list"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3 class="red">No completadas</h3>
+              <p>Las tareas vencidas dejan de notificar automáticamente.</p>
+            </div>
+          </div>
+          <div id="missedList" class="task-list"></div>
+        </section>
+      </section>
+
+      <section id="calendarView" class="view">
+        <div class="section-heading">
+          <button id="prevMonth" class="icon-btn">‹</button>
+          <div class="center">
+            <p class="eyebrow">Calendario</p>
+            <h2 id="calendarTitle"></h2>
+          </div>
+          <button id="nextMonth" class="icon-btn">›</button>
+        </div>
+        <div class="calendar panel">
+          <div class="calendar-weekdays">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+          </div>
+          <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h3 id="calendarDayHeading">Tareas del día</h3>
+              <p>Toca un día para ver sus tareas.</p>
+            </div>
+          </div>
+          <div id="calendarDayList" class="task-list"></div>
+        </div>
+      </section>
+
+      <section id="weekView" class="view">
+        <div class="section-heading">
+          <button id="prevWeek" class="icon-btn">‹</button>
+          <div class="center">
+            <p class="eyebrow">Semana</p>
+            <h2 id="weekTitle"></h2>
+          </div>
+          <button id="nextWeek" class="icon-btn">›</button>
+        </div>
+        <div id="weekBoard" class="week-board"></div>
+      </section>
+
+      <section id="ganttView" class="view">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Cronograma</p>
+            <h2>Gantt</h2>
+          </div>
+          <select id="ganttRange" class="select">
+            <option value="14">14 días</option>
+            <option value="30" selected>30 días</option>
+            <option value="60">60 días</option>
+          </select>
+        </div>
+        <div class="panel gantt-panel">
+          <div id="ganttChart" class="gantt-chart"></div>
+        </div>
+      </section>
+
+      <section id="trashView" class="view">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Recuperación</p>
+            <h2>Papelera</h2>
+          </div>
+          <button id="emptyTrashBtn" class="danger-btn">Vaciar</button>
+        </div>
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Tareas eliminadas</h3>
+              <p>Se conservan durante 24 horas antes de eliminarse definitivamente.</p>
+            </div>
+          </div>
+          <div id="trashList" class="task-list"></div>
+        </section>
+      </section>
+    </main>
+
+    <button id="floatingAddBtn" class="floating-add">＋</button>
+
+    <nav class="bottom-nav">
+      <button data-view="day" class="bottom-tab active"><span>✓</span>Tareas</button>
+      <button data-view="calendar" class="bottom-tab"><span>▦</span>Calendario</button>
+      <button id="bottomAddBtn" class="bottom-add"><span>＋</span>Agregar</button>
+      <button data-view="gantt" class="bottom-tab"><span>▥</span>Gantt</button>
+      <button data-view="trash" class="bottom-tab"><span>🗑</span>Papelera</button>
+    </nav>
+  </div>
+
+  <dialog id="taskDialog" class="modal">
+    <form id="taskForm" method="dialog">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Nueva / editar</p>
+          <h2 id="taskDialogTitle">Agregar tarea</h2>
+        </div>
+        <button type="button" class="icon-btn" id="closeTaskDialog">✕</button>
+      </div>
+
+      <input type="hidden" id="taskId" />
+
+      <label>Título *
+        <input id="title" maxlength="120" required placeholder="Ej. Enviar reporte semanal" />
+      </label>
+
+      <label>Descripción
+        <textarea id="description" rows="4" maxlength="2000" placeholder="Descripción larga de la tarea..."></textarea>
+      </label>
+
+      <div class="two-cols">
+        <label>Fecha de inicio *
+          <input id="startDate" type="date" required />
+        </label>
+        <label>Fecha de vencimiento *
+          <input id="dueDate" type="date" required />
+        </label>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <strong>Todo el día</strong>
+          <small>Desactiva para seleccionar hora específica.</small>
+        </div>
+        <label class="switch"><input id="allDay" type="checkbox" checked><span></span></label>
+      </div>
+
+      <div id="timeFields" class="two-cols hidden">
+        <label>Hora inicio
+          <input id="startTime" type="time" />
+        </label>
+        <label>Hora vencimiento
+          <input id="dueTime" type="time" />
+        </label>
+      </div>
+
+      <div class="two-cols">
+        <label>Repetir
+          <select id="recurrence">
+            <option value="none">No repetir</option>
+            <option value="daily">Diario</option>
+            <option value="weekly">Semanal</option>
+            <option value="monthly">Mensual</option>
+            <option value="yearly">Anual</option>
+          </select>
+        </label>
+        <label>Estado
+          <select id="status">
+            <option value="pending">Pendiente</option>
+            <option value="completed">Completada</option>
+            <option value="missed">No completada</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="switch-row">
+        <div>
+          <strong>Notificación</strong>
+          <small>Por defecto se activa un día antes.</small>
+        </div>
+        <label class="switch"><input id="notify" type="checkbox" checked><span></span></label>
+      </div>
+
+      <div class="two-cols" id="notifyFields">
+        <label>Avisar
+          <input id="notifyAmount" type="number" min="1" max="365" value="1" />
+        </label>
+        <label>Unidad
+          <select id="notifyUnit">
+            <option value="days">Día(s) antes</option>
+            <option value="hours">Hora(s) antes</option>
+            <option value="minutes">Minuto(s) antes</option>
+          </select>
+        </label>
+      </div>
+
+      <label>Comentario
+        <textarea id="comment" rows="3" maxlength="1000" placeholder="Notas, seguimiento o comentario..."></textarea>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" id="deleteTaskBtn" class="danger-btn hidden">Eliminar</button>
+        <button type="button" id="cancelTaskBtn" class="ghost-btn">Cancelar</button>
+        <button type="submit" class="primary-btn">Guardar tarea</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settingsDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Datos y respaldo</p>
+        <h2>Ajustes</h2>
+      </div>
+      <button class="icon-btn" id="closeSettings">✕</button>
+    </div>
+
+    <div class="settings-stack">
+      <button id="exportBtn" class="settings-item">
+        <span>⬇️</span>
+        <div><strong>Exportar respaldo</strong><small>Descarga todas tus tareas en formato JSON.</small></div>
+      </button>
+      <label class="settings-item file-item">
+        <span>⬆️</span>
+        <div><strong>Importar respaldo</strong><small>Restaura tareas desde un archivo JSON.</small></div>
+        <input id="importInput" type="file" accept=".json,application/json" hidden />
+      </label>
+      <button id="seedBtn" class="settings-item">
+        <span>✨</span>
+        <div><strong>Cargar ejemplos</strong><small>Agrega tareas de muestra para probar la aplicación.</small></div>
+      </button>
+      <button id="clearBtn" class="settings-item danger-outline">
+        <span>🗑️</span>
+        <div><strong>Borrar todos los datos</strong><small>Elimina todas las tareas y la papelera guardadas en este dispositivo.</small></div>
+      </button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

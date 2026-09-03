@@ -1,0 +1,17 @@
+{
+  "name": "Mis Tareas - Gantt",
+  "short_name": "Mis Tareas",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "description": "Gestor móvil de tareas con calendario, semana, Gantt y recurrencias.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
