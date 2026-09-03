@@ -473,17 +473,7 @@ $("#settingsBtnTop").onclick=()=>$("#settingsDialog").showModal();
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
   try{
-    
-function removeDuplicateAddButtons(){
-  ["openTaskBtn","floatingAddBtn"].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.remove();
-  });
-  document.querySelectorAll(".add-top,.floating-add").forEach(el=>el.remove());
-}
-removeDuplicateAddButtons();
-
-if("serviceWorker" in navigator){
+    if("serviceWorker" in navigator){
       const reg=await navigator.serviceWorker.getRegistration();
       if(reg) await reg.update();
     }

@@ -1,5 +1,5 @@
-const CACHE="mis-tareas-v7-final-2";
-const FILES=["./","./index.html?v=7final2","./styles.css?v=7final2","./app.js?v=7final2","./manifest.webmanifest?v=7final2","./icon.svg?v=7final2"];
+const CACHE="mis-tareas-v7-clean";
+const FILES=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg"];
 
 self.addEventListener("install", event => {
   self.skipWaiting();
