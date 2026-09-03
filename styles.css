@@ -157,3 +157,100 @@ button{cursor:pointer}
   color:#ff6678;
   border:1px solid rgba(255,102,120,.35);
 }
+
+
+/* =========================
+   V9 - Tablero de actividades
+   ========================= */
+.three-cols{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+}
+.board-stats{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+  margin-bottom:16px;
+}
+.board-scroll{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(260px,1fr));
+  gap:14px;
+  overflow-x:auto;
+  padding-bottom:12px;
+  align-items:start;
+}
+.board-column{
+  min-height:300px;
+  background:rgba(11,25,43,.72);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+}
+.board-column-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+.board-column-head h3{margin:0}
+.board-column-head span{
+  min-width:30px;height:30px;border-radius:999px;
+  display:grid;place-items:center;
+  background:rgba(109,82,255,.18);
+}
+.board-list{display:grid;gap:10px}
+.board-card{
+  border:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(20,40,66,.94),rgba(12,28,48,.94));
+  border-radius:15px;
+  padding:13px;
+}
+.board-card-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+}
+.board-card p{
+  margin:8px 0;
+  color:var(--muted);
+  font-size:.92rem;
+}
+.board-card-meta{
+  display:flex;flex-wrap:wrap;gap:7px;
+  color:var(--muted);font-size:.82rem;margin-top:10px;
+}
+.board-move-label{
+  display:grid;
+  gap:6px;
+  margin-top:12px;
+  color:var(--muted);
+  font-size:.82rem;
+}
+.board-move-label select{
+  width:100%;
+}
+.board-card-actions{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:12px;
+}
+.board-pill{
+  border-radius:999px;
+  padding:4px 8px;
+  background:rgba(109,82,255,.14);
+}
+.stage-in_progress{background:rgba(64,145,255,.14)}
+.stage-waiting{background:rgba(255,190,65,.14)}
+.stage-completed{background:rgba(62,213,132,.14)}
+
+@media(max-width:760px){
+  .three-cols{grid-template-columns:1fr}
+  .board-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .board-scroll{
+    grid-template-columns:repeat(4,82vw);
+    scroll-snap-type:x proximity;
+  }
+  .board-column{scroll-snap-align:start}
+}

@@ -27,7 +27,7 @@
       <button data-view="calendar" class="view-tab">Calendario</button>
       <button data-view="day" class="view-tab active">Día</button>
       <button data-view="week" class="view-tab">Semana</button>
-      <button data-view="gantt" class="view-tab">Gantt</button>
+      <button data-view="board" class="view-tab">Tablero</button>
     </nav>
 
     <main>
@@ -125,24 +125,48 @@
         <div id="weekBoard" class="week-board"></div>
       </section>
 
-      <section id="ganttView" class="view">
+      <section id="boardView" class="view">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Cronograma</p>
-            <h2>Gantt</h2>
+            <p class="eyebrow">Organización</p>
+            <h2>Tablero de actividades</h2>
           </div>
-          <select id="ganttRange" class="select">
-            <option value="14">14 días</option>
-            <option value="30" selected>30 días</option>
-            <option value="60">60 días</option>
-          </select>
         </div>
-        <div class="panel gantt-panel">
-          <div id="ganttChart" class="gantt-chart"></div>
+
+        <div id="boardStats" class="board-stats"></div>
+
+        <div class="board-scroll">
+          <section class="board-column" data-board-column="pending">
+            <div class="board-column-head">
+              <h3>Pendientes</h3><span id="boardCountPending">0</span>
+            </div>
+            <div id="boardPending" class="board-list"></div>
+          </section>
+
+          <section class="board-column" data-board-column="in_progress">
+            <div class="board-column-head">
+              <h3>En proceso</h3><span id="boardCountProgress">0</span>
+            </div>
+            <div id="boardProgress" class="board-list"></div>
+          </section>
+
+          <section class="board-column" data-board-column="waiting">
+            <div class="board-column-head">
+              <h3>En espera</h3><span id="boardCountWaiting">0</span>
+            </div>
+            <div id="boardWaiting" class="board-list"></div>
+          </section>
+
+          <section class="board-column" data-board-column="completed">
+            <div class="board-column-head">
+              <h3>Completadas</h3><span id="boardCountCompleted">0</span>
+            </div>
+            <div id="boardCompleted" class="board-list"></div>
+          </section>
         </div>
       </section>
 
-      <section id="trashView" class="view">
+<section id="trashView" class="view">
         <div class="section-heading">
           <div>
             <p class="eyebrow">Recuperación</p>
@@ -167,7 +191,7 @@
       <button data-view="day" class="bottom-tab active"><span>✓</span>Tareas</button>
       <button data-view="calendar" class="bottom-tab"><span>▦</span>Calendario</button>
       <button id="bottomAddBtn" class="bottom-add"><span>＋</span>Agregar</button>
-      <button data-view="gantt" class="bottom-tab"><span>▥</span>Gantt</button>
+      <button data-view="board" class="bottom-tab"><span>▦</span>Tablero</button>
       <button data-view="trash" class="bottom-tab"><span>🗑</span>Papelera</button>
     </nav>
   </div>
@@ -196,8 +220,8 @@
         <label>Fecha de inicio *
           <input id="startDate" type="date" required />
         </label>
-        <label>Fecha de vencimiento *
-          <input id="dueDate" type="date" required />
+        <label>Fecha de vencimiento <small>(opcional)</small>
+          <input id="dueDate" type="date" />
         </label>
       </div>
 
@@ -218,7 +242,7 @@
         </label>
       </div>
 
-      <div class="two-cols">
+      <div class="three-cols">
         <label>Repetir
           <select id="recurrence">
             <option value="none">No repetir</option>
@@ -235,12 +259,20 @@
             <option value="missed">No completada</option>
           </select>
         </label>
+        <label>Tablero
+          <select id="boardStage">
+            <option value="pending">Pendiente</option>
+            <option value="in_progress">En proceso</option>
+            <option value="waiting">En espera</option>
+            <option value="completed">Completada</option>
+          </select>
+        </label>
       </div>
 
       <div class="switch-row">
         <div>
           <strong>Notificación</strong>
-          <small>Por defecto se activa un día antes.</small>
+          <small>Por defecto se activa un día antes. Requiere fecha de vencimiento.</small>
         </div>
         <label class="switch"><input id="notify" type="checkbox" checked><span></span></label>
       </div>
@@ -280,7 +312,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v8</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v9</small></div></div>
       <button id="updateAppBtn" class="settings-item">
         <span>🔄</span>
         <div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div>

@@ -3,7 +3,7 @@ const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
-const APP_VERSION = "v8";
+const APP_VERSION = "v9";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -61,12 +61,31 @@ function deleteForever(id){
   renderTrash();
 }
 function taskDueDate(t){
+  if(!t || !t.dueDate) return null;
   const d=parseDate(t.dueDate);
   if(t.allDay){ d.setHours(23,59,59,999); } else {
     const [h,m]=(t.dueTime||"23:59").split(":").map(Number); d.setHours(h,m,0,0);
   }
   return d;
 }
+function sortDate(t){
+  return taskDueDate(t) || taskStartDate(t) || new Date(8640000000000000);
+}
+function compareTasksByDate(a,b){
+  const ad=taskDueDate(a), bd=taskDueDate(b);
+  if(ad && bd) return ad-bd;
+  if(ad) return -1;
+  if(bd) return 1;
+  return taskStartDate(a)-taskStartDate(b);
+}
+function boardStageOf(t){
+  if(t.status==="completed") return "completed";
+  return t.boardStage || "pending";
+}
+function boardStageLabel(stage){
+  return ({pending:"Pendiente",in_progress:"En proceso",waiting:"En espera",completed:"Completada"})[stage] || "Pendiente";
+}
+
 function taskStartDate(t){
   const d=parseDate(t.startDate);
   if(!t.allDay && t.startTime){ const [h,m]=t.startTime.split(":").map(Number); d.setHours(h,m,0,0); }
@@ -76,7 +95,7 @@ function normalizeStatuses(){
   const now=new Date();
   let changed=false;
   for(const t of tasks){
-    if(t.status==="pending" && t.recurrence==="none" && taskDueDate(t) < now){
+    if(t.status==="pending" && t.recurrence==="none" && taskDueDate(t) && taskDueDate(t) < now){
       t.status="missed";
       t.missedAt=now.toISOString();
       changed=true;
@@ -86,12 +105,12 @@ function normalizeStatuses(){
 }
 
 function nextDueForSort(t){
-  if(t.recurrence==="none") return taskDueDate(t);
-  const now=new Date();
   const baseDue=taskDueDate(t);
-  let candidate=new Date(baseDue);
+  if(!baseDue) return null;
+  if(t.recurrence==="none") return baseDue;
 
-  // Advance recurring task until its next occurrence is now/future.
+  const now=new Date();
+  let candidate=new Date(baseDue);
   let guard=0;
   while(candidate < now && guard < 5000){
     if(t.recurrence==="daily") candidate.setDate(candidate.getDate()+1);
@@ -114,7 +133,7 @@ function statusLabel(s){ return ({pending:"Pendiente",completed:"Completada",mis
 
 function renderAll(){
   normalizeStatuses();
-  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderGantt(); renderTrash();
+  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash();
 }
 function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
@@ -135,19 +154,19 @@ function renderDay(){
   // Global sections: do not hide tasks just because they belong to another date.
   const allPending = tasks
     .filter(t=>t.status==="pending")
-    .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
+    .sort(compareTasksByDate);
 
   const allCompleted = tasks
     .filter(t=>t.status==="completed")
     .sort((a,b)=>{
-      const ad=a.completedAt ? new Date(a.completedAt) : taskDueDate(a);
-      const bd=b.completedAt ? new Date(b.completedAt) : taskDueDate(b);
+      const ad=a.completedAt ? new Date(a.completedAt) : (taskDueDate(a)||taskStartDate(a));
+      const bd=b.completedAt ? new Date(b.completedAt) : (taskDueDate(b)||taskStartDate(b));
       return bd-ad;
     });
 
   const allMissed = tasks
     .filter(t=>t.status==="missed")
-    .sort((a,b)=>taskDueDate(b)-taskDueDate(a));
+    .sort((a,b)=>sortDate(b)-sortDate(a));
 
   const todayKey=dateKey(selectedDate);
   const filter=$("#pendingFilter").value;
@@ -159,14 +178,14 @@ function renderDay(){
 
   if(filter==="upcoming"){
     filtered=allPending
-      .filter(t=>nextDueForSort(t)>=new Date())
-      .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
+      .filter(t=>!t.dueDate || (nextDueForSort(t) && nextDueForSort(t)>=new Date()))
+      .sort(compareTasksByDate);
   }
 
   if(filter==="recurring"){
     filtered=allPending
       .filter(t=>t.recurrence!=="none")
-      .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
+      .sort(compareTasksByDate);
   }
 
   $("#statsGrid").innerHTML = `
@@ -181,10 +200,18 @@ function renderDay(){
 }
 function expandedTasksForDate(d){ return tasks.filter(t=>occursOn(t,d)); }
 function occursOn(t,d){
-  const target=startOfDay(d), start=startOfDay(parseDate(t.startDate)), due=startOfDay(parseDate(t.dueDate));
-  if(t.recurrence==="none") return target>=start && target<=due;
+  const target=startOfDay(d);
+  const start=startOfDay(parseDate(t.startDate));
+  const due=t.dueDate?startOfDay(parseDate(t.dueDate)):null;
+
+  if(t.recurrence==="none"){
+    if(!due) return dateKey(target)===dateKey(start);
+    return target>=start && target<=due;
+  }
+
   if(target<start) return false;
-  if(t.status!=="pending" && target>due) return false;
+  if(due && t.status!=="pending" && target>due) return false;
+
   switch(t.recurrence){
     case "daily": return true;
     case "weekly": return target.getDay()===start.getDay();
@@ -206,9 +233,10 @@ function taskCard(t){
         <div class="task-title">${esc(t.title)}</div>
         ${t.description?`<div class="task-desc">${esc(t.description)}</div>`:""}
         <div class="task-meta">
-          <span>📅 ${shortDate(parseDate(t.dueDate))}</span>
+          <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
           <span>🕒 ${formatTimeMeta(t)}</span>
           ${t.recurrence!=="none"?`<span class="recur-pill">↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+          ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.comment?`<span>💬 ${esc(t.comment)}</span>`:""}
         </div>
         <div class="card-actions">
@@ -229,7 +257,7 @@ function bindTaskActions(){
     saveTasks();
   });
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
-  $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); t.status="pending"; t.missedAt=null; saveTasks();});
+  $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); t.status="pending"; t.boardStage="pending"; t.missedAt=null; saveTasks();});
   $$("[data-delete]").forEach(b=>b.onclick=()=>{
     const t=tasks.find(x=>x.id===b.dataset.delete);
     if(!t) return;
@@ -254,11 +282,11 @@ function renderCalendar(){
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
     selectedDate=parseDate(b.dataset.caldate);
     $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
-    $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort((a,b)=>taskDueDate(a)-taskDueDate(b)));
+    $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate));
     bindTaskActions(); renderCalendar();
   });
   $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
-  $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort((a,b)=>taskDueDate(a)-taskDueDate(b)));
+  $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate));
   bindTaskActions();
 }
 function renderWeek(){
@@ -266,7 +294,7 @@ function renderWeek(){
   $("#weekTitle").textContent=`${shortDate(weekCursor)} – ${shortDate(end)}`;
   $("#weekBoard").innerHTML=[...Array(7)].map((_,i)=>{
     const d=addDays(weekCursor,i);
-    const list=expandedTasksForDate(d).sort((a,b)=>taskDueDate(a)-taskDueDate(b));
+    const list=expandedTasksForDate(d).sort(compareTasksByDate);
     return `<section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
       ${list.length?list.map(t=>`<div class="mini-task" data-edit="${t.id}"><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)}</small></div>`).join(""):`<div class="empty">Sin tareas</div>`}
@@ -274,29 +302,76 @@ function renderWeek(){
   }).join("");
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
 }
-function renderGantt(){
-  const days=Number($("#ganttRange").value);
-  const start=startOfDay(new Date());
-  const end=addDays(start,days-1);
-  const visible=tasks.filter(t=>taskStartDate(t)<=addDays(end,1)&&taskDueDate(t)>=start).sort((a,b)=>taskDueDate(a)-taskDueDate(b));
-  const cell=100/days;
-  let html=`<div class="gantt-head"><div></div><div class="gantt-days" style="grid-template-columns:repeat(${days},1fr)">`;
-  for(let i=0;i<days;i++){const d=addDays(start,i); html+=`<span>${d.getDate()}<br>${d.toLocaleDateString("es-MX",{month:"short"}).slice(0,3)}</span>`}
-  html+=`</div></div>`;
-  for(const t of visible){
-    const s=Math.max(0,Math.floor((startOfDay(taskStartDate(t))-start)/86400000));
-    const e=Math.min(days-1,Math.floor((startOfDay(taskDueDate(t))-start)/86400000));
-    const width=Math.max(1,e-s+1);
-    html+=`<div class="gantt-row">
-      <div class="gantt-label" title="${esc(t.title)}">${esc(t.title)}</div>
-      <div class="gantt-track" style="--cell:${cell}%">
-        <div class="gantt-bar ${t.status}" data-edit="${t.id}" style="left:${s*cell}%;width:${width*cell}%"></div>
-      </div>
-    </div>`;
-  }
-  if(!visible.length) html+=`<div class="empty">No hay tareas dentro de este rango.</div>`;
-  $("#ganttChart").innerHTML=html;
-  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
+function renderBoard(){
+  const groups={pending:[],in_progress:[],waiting:[],completed:[]};
+
+  tasks.forEach(t=>{
+    const stage=boardStageOf(t);
+    if(stage==="completed" || t.status==="completed") groups.completed.push(t);
+    else if(stage==="in_progress") groups.in_progress.push(t);
+    else if(stage==="waiting") groups.waiting.push(t);
+    else groups.pending.push(t);
+  });
+
+  Object.values(groups).forEach(list=>list.sort(compareTasksByDate));
+
+  const boardCard=t=>`<article class="board-card ${t.status}">
+    <div class="board-card-head">
+      <strong>${esc(t.title)}</strong>
+      <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
+    </div>
+    ${t.description?`<p>${esc(t.description)}</p>`:""}
+    <div class="board-card-meta">
+      <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
+      ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
+      ${t.recurrence!=="none"?`<span>↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+    </div>
+    <label class="board-move-label">Mover a
+      <select data-board-move="${t.id}">
+        <option value="pending" ${boardStageOf(t)==="pending"?"selected":""}>Pendiente</option>
+        <option value="in_progress" ${boardStageOf(t)==="in_progress"?"selected":""}>En proceso</option>
+        <option value="waiting" ${boardStageOf(t)==="waiting"?"selected":""}>En espera</option>
+        <option value="completed" ${boardStageOf(t)==="completed"?"selected":""}>Completada</option>
+      </select>
+    </label>
+    <div class="board-card-actions">
+      <button data-edit="${t.id}">Editar</button>
+      <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
+    </div>
+  </article>`;
+
+  $("#boardPending").innerHTML=groups.pending.length?groups.pending.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
+  $("#boardProgress").innerHTML=groups.in_progress.length?groups.in_progress.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
+  $("#boardWaiting").innerHTML=groups.waiting.length?groups.waiting.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
+  $("#boardCompleted").innerHTML=groups.completed.length?groups.completed.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
+
+  $("#boardCountPending").textContent=groups.pending.length;
+  $("#boardCountProgress").textContent=groups.in_progress.length;
+  $("#boardCountWaiting").textContent=groups.waiting.length;
+  $("#boardCountCompleted").textContent=groups.completed.length;
+
+  $("#boardStats").innerHTML=`
+    <div class="stat-card"><strong>${groups.pending.length}</strong><small>Pendientes</small></div>
+    <div class="stat-card"><strong>${groups.in_progress.length}</strong><small>En proceso</small></div>
+    <div class="stat-card"><strong>${groups.waiting.length}</strong><small>En espera</small></div>
+    <div class="stat-card"><strong>${groups.completed.length}</strong><small>Completadas</small></div>`;
+
+  $$("[data-board-move]").forEach(sel=>sel.onchange=()=>{
+    const t=tasks.find(x=>x.id===sel.dataset.boardMove);
+    if(!t) return;
+    t.boardStage=sel.value;
+    if(sel.value==="completed"){
+      t.status="completed";
+      t.completedAt=t.completedAt||new Date().toISOString();
+    }else if(t.status==="completed"){
+      t.status="pending";
+      t.completedAt=null;
+    }
+    saveTasks();
+    toast(`Movida a ${boardStageLabel(sel.value)}.`);
+  });
+
+  bindTaskActions();
 }
 
 
@@ -358,32 +433,42 @@ function openTask(t=null){
   $("#title").value=t?.title||"";
   $("#description").value=t?.description||"";
   $("#startDate").value=t?.startDate||today;
-  $("#dueDate").value=t?.dueDate||today;
+  $("#dueDate").value=t?.dueDate||"";
   $("#allDay").checked=t?!!t.allDay:true;
   $("#startTime").value=t?.startTime||"09:00";
   $("#dueTime").value=t?.dueTime||"10:00";
   $("#recurrence").value=t?.recurrence||"none";
   $("#status").value=t?.status||"pending";
+  $("#boardStage").value=t?boardStageOf(t):"pending";
   $("#notify").checked=t?!!t.notify:true;
   $("#notifyAmount").value=t?.notifyAmount||1;
   $("#notifyUnit").value=t?.notifyUnit||"days";
   $("#comment").value=t?.comment||"";
-  toggleTimeFields(); toggleNotifyFields();
+  toggleTimeFields(); syncDueDependentFields();
   $("#taskDialog").showModal();
 }
 function readForm(){
-  const start=$("#startDate").value, due=$("#dueDate").value;
-  if(parseDate(due)<parseDate(start)) throw new Error("La fecha de vencimiento no puede ser anterior al inicio.");
+  const start=$("#startDate").value;
+  const due=$("#dueDate").value;
+  if(due && parseDate(due)<parseDate(start)) throw new Error("La fecha de vencimiento no puede ser anterior al inicio.");
+
+  let status=$("#status").value;
+  let boardStage=$("#boardStage").value;
+  if(status==="completed") boardStage="completed";
+  if(boardStage==="completed") status="completed";
+
   return {
     title:$("#title").value.trim(),
     description:$("#description").value.trim(),
-    startDate:start,dueDate:due,
+    startDate:start,
+    dueDate:due||"",
     allDay:$("#allDay").checked,
     startTime:$("#allDay").checked?"":$("#startTime").value,
-    dueTime:$("#allDay").checked?"":$("#dueTime").value,
+    dueTime:(!due || $("#allDay").checked)?"":$("#dueTime").value,
     recurrence:$("#recurrence").value,
-    status:$("#status").value,
-    notify:$("#notify").checked,
+    status,
+    boardStage,
+    notify:!!due && $("#notify").checked,
     notifyAmount:Number($("#notifyAmount").value||1),
     notifyUnit:$("#notifyUnit").value,
     comment:$("#comment").value.trim()
@@ -401,7 +486,9 @@ async function requestNotifications(){
   scheduleNotifications();
 }
 function notificationTime(t){
-  const due=taskDueDate(t); const n=new Date(due);
+  const due=taskDueDate(t);
+  if(!due) return null;
+  const n=new Date(due);
   const amount=t.notifyAmount||1;
   if(t.notifyUnit==="minutes") n.setMinutes(n.getMinutes()-amount);
   else if(t.notifyUnit==="hours") n.setHours(n.getHours()-amount);
@@ -413,8 +500,10 @@ function scheduleNotifications(){
   notificationTimers.forEach(clearTimeout); notificationTimers.clear();
   if(!("Notification" in window) || Notification.permission!=="granted") return;
   const now=Date.now();
-  tasks.filter(t=>t.status==="pending"&&t.notify).forEach(t=>{
-    const nt=notificationTime(t).getTime(), delay=nt-now;
+  tasks.filter(t=>t.status==="pending"&&t.notify&&t.dueDate).forEach(t=>{
+    const ntDate=notificationTime(t);
+    if(!ntDate) return;
+    const nt=ntDate.getTime(), delay=nt-now;
     if(delay>0 && delay<2147483647){
       const id=setTimeout(()=>new Notification("Recordatorio de tarea",{body:`${t.title} · vence ${shortDate(parseDate(t.dueDate))} ${t.allDay?"":t.dueTime||""}`,icon:"icon.svg"}),delay);
       notificationTimers.set(t.id,id);
@@ -457,6 +546,15 @@ $("#taskForm").addEventListener("submit",e=>{
 $("#deleteTaskBtn").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("¿Mover esta tarea a la papelera? Podrás recuperarla durante 24 horas.")){moveToTrash(id);$("#taskDialog").close();toast("Tarea movida a la papelera.");}};
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
 $("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
+
+function syncDueDependentFields(){
+  const hasDue=!!$("#dueDate").value;
+  $("#notify").disabled=!hasDue;
+  if(!hasDue) $("#notify").checked=false;
+  toggleNotifyFields();
+}
+$("#dueDate").addEventListener("change",syncDueDependentFields);
+
 $("#bottomAddBtn").onclick=()=>openTask();
 function setSelectedDay(d){
   selectedDate=startOfDay(d);
@@ -476,7 +574,6 @@ $("#prevMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1
 $("#nextMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar();};
 $("#prevWeek").onclick=()=>{weekCursor=addDays(weekCursor,-7);renderWeek();};
 $("#nextWeek").onclick=()=>{weekCursor=addDays(weekCursor,7);renderWeek();};
-$("#ganttRange").onchange=renderGantt;
 $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll();});
 $("#settingsBtnTop").onclick=()=>$("#settingsDialog").showModal();
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
