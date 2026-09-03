@@ -3,7 +3,7 @@ const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
-const APP_VERSION = "v7";
+const APP_VERSION = "v6";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -448,7 +448,7 @@ $("#taskForm").addEventListener("submit",e=>{
 $("#deleteTaskBtn").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("¿Mover esta tarea a la papelera? Podrás recuperarla durante 24 horas.")){moveToTrash(id);$("#taskDialog").close();toast("Tarea movida a la papelera.");}};
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
 $("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
-$("#bottomAddBtn").onclick=()=>openTask();
+$("#openTaskBtn").onclick=$("#floatingAddBtn").onclick=$("#bottomAddBtn").onclick=()=>openTask();
 function setSelectedDay(d){
   selectedDate=startOfDay(d);
   calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
