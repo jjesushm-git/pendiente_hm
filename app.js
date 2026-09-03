@@ -3,7 +3,7 @@ const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
-const APP_VERSION = "v4";
+const APP_VERSION = "v5";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -130,24 +130,52 @@ function renderWeekStrip(){
 }
 function renderDay(){
   $("#selectedDateTitle").textContent = longDate(selectedDate);
-  const pending = expandedTasksForDate(selectedDate).filter(t=>t.status==="pending").sort((a,b)=>taskDueDate(a)-taskDueDate(b));
-  const completed = expandedTasksForDate(selectedDate).filter(t=>t.status==="completed").sort((a,b)=>taskDueDate(a)-taskDueDate(b));
-  const missed = expandedTasksForDate(selectedDate).filter(t=>t.status==="missed").sort((a,b)=>taskDueDate(a)-taskDueDate(b));
 
-  const filter=$("#pendingFilter").value;
-  let filtered=pending;
-  if(filter==="upcoming") filtered=tasks
+  // Global sections: do not hide tasks just because they belong to another date.
+  const allPending = tasks
     .filter(t=>t.status==="pending")
     .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
-  if(filter==="recurring") filtered=pending.filter(t=>t.recurrence!=="none");
+
+  const allCompleted = tasks
+    .filter(t=>t.status==="completed")
+    .sort((a,b)=>{
+      const ad=a.completedAt ? new Date(a.completedAt) : taskDueDate(a);
+      const bd=b.completedAt ? new Date(b.completedAt) : taskDueDate(b);
+      return bd-ad;
+    });
+
+  const allMissed = tasks
+    .filter(t=>t.status==="missed")
+    .sort((a,b)=>taskDueDate(b)-taskDueDate(a));
+
+  const todayKey=dateKey(selectedDate);
+  const filter=$("#pendingFilter").value;
+  let filtered=allPending;
+
+  if(filter==="today"){
+    filtered=allPending.filter(t=>occursOn(t,selectedDate));
+  }
+
+  if(filter==="upcoming"){
+    filtered=allPending
+      .filter(t=>nextDueForSort(t)>=new Date())
+      .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
+  }
+
+  if(filter==="recurring"){
+    filtered=allPending
+      .filter(t=>t.recurrence!=="none")
+      .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
+  }
 
   $("#statsGrid").innerHTML = `
-    <div class="stat-card"><strong>${pending.length}</strong><small>Pendientes</small></div>
-    <div class="stat-card"><strong>${completed.length}</strong><small>Completadas</small></div>
-    <div class="stat-card"><strong>${missed.length}</strong><small>Vencidas</small></div>`;
+    <div class="stat-card"><strong>${allPending.length}</strong><small>Pendientes</small></div>
+    <div class="stat-card"><strong>${allCompleted.length}</strong><small>Completadas</small></div>
+    <div class="stat-card"><strong>${allMissed.length}</strong><small>Vencidas</small></div>`;
+
   $("#pendingList").innerHTML=listHtml(filtered);
-  $("#completedList").innerHTML=listHtml(completed);
-  $("#missedList").innerHTML=listHtml(missed);
+  $("#completedList").innerHTML=listHtml(allCompleted);
+  $("#missedList").innerHTML=listHtml(allMissed);
   bindTaskActions();
 }
 function expandedTasksForDate(d){ return tasks.filter(t=>occursOn(t,d)); }
