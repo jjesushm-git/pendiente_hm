@@ -7,6 +7,18 @@
   <title>Mis Tareas</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
+
+  <style id="v7-hide-extra-add">
+    #openTaskBtn,
+    #floatingAddBtn,
+    .add-top,
+    .floating-add {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+  </style>
+
 </head>
 <body>
   <div class="app-shell">
@@ -18,7 +30,6 @@
       <div class="top-actions">
         <button id="notifyBtn" class="icon-btn" title="Activar notificaciones">🔔</button>
         <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
-        <button id="openTaskBtn" class="add-top" title="Nueva tarea">＋</button>
       </div>
     </header>
 
@@ -163,7 +174,6 @@
       </section>
     </main>
 
-    <button id="floatingAddBtn" class="floating-add">＋</button>
 
     <nav class="bottom-nav">
       <button data-view="day" class="bottom-tab active"><span>✓</span>Tareas</button>
@@ -282,7 +292,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v6</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v7</small></div></div>
       <button id="updateAppBtn" class="settings-item">
         <span>🔄</span>
         <div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div>

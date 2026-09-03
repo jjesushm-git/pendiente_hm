@@ -145,3 +145,13 @@ button{cursor:pointer}
   .date-picker-btn{flex:1;justify-content:center}
   .date-picker-btn input{width:126px}
 }
+
+/* V7 FINAL: los únicos botones + permitidos son los de Agregar en la barra inferior */
+#openTaskBtn,
+#floatingAddBtn,
+.add-top,
+.floating-add {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
