@@ -2,6 +2,8 @@ const STORAGE_KEY = "mis_tareas_v1";
 const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
+const DEFAULT_PENDING_FILTER = "upcoming";
+const APP_VERSION = "v4";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -74,7 +76,7 @@ function normalizeStatuses(){
   const now=new Date();
   let changed=false;
   for(const t of tasks){
-    if(t.status==="pending" && taskDueDate(t) < now){
+    if(t.status==="pending" && t.recurrence==="none" && taskDueDate(t) < now){
       t.status="missed";
       t.missedAt=now.toISOString();
       changed=true;
@@ -82,6 +84,26 @@ function normalizeStatuses(){
   }
   if(changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
+
+function nextDueForSort(t){
+  if(t.recurrence==="none") return taskDueDate(t);
+  const now=new Date();
+  const baseDue=taskDueDate(t);
+  let candidate=new Date(baseDue);
+
+  // Advance recurring task until its next occurrence is now/future.
+  let guard=0;
+  while(candidate < now && guard < 5000){
+    if(t.recurrence==="daily") candidate.setDate(candidate.getDate()+1);
+    else if(t.recurrence==="weekly") candidate.setDate(candidate.getDate()+7);
+    else if(t.recurrence==="monthly") candidate.setMonth(candidate.getMonth()+1);
+    else if(t.recurrence==="yearly") candidate.setFullYear(candidate.getFullYear()+1);
+    else break;
+    guard++;
+  }
+  return candidate;
+}
+
 function formatTimeMeta(t){
   return t.allDay ? "Todo el día" : `${t.startTime||"--:--"}${t.dueTime ? " – "+t.dueTime : ""}`;
 }
@@ -114,7 +136,9 @@ function renderDay(){
 
   const filter=$("#pendingFilter").value;
   let filtered=pending;
-  if(filter==="upcoming") filtered=tasks.filter(t=>t.status==="pending" && taskDueDate(t)>=new Date()).sort((a,b)=>taskDueDate(a)-taskDueDate(b));
+  if(filter==="upcoming") filtered=tasks
+    .filter(t=>t.status==="pending")
+    .sort((a,b)=>nextDueForSort(a)-nextDueForSort(b));
   if(filter==="recurring") filtered=pending.filter(t=>t.recurrence!=="none");
 
   $("#statsGrid").innerHTML = `
@@ -407,6 +431,18 @@ $("#ganttRange").onchange=renderGantt;
 $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll();});
 $("#settingsBtnTop").onclick=()=>$("#settingsDialog").showModal();
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
+$("#updateAppBtn").onclick=async()=>{
+  try{
+    if("serviceWorker" in navigator){
+      const reg=await navigator.serviceWorker.getRegistration();
+      if(reg) await reg.update();
+    }
+    toast("Buscando actualización...");
+    setTimeout(()=>location.reload(),700);
+  }catch{
+    location.reload();
+  }
+};
 $("#exportBtn").onclick=exportData;
 $("#importInput").onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 $("#seedBtn").onclick=seedExamples;
@@ -418,5 +454,9 @@ $("#emptyTrashBtn").onclick=()=>{
 window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNotifications();});
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
-if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
+}
+if ($("#pendingFilter")) $("#pendingFilter").value = DEFAULT_PENDING_FILTER;
+if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
 renderAll(); scheduleNotifications();
