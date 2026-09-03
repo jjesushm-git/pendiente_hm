@@ -33,12 +33,20 @@
 
     <main>
       <section id="dayView" class="view active">
-        <div class="section-heading">
-          <div>
+        <div class="section-heading day-heading">
+          <div class="day-title-block">
             <p class="eyebrow">Vista diaria</p>
             <h2 id="selectedDateTitle"></h2>
           </div>
-          <button id="todayBtn" class="ghost-btn">Hoy</button>
+          <div class="day-nav-actions">
+            <button id="prevDayBtn" class="icon-btn" title="Día anterior">‹</button>
+            <label class="date-picker-btn" title="Seleccionar fecha">
+              <span>📅</span>
+              <input id="dayDatePicker" type="date" />
+            </label>
+            <button id="nextDayBtn" class="icon-btn" title="Día siguiente">›</button>
+            <button id="todayBtn" class="ghost-btn">Hoy</button>
+          </div>
         </div>
 
         <div class="stats-grid" id="statsGrid"></div>
@@ -274,7 +282,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v5</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v6</small></div></div>
       <button id="updateAppBtn" class="settings-item">
         <span>🔄</span>
         <div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div>

@@ -3,7 +3,7 @@ const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
-const APP_VERSION = "v5";
+const APP_VERSION = "v6";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -130,6 +130,7 @@ function renderWeekStrip(){
 }
 function renderDay(){
   $("#selectedDateTitle").textContent = longDate(selectedDate);
+  if ($("#dayDatePicker")) $("#dayDatePicker").value = dateKey(selectedDate);
 
   // Global sections: do not hide tasks just because they belong to another date.
   const allPending = tasks
@@ -448,7 +449,18 @@ $("#deleteTaskBtn").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("¿M
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
 $("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
 $("#openTaskBtn").onclick=$("#floatingAddBtn").onclick=$("#bottomAddBtn").onclick=()=>openTask();
-$("#todayBtn").onclick=()=>{selectedDate=startOfDay(new Date());calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);weekCursor=startOfWeek(selectedDate);renderAll();};
+function setSelectedDay(d){
+  selectedDate=startOfDay(d);
+  calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  weekCursor=startOfWeek(selectedDate);
+  renderAll();
+}
+$("#prevDayBtn").onclick=()=>setSelectedDay(addDays(selectedDate,-1));
+$("#nextDayBtn").onclick=()=>setSelectedDay(addDays(selectedDate,1));
+$("#dayDatePicker").onchange=e=>{
+  if(e.target.value) setSelectedDay(parseDate(e.target.value));
+};
+$("#todayBtn").onclick=()=>setSelectedDay(new Date());
 $("#notifyBtn").onclick=requestNotifications;
 $("#pendingFilter").onchange=renderDay;
 $("#prevMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();};

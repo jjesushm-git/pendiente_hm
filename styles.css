@@ -111,3 +111,37 @@ button{cursor:pointer}
 .trash-countdown{color:#ffbd69;font-size:.78rem;margin-top:8px}
 .restore-btn{background:#143d2b!important;color:#7beaaa!important}
 .delete-forever-btn{background:#4a1720!important;color:#ff9da5!important}
+
+.day-heading{align-items:flex-end}
+.day-title-block{min-width:0}
+.day-nav-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.date-picker-btn{
+  min-height:44px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:0 11px;
+  border-radius:14px;
+  background:#101d31;
+  border:1px solid var(--line);
+  cursor:pointer;
+}
+.date-picker-btn input{
+  width:132px;
+  border:0;
+  background:transparent;
+  padding:0;
+  margin:0;
+  color:var(--text);
+}
+.date-picker-btn input::-webkit-calendar-picker-indicator{
+  filter:invert(1);
+  opacity:.9;
+  cursor:pointer;
+}
+@media(max-width:600px){
+  .day-heading{align-items:flex-start;flex-direction:column}
+  .day-nav-actions{width:100%;justify-content:space-between}
+  .date-picker-btn{flex:1;justify-content:center}
+  .date-picker-btn input{width:126px}
+}
