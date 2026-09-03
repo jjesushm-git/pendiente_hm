@@ -3,7 +3,7 @@ const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
-const APP_VERSION = "v7";
+const APP_VERSION = "v8";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -214,6 +214,7 @@ function taskCard(t){
         <div class="card-actions">
           <button data-edit="${t.id}">Editar</button>
           ${t.status==="missed"?`<button data-reopen="${t.id}">Reabrir</button>`:""}
+          <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
         </div>
       </div>
       <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
@@ -229,6 +230,14 @@ function bindTaskActions(){
   });
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
   $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); t.status="pending"; t.missedAt=null; saveTasks();});
+  $$("[data-delete]").forEach(b=>b.onclick=()=>{
+    const t=tasks.find(x=>x.id===b.dataset.delete);
+    if(!t) return;
+    if(confirm(`¿Eliminar "${t.title}"?\n\nSe moverá a la papelera y podrás restaurarla durante 24 horas.`)){
+      moveToTrash(t.id);
+      toast("Tarea movida a la papelera.");
+    }
+  });
 }
 function renderCalendar(){
   $("#calendarTitle").textContent=monthName(calendarCursor);

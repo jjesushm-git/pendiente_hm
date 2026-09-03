@@ -145,3 +145,15 @@ button{cursor:pointer}
   .date-picker-btn{flex:1;justify-content:center}
   .date-picker-btn input{width:126px}
 }
+
+/* V8 - botón Eliminar directo en cada tarea */
+.card-actions{
+  width:100%;
+  align-items:center;
+}
+.card-actions .task-delete-btn{
+  margin-left:auto;
+  background:rgba(255,72,92,.14);
+  color:#ff6678;
+  border:1px solid rgba(255,102,120,.35);
+}
