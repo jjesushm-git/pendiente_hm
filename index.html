@@ -13,7 +13,7 @@
     <header class="topbar">
       <div>
         <p class="eyebrow">Organizador personal</p>
-        <h1>Mis Tareas</h1>
+        <h1 id="appTitle">Mis Tareas</h1>
       </div>
       <div class="top-actions">
         <button id="notifyBtn" class="icon-btn" title="Activar notificaciones">🔔</button>
@@ -24,14 +24,27 @@
     <section class="week-strip" id="weekStrip"></section>
 
     <nav class="view-tabs">
-      <button data-view="calendar" class="view-tab">Calendario</button>
-      <button data-view="day" class="view-tab active">Día</button>
+      <button data-view="calendar" class="view-tab active">Calendario</button>
+      <button data-view="day" class="view-tab">Día</button>
       <button data-view="week" class="view-tab">Semana</button>
       <button data-view="board" class="view-tab">Tablero</button>
     </nav>
 
+    <section class="expense-summary-bar" id="expenseSummaryBar">
+      <div>
+        <strong id="expenseDayTotal">Gastos del día: $0.00 MN</strong>
+        <small id="expenseMonthTotal">Total del mes: $0.00 MN</small>
+      </div>
+      <div class="expense-actions">
+        <button id="viewExpensesBtn" class="expense-eye-btn" title="Ver gastos registrados" aria-label="Ver gastos registrados">
+          <span class="eye-outline" aria-hidden="true"></span>
+        </button>
+        <button id="addExpenseBtn" class="expense-add-btn" title="Agregar gasto">+$</button>
+      </div>
+    </section>
+
     <main>
-      <section id="dayView" class="view active">
+      <section id="dayView" class="view">
         <div class="section-heading day-heading">
           <div class="day-title-block">
             <p class="eyebrow">Vista diaria</p>
@@ -87,7 +100,7 @@
         </section>
       </section>
 
-      <section id="calendarView" class="view">
+      <section id="calendarView" class="view active">
         <div class="section-heading">
           <button id="prevMonth" class="icon-btn">‹</button>
           <div class="center">
@@ -188,8 +201,8 @@
 
 
     <nav class="bottom-nav">
-      <button data-view="day" class="bottom-tab active"><span>✓</span>Tareas</button>
-      <button data-view="calendar" class="bottom-tab"><span>▦</span>Calendario</button>
+      <button data-view="day" class="bottom-tab"><span>✓</span>Tareas</button>
+      <button data-view="calendar" class="bottom-tab active"><span>▦</span>Calendario</button>
       <button id="bottomAddBtn" class="bottom-add"><span>＋</span>Agregar</button>
       <button data-view="board" class="bottom-tab"><span>▦</span>Tablero</button>
       <button data-view="trash" class="bottom-tab"><span>🗑</span>Papelera</button>
@@ -305,40 +318,150 @@
   <dialog id="settingsDialog" class="modal">
     <div class="modal-head">
       <div>
-        <p class="eyebrow">Datos y respaldo</p>
+        <p class="eyebrow">Preferencias y respaldo</p>
         <h2>Ajustes</h2>
       </div>
       <button class="icon-btn" id="closeSettings">✕</button>
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v9</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10</small></div></div>
+
+      <div class="settings-form-card">
+        <label>Vista predeterminada de tareas
+          <select id="defaultPendingFilter">
+            <option value="all">Todas</option>
+            <option value="today">Hoy</option>
+            <option value="upcoming">Próximas</option>
+            <option value="recurring">Recurrentes</option>
+          </select>
+        </label>
+
+        <label>Día de inicio para sumar gastos del mes
+          <select id="expenseCycleDay"></select>
+        </label>
+
+        <label>Título de la aplicación
+          <input id="customAppTitle" type="text" placeholder="Mis Tareas" autocomplete="off" />
+          <small>Máximo 10 caracteres.</small>
+        </label>
+
+        <button id="saveSettingsBtn" class="primary-btn" type="button">Guardar cambios</button>
+        <div id="settingsSavedMessage" class="saved-message hidden">Los cambios han sido guardados.</div>
+      </div>
+
       <button id="updateAppBtn" class="settings-item">
         <span>🔄</span>
         <div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div>
       </button>
+
+      <button id="exportExpensesTxtBtn" class="settings-item">
+        <span>📄</span>
+        <div><strong>Exportar gastos TXT</strong><small>Descarga todos los gastos registrados en formato de texto.</small></div>
+      </button>
+
+      <button id="exportExpensesCsvBtn" class="settings-item">
+        <span>📊</span>
+        <div><strong>Exportar gastos CSV</strong><small>Descarga los gastos para abrirlos en Excel u otra hoja de cálculo.</small></div>
+      </button>
+
       <button id="exportBtn" class="settings-item">
         <span>⬇️</span>
-        <div><strong>Exportar respaldo</strong><small>Descarga todas tus tareas en formato JSON.</small></div>
+        <div><strong>Exportar respaldo de tareas</strong><small>Descarga tus tareas en formato JSON.</small></div>
       </button>
+
       <label class="settings-item file-item">
         <span>⬆️</span>
-        <div><strong>Importar respaldo</strong><small>Restaura tareas desde un archivo JSON.</small></div>
+        <div><strong>Importar respaldo de tareas</strong><small>Restaura tareas desde un archivo JSON.</small></div>
         <input id="importInput" type="file" accept=".json,application/json" hidden />
       </label>
+
       <button id="seedBtn" class="settings-item">
         <span>✨</span>
         <div><strong>Cargar ejemplos</strong><small>Agrega tareas de muestra para probar la aplicación.</small></div>
       </button>
+
       <button id="clearBtn" class="settings-item danger-outline">
         <span>🗑️</span>
-        <div><strong>Borrar todos los datos</strong><small>Elimina todas las tareas y la papelera guardadas en este dispositivo.</small></div>
+        <div><strong>Borrar todos los datos</strong><small>Elimina tareas, papelera y gastos guardados en este dispositivo.</small></div>
       </button>
     </div>
+  </dialog>
+
+  
+  <dialog id="expenseDialog" class="modal">
+    <form id="expenseForm" method="dialog">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Registro de gasto</p>
+          <h2>Agregar gasto</h2>
+        </div>
+        <button type="button" class="icon-btn" id="closeExpenseDialog">✕</button>
+      </div>
+
+      <div class="expense-date-nav">
+        <button type="button" data-expense-shift="-month" title="Mes anterior">&lt;&lt;&lt;</button>
+        <button type="button" data-expense-shift="-week" title="Semana anterior">&lt;&lt;</button>
+        <button type="button" data-expense-shift="-day" title="Día anterior">&lt;</button>
+        <strong id="expenseDateLabel">08.09.2026</strong>
+        <button type="button" data-expense-shift="+day" title="Día siguiente">&gt;</button>
+        <button type="button" data-expense-shift="+week" title="Semana siguiente">&gt;&gt;</button>
+        <button type="button" data-expense-shift="+month" title="Mes siguiente">&gt;&gt;&gt;</button>
+      </div>
+
+      <input id="expenseDate" type="hidden" />
+      <input id="expenseId" type="hidden" />
+
+      <label>¿En qué gasté? *
+        <input id="expenseTitle" maxlength="120" required placeholder="Ej. Comida, gasolina, farmacia..." />
+      </label>
+
+      <label>Descripción
+        <textarea id="expenseDescription" rows="3" maxlength="1000" placeholder="Detalle opcional del gasto..."></textarea>
+      </label>
+
+      <label>Monto *
+        <div class="money-input-wrap">
+          <span>$</span>
+          <input id="expenseAmount" type="number" inputmode="decimal" min="0.01" max="99999999.99" step="0.01" required placeholder="000000.00" />
+          <button type="button" id="expenseCurrencyBtn" class="currency-btn">MN</button>
+        </div>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" id="cancelExpenseBtn" class="ghost-btn">Cancelar</button>
+        <button type="submit" class="primary-btn">Guardar gasto</button>
+      </div>
+    </form>
   </dialog>
 
   <div id="toast" class="toast"></div>
 
   <script src="app.js"></script>
+
+  <dialog id="viewExpensesDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Consulta de gastos</p>
+        <h2>Gastos registrados</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeViewExpensesDialog">✕</button>
+    </div>
+
+    <div class="expense-date-nav expense-date-nav-one-line">
+      <button type="button" data-view-expense-shift="-month" title="Mes anterior">&lt;&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-week" title="Semana anterior">&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-day" title="Día anterior">&lt;</button>
+      <strong id="viewExpenseDateLabel"></strong>
+      <button type="button" data-view-expense-shift="+day" title="Día siguiente">&gt;</button>
+      <button type="button" data-view-expense-shift="+week" title="Semana siguiente">&gt;&gt;</button>
+      <button type="button" data-view-expense-shift="+month" title="Mes siguiente">&gt;&gt;&gt;</button>
+    </div>
+
+    <input id="viewExpenseDate" type="hidden" />
+    <div id="viewExpenseDayTotal" class="expense-view-total"></div>
+    <div id="viewExpensesList" class="expense-list"></div>
+  </dialog>
+
 </body>
 </html>

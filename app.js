@@ -3,17 +3,20 @@ const SETTINGS_KEY = "mis_tareas_settings_v1";
 const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
-const APP_VERSION = "v9";
+const EXPENSES_KEY = "mis_tareas_expenses_v1";
+const APP_VERSION = "x10";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 let tasks = loadTasks();
 let trash = loadTrash();
+let settings = loadSettings();
+let expenses = loadExpenses();
 let selectedDate = startOfDay(new Date());
 let calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
 let weekCursor = startOfWeek(selectedDate);
-let currentView = "day";
+let currentView = "calendar";
 let notificationTimers = new Map();
 
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
@@ -26,9 +29,86 @@ function startOfWeek(d){ const x=startOfDay(d); const day=(x.getDay()+6)%7; retu
 function monthName(d){ return d.toLocaleDateString("es-MX",{month:"long",year:"numeric"}); }
 function longDate(d){ return d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
 function shortDate(d){ return d.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+function dotDate(d){ return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`; }
+function money(n){ return Number(n||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function expenseTotalsForDate(d){
+  const key=dateKey(d);
+  const day=expenses.filter(e=>e.date===key);
+  return {
+    MN:day.filter(e=>e.currency==="MN").reduce((s,e)=>s+Number(e.amount||0),0),
+    DLS:day.filter(e=>e.currency==="DLS").reduce((s,e)=>s+Number(e.amount||0),0)
+  };
+}
+function expenseCycleRange(d){
+  const cycle=Math.min(31,Math.max(1,Number(settings.expenseCycleDay||1)));
+  const y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+  let start;
+  if(day>=cycle){
+    const maxDay=new Date(y,m+1,0).getDate();
+    start=new Date(y,m-1,Math.min(cycle,new Date(y,m,0).getDate()));
+    if(cycle<=maxDay) start=new Date(y,m,cycle);
+  }else{
+    const prevMax=new Date(y,m,0).getDate();
+    start=new Date(y,m-1,Math.min(cycle,prevMax));
+  }
+  const endMonth=start.getMonth()+1;
+  const endYear=start.getFullYear() + (endMonth>11?1:0);
+  const normalizedMonth=endMonth%12;
+  const endMax=new Date(endYear,normalizedMonth+1,0).getDate();
+  const nextStart=new Date(endYear,normalizedMonth,Math.min(cycle,endMax));
+  const end=addDays(nextStart,-1);
+  return {start:startOfDay(start),end:startOfDay(end)};
+}
+function expenseTotalsForCycle(d){
+  const {start,end}=expenseCycleRange(d);
+  const list=expenses.filter(e=>{
+    const ed=parseDate(e.date);
+    return ed>=start && ed<=end;
+  });
+  return {
+    MN:list.filter(e=>e.currency==="MN").reduce((s,e)=>s+Number(e.amount||0),0),
+    DLS:list.filter(e=>e.currency==="DLS").reduce((s,e)=>s+Number(e.amount||0),0),
+    start,end
+  };
+}
+function totalsText(prefix,t){
+  let parts=[];
+  if(t.MN || !t.DLS) parts.push(`$${money(t.MN)} MN`);
+  if(t.DLS) parts.push(`$${money(t.DLS)} DLS`);
+  return `${prefix}: ${parts.join(" · ")}`;
+}
+function renderExpenseSummary(){
+  if(!$("#expenseDayTotal")) return;
+  const day=expenseTotalsForDate(selectedDate);
+  const cyc=expenseTotalsForCycle(selectedDate);
+  $("#expenseDayTotal").textContent=totalsText("Gastos del día",day);
+  $("#expenseMonthTotal").textContent=`Total del mes: ${totalsText("",cyc).replace(/^:\s*/,"")} · ${dotDate(cyc.start)}–${dotDate(cyc.end)}`;
+}
+
 function esc(s=""){ return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
 function loadTasks(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{return []} }
 function loadTrash(){ try{return JSON.parse(localStorage.getItem(TRASH_KEY))||[]}catch{return []} }
+function loadSettings(){
+  try{
+    return {
+      defaultPendingFilter:"upcoming",
+      expenseCycleDay:1,
+      appTitle:"Mis Tareas",
+      ...(JSON.parse(localStorage.getItem(SETTINGS_KEY))||{})
+    };
+  }catch{
+    return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas"};
+  }
+}
+function saveSettings(){
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+}
+function loadExpenses(){ try{return JSON.parse(localStorage.getItem(EXPENSES_KEY))||[]}catch{return []} }
+function saveExpenses(){
+  localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
+  renderExpenseSummary();
+}
+
 function saveTrash(){ localStorage.setItem(TRASH_KEY, JSON.stringify(trash)); }
 function saveTasks(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); purgeExpiredTrash(); scheduleNotifications(); renderAll(); }
 function purgeExpiredTrash(){
@@ -133,7 +213,7 @@ function statusLabel(s){ return ({pending:"Pendiente",completed:"Completada",mis
 
 function renderAll(){
   normalizeStatuses();
-  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash();
+  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderExpenseSummary();
 }
 function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
@@ -249,6 +329,30 @@ function taskCard(t){
     </div>
   </article>`;
 }
+
+function reopenTask(t){
+  const now=new Date();
+  const today=startOfDay(now);
+
+  let target=today;
+  if(!t.allDay && t.startTime){
+    const [h,m]=(t.startTime||"00:00").split(":").map(Number);
+    const todayStart=new Date(today);
+    todayStart.setHours(h,m,0,0);
+    if(now>=todayStart) target=addDays(today,1);
+  }
+
+  const oldStart=t.startDate?parseDate(t.startDate):today;
+  const oldDue=t.dueDate?parseDate(t.dueDate):null;
+  const durationDays=oldDue?Math.max(0,Math.round((startOfDay(oldDue)-startOfDay(oldStart))/86400000)):0;
+
+  t.startDate=dateKey(target);
+  if(t.dueDate) t.dueDate=dateKey(addDays(target,durationDays));
+  t.status="pending";
+  t.boardStage="pending";
+  t.missedAt=null;
+  t.completedAt=null;
+}
 function bindTaskActions(){
   $$("[data-complete]").forEach(ch=>ch.onchange=()=>{
     const t=tasks.find(x=>x.id===ch.dataset.complete); if(!t)return;
@@ -257,7 +361,7 @@ function bindTaskActions(){
     saveTasks();
   });
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
-  $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); t.status="pending"; t.boardStage="pending"; t.missedAt=null; saveTasks();});
+  $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); if(!t)return; reopenTask(t); saveTasks(); toast(`Tarea reabierta para ${shortDate(parseDate(t.startDate))}.`);});
   $$("[data-delete]").forEach(b=>b.onclick=()=>{
     const t=tasks.find(x=>x.id===b.dataset.delete);
     if(!t) return;
@@ -275,15 +379,19 @@ function renderCalendar(){
     const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===calendarCursor.getMonth();
     const dayTasks=expandedTasksForDate(d);
     const dots=dayTasks.slice(0,4).map(t=>`<i class="${t.status==="missed"?"red":t.status==="completed"?"green":""}"></i>`).join("");
+    const hasExpense=expenses.some(e=>e.date===key);
+
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
-      ${d.getDate()}<span class="calendar-dots">${dots}</span>
+      ${d.getDate()}
+      ${hasExpense?`<span class="calendar-expense-mark" title="Hay gastos registrados">$</span>`:""}
+      <span class="calendar-dots">${dots}</span>
     </button>`;
   }).join("");
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
     selectedDate=parseDate(b.dataset.caldate);
     $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
     $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate));
-    bindTaskActions(); renderCalendar();
+    bindTaskActions(); renderCalendar(); renderExpenseSummary();
   });
   $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
   $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate));
@@ -533,6 +641,194 @@ async function importData(file){
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 
+
+function populateSettings(){
+  $("#defaultPendingFilter").value=settings.defaultPendingFilter||"upcoming";
+  $("#expenseCycleDay").innerHTML=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+  $("#expenseCycleDay").value=String(settings.expenseCycleDay||1);
+  $("#customAppTitle").value=settings.appTitle||"Mis Tareas";
+}
+function applySettings(){
+  if($("#pendingFilter")) $("#pendingFilter").value=settings.defaultPendingFilter||"upcoming";
+  if($("#appTitle")) $("#appTitle").textContent=settings.appTitle||"Mis Tareas";
+}
+function saveSettingsFromDialog(){
+  const title=$("#customAppTitle").value.trim()||"Mis Tareas";
+  if(title.length>10){
+    alert("El título es muy largo. El máximo permitido es de 10 caracteres.");
+    return;
+  }
+  settings.defaultPendingFilter=$("#defaultPendingFilter").value;
+  settings.expenseCycleDay=Number($("#expenseCycleDay").value||1);
+  settings.appTitle=title;
+  saveSettings();
+  applySettings();
+  renderAll();
+  const m=$("#settingsSavedMessage");
+  m.classList.remove("hidden");
+  clearTimeout(m._t);
+  m._t=setTimeout(()=>m.classList.add("hidden"),2600);
+  toast("Los cambios han sido guardados.");
+}
+function shiftExpenseDate(type){
+  let d=parseDate($("#expenseDate").value);
+  if(type==="-day") d=addDays(d,-1);
+  if(type==="+day") d=addDays(d,1);
+  if(type==="-week") d=addDays(d,-7);
+  if(type==="+week") d=addDays(d,7);
+  if(type==="-month") d.setMonth(d.getMonth()-1);
+  if(type==="+month") d.setMonth(d.getMonth()+1);
+  $("#expenseDate").value=dateKey(d);
+  $("#expenseDateLabel").textContent=dotDate(d);
+}
+function openExpenseDialog(expense=null){
+  $("#expenseForm").reset();
+  $("#expenseId").value=expense?.id||"";
+  const d=expense?.date ? parseDate(expense.date) : selectedDate;
+  $("#expenseDate").value=dateKey(d);
+  $("#expenseDateLabel").textContent=dotDate(d);
+  $("#expenseTitle").value=expense?.title||"";
+  $("#expenseDescription").value=expense?.description||"";
+  $("#expenseAmount").value=expense ? Number(expense.amount||0).toFixed(2) : "";
+  $("#expenseCurrencyBtn").textContent=expense?.currency||"MN";
+
+  const title=$("#expenseDialog h2");
+  if(title) title.textContent=expense ? "Editar gasto" : "Agregar gasto";
+  $("#expenseDialog").showModal();
+}
+function openViewExpensesDialog(){
+  $("#viewExpenseDate").value=dateKey(selectedDate);
+  $("#viewExpenseDateLabel").textContent=dotDate(selectedDate);
+  renderViewExpenses();
+  $("#viewExpensesDialog").showModal();
+}
+
+function shiftExpenseDateValue(dateString,type){
+  const d=parseDate(dateString);
+
+  if(type==="-day") return addDays(d,-1);
+  if(type==="+day") return addDays(d,1);
+  if(type==="-week") return addDays(d,-7);
+  if(type==="+week") return addDays(d,7);
+
+  if(type==="-month"){
+    d.setMonth(d.getMonth()-1);
+    return d;
+  }
+
+  if(type==="+month"){
+    d.setMonth(d.getMonth()+1);
+    return d;
+  }
+
+  return d;
+}
+
+function shiftViewExpenseDate(type){
+  const d=shiftExpenseDateValue($("#viewExpenseDate").value,type);
+
+  $("#viewExpenseDate").value=dateKey(d);
+  $("#viewExpenseDateLabel").textContent=dotDate(d);
+
+  selectedDate=startOfDay(d);
+  calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  weekCursor=startOfWeek(selectedDate);
+
+  renderViewExpenses();
+  renderAll();
+}
+
+function renderViewExpenses(){
+  if(!$("#viewExpensesList")) return;
+
+  const key=$("#viewExpenseDate").value || dateKey(selectedDate);
+  const d=parseDate(key);
+
+  const list=expenses
+    .filter(e=>e.date===key)
+    .sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
+
+  $("#viewExpenseDayTotal").textContent=
+    totalsText("Gastos del día",expenseTotalsForDate(d));
+
+  $("#viewExpensesList").innerHTML=list.length
+    ? list.map(e=>`
+      <article class="expense-card">
+        <div class="expense-card-main">
+          <strong>${esc(e.title)}</strong>
+          <span class="expense-card-amount">$${money(e.amount)} ${e.currency}</span>
+        </div>
+
+        ${e.description ? `<p>${esc(e.description)}</p>` : ""}
+
+        <div class="expense-card-actions">
+          <button class="expense-edit-btn" data-expense-edit="${e.id}" title="Editar gasto">
+            ✏ Editar
+          </button>
+          <button class="expense-delete-btn" data-expense-delete="${e.id}" title="Borrar gasto">
+            🗑 Borrar
+          </button>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty">No hay gastos registrados en este día.</div>`;
+
+  $$("[data-expense-edit]").forEach(btn=>{
+    btn.onclick=()=>{
+      const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
+      if(!expense) return;
+
+      $("#viewExpensesDialog").close();
+      openExpenseDialog(expense);
+    };
+  });
+
+  $$("[data-expense-delete]").forEach(btn=>{
+    btn.onclick=()=>{
+      const expense=expenses.find(e=>e.id===btn.dataset.expenseDelete);
+      if(!expense) return;
+
+      if(confirm(`¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`)){
+        expenses=expenses.filter(e=>e.id!==expense.id);
+        saveExpenses();
+
+        renderViewExpenses();
+        renderAll();
+
+        toast("Gasto borrado.");
+      }
+    };
+  });
+}
+
+function downloadText(filename,text,type="text/plain;charset=utf-8"){
+  const blob=new Blob([text],{type});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+function exportExpensesTxt(){
+  const rows=[`GASTOS - ${settings.appTitle||"Mis Tareas"}`,""];
+  [...expenses].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+    rows.push(`${dotDate(parseDate(e.date))} | ${e.title} | ${e.description||""} | $${money(e.amount)} ${e.currency}`);
+  });
+  downloadText(`gastos_${dateKey(new Date())}.txt`,rows.join("\n"));
+}
+function csvCell(v){
+  const s=String(v??"").replace(/"/g,'""');
+  return `"${s}"`;
+}
+function exportExpensesCsv(){
+  const rows=[["Fecha","En que gaste","Descripcion","Monto","Moneda"]];
+  [...expenses].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>rows.push([
+    dotDate(parseDate(e.date)),e.title,e.description||"",Number(e.amount||0).toFixed(2),e.currency
+  ]));
+  const csv="\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
+  downloadText(`gastos_${dateKey(new Date())}.csv`,csv,"text/csv;charset=utf-8");
+}
+
 $("#taskForm").addEventListener("submit",e=>{
   e.preventDefault();
   try{
@@ -555,6 +851,73 @@ function syncDueDependentFields(){
 }
 $("#dueDate").addEventListener("change",syncDueDependentFields);
 
+
+$("#viewExpensesBtn").onclick=openViewExpensesDialog;
+$("#closeViewExpensesDialog").onclick=()=>$("#viewExpensesDialog").close();
+$$("[data-view-expense-shift]").forEach(btn=>{
+  btn.onclick=()=>shiftViewExpenseDate(btn.dataset.viewExpenseShift);
+});
+$("#addExpenseBtn").onclick=()=>openExpenseDialog();
+$("#closeExpenseDialog").onclick=$("#cancelExpenseBtn").onclick=()=>$("#expenseDialog").close();
+$$("[data-expense-shift]").forEach(b=>b.onclick=()=>shiftExpenseDate(b.dataset.expenseShift));
+$("#expenseCurrencyBtn").onclick=()=>{
+  $("#expenseCurrencyBtn").textContent=$("#expenseCurrencyBtn").textContent==="MN"?"DLS":"MN";
+};
+$("#expenseForm").addEventListener("submit",e=>{
+  e.preventDefault();
+
+  const title=$("#expenseTitle").value.trim();
+  const amount=Number($("#expenseAmount").value||0);
+
+  if(!title){
+    toast("Escribe en qué gastaste.");
+    return;
+  }
+
+  if(amount<=0 || amount>99999999.99){
+    toast("El monto debe estar entre $0.01 y $99,999,999.99.");
+    return;
+  }
+
+  const id=$("#expenseId").value;
+  const data={
+    date:$("#expenseDate").value,
+    title,
+    description:$("#expenseDescription").value.trim(),
+    amount:Number(amount.toFixed(2)),
+    currency:$("#expenseCurrencyBtn").textContent
+  };
+
+  if(id){
+    const i=expenses.findIndex(x=>x.id===id);
+    if(i>=0){
+      expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
+    }
+  }else{
+    expenses.push({
+      id:uid(),
+      ...data,
+      createdAt:new Date().toISOString()
+    });
+  }
+
+  selectedDate=parseDate(data.date);
+  calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  weekCursor=startOfWeek(selectedDate);
+
+  saveExpenses();
+  $("#expenseDialog").close();
+
+  renderAll();
+  if($("#viewExpensesDialog")?.open){
+    $("#viewExpenseDate").value=data.date;
+    $("#viewExpenseDateLabel").textContent=dotDate(parseDate(data.date));
+    renderViewExpenses();
+  }
+
+  toast(id ? "Gasto actualizado." : "Gasto guardado.");
+});
+
 $("#bottomAddBtn").onclick=()=>openTask();
 function setSelectedDay(d){
   selectedDate=startOfDay(d);
@@ -575,7 +938,7 @@ $("#nextMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1
 $("#prevWeek").onclick=()=>{weekCursor=addDays(weekCursor,-7);renderWeek();};
 $("#nextWeek").onclick=()=>{weekCursor=addDays(weekCursor,7);renderWeek();};
 $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll();});
-$("#settingsBtnTop").onclick=()=>$("#settingsDialog").showModal();
+$("#settingsBtnTop").onclick=()=>{populateSettings();$("#settingsSavedMessage").classList.add("hidden");$("#settingsDialog").showModal();};
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
   try{
@@ -589,10 +952,13 @@ $("#updateAppBtn").onclick=async()=>{
     location.reload();
   }
 };
+$("#saveSettingsBtn").onclick=saveSettingsFromDialog;
+$("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
+$("#exportExpensesCsvBtn").onclick=exportExpensesCsv;
 $("#exportBtn").onclick=exportData;
 $("#importInput").onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
 $("#seedBtn").onclick=seedExamples;
-$("#clearBtn").onclick=()=>{if(confirm("Esto borrará todas las tareas y la papelera. ¿Continuar?")){tasks=[];trash=[];saveTrash();saveTasks();toast("Datos eliminados.");}};
+$("#clearBtn").onclick=()=>{if(confirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?")){tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");}};
 $("#emptyTrashBtn").onclick=()=>{
   if(!trash.length){toast("La papelera ya está vacía.");return;}
   if(confirm("¿Vaciar la papelera? Las tareas se eliminarán definitivamente.")){trash=[];saveTrash();renderTrash();toast("Papelera vaciada.");}
@@ -603,6 +969,8 @@ setInterval(()=>{normalizeStatuses();renderAll();},60000);
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
 }
-if ($("#pendingFilter")) $("#pendingFilter").value = DEFAULT_PENDING_FILTER;
+populateSettings();
+applySettings();
 if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
+switchView("calendar");
 renderAll(); scheduleNotifications();
