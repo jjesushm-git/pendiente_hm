@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "x10.0.3";
+const APP_VERSION = "x10.0.3.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -268,8 +268,8 @@ function renderWeekStrip(){
       <span class="dow">${d.toLocaleDateString("es-MX",{weekday:"short"}).replace(".","")}</span>
       <span class="num">${d.getDate()}</span>
       <span class="week-day-indicators">
-        ${hasTask?'<span class="dot"></span>':""}
         ${hasExpense?'<span class="week-expense-mark" title="Hay gastos registrados">$</span>':""}
+        ${hasTask?'<span class="dot"></span>':""}
       </span>
     </button>`;
   }).join("");

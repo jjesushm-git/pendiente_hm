@@ -690,3 +690,25 @@ button{cursor:pointer}
 .week-day.active .week-expense-mark{
   color:#f0c24d;
 }
+
+
+/* X10.0.3.1 - indicador $ y punto lado a lado */
+.week-day-indicators{
+  min-height:14px;
+  display:inline-flex !important;
+  flex-direction:row !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  margin-top:4px;
+  white-space:nowrap;
+}
+.week-day-indicators .week-expense-mark{
+  order:1;
+  display:inline-block;
+}
+.week-day-indicators .dot{
+  order:2;
+  display:inline-block;
+  margin:0 !important;
+}

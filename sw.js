@@ -1,4 +1,4 @@
-const CACHE="mis-tareas-x10-0-3";
+const CACHE="mis-tareas-x10-0-3-1";
 const FILES=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg"];
 
 self.addEventListener("install", event => {
