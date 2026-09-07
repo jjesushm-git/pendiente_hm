@@ -325,7 +325,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10 estable</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -437,7 +437,6 @@
 
   <div id="toast" class="toast"></div>
 
-  <script src="app.js"></script>
 
   <dialog id="viewExpensesDialog" class="modal">
     <div class="modal-head">
@@ -449,13 +448,13 @@
     </div>
 
     <div class="expense-date-nav expense-date-nav-one-line">
-      <button type="button" data-view-expense-shift="-month" title="Mes anterior">&lt;&lt;&lt;</button>
-      <button type="button" data-view-expense-shift="-week" title="Semana anterior">&lt;&lt;</button>
-      <button type="button" data-view-expense-shift="-day" title="Día anterior">&lt;</button>
+      <button type="button" data-view-expense-shift="-month">&lt;&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-week">&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-day">&lt;</button>
       <strong id="viewExpenseDateLabel"></strong>
-      <button type="button" data-view-expense-shift="+day" title="Día siguiente">&gt;</button>
-      <button type="button" data-view-expense-shift="+week" title="Semana siguiente">&gt;&gt;</button>
-      <button type="button" data-view-expense-shift="+month" title="Mes siguiente">&gt;&gt;&gt;</button>
+      <button type="button" data-view-expense-shift="+day">&gt;</button>
+      <button type="button" data-view-expense-shift="+week">&gt;&gt;</button>
+      <button type="button" data-view-expense-shift="+month">&gt;&gt;&gt;</button>
     </div>
 
     <input id="viewExpenseDate" type="hidden" />
@@ -463,5 +462,7 @@
     <div id="viewExpensesList" class="expense-list"></div>
   </dialog>
 
+
+  <script src="app.js" defer></script>
 </body>
 </html>

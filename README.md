@@ -1,16 +1,14 @@
-# Mis Tareas — Versión x10
+# Mis Tareas — x10 ESTABLE
 
-Base: Versión 10 estable.
+Reconstruida directamente desde la Versión 10 que funcionaba.
 
-Cambios realizados únicamente sobre el módulo de gastos:
-- Flechas de fecha más pequeñas para caber en una sola línea.
-- Botón de ojo discreto y de contorno junto a +$.
-- Ventana para consultar gastos del día.
-- Navegación por día, semana y mes en la consulta.
-- Tarjetas con título, monto, descripción, Editar y Borrar.
-- Edición de gastos existentes.
-- Borrado con confirmación.
-- Actualización inmediata de totales después de agregar, editar, borrar o cambiar de fecha.
-- Monto máximo por gasto: $99,999,999.99.
-- Símbolo $ dorado pequeño en los días del calendario que tienen gastos.
-- El resto de la Versión 10 se conserva sin cambios.
+Se agregaron únicamente:
+- Flechas de gastos compactas en una línea.
+- Botón de ojo discreto junto a +$.
+- Consulta de gastos por día.
+- Navegación día/semana/mes.
+- Editar y borrar gastos.
+- Actualización inmediata de totales.
+- Monto máximo $99,999,999.99.
+- Símbolo $ dorado en calendario si hay gasto.
+- app.js usa defer y el modal de consulta existe antes de ejecutar JavaScript.

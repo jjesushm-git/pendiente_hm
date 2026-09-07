@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "x10";
+const APP_VERSION = "x10 estable";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -383,7 +383,7 @@ function renderCalendar(){
 
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
       ${d.getDate()}
-      ${hasExpense?`<span class="calendar-expense-mark" title="Hay gastos registrados">$</span>`:""}
+      ${hasExpense?`<span class="calendar-expense-mark">$</span>`:""}
       <span class="calendar-dots">${dots}</span>
     </button>`;
   }).join("");
@@ -684,6 +684,7 @@ function shiftExpenseDate(type){
 function openExpenseDialog(expense=null){
   $("#expenseForm").reset();
   $("#expenseId").value=expense?.id||"";
+
   const d=expense?.date ? parseDate(expense.date) : selectedDate;
   $("#expenseDate").value=dateKey(d);
   $("#expenseDateLabel").textContent=dotDate(d);
@@ -692,8 +693,9 @@ function openExpenseDialog(expense=null){
   $("#expenseAmount").value=expense ? Number(expense.amount||0).toFixed(2) : "";
   $("#expenseCurrencyBtn").textContent=expense?.currency||"MN";
 
-  const title=$("#expenseDialog h2");
-  if(title) title.textContent=expense ? "Editar gasto" : "Agregar gasto";
+  const heading=document.querySelector("#expenseDialog h2");
+  if(heading) heading.textContent=expense ? "Editar gasto" : "Agregar gasto";
+
   $("#expenseDialog").showModal();
 }
 function openViewExpensesDialog(){
@@ -703,29 +705,15 @@ function openViewExpensesDialog(){
   $("#viewExpensesDialog").showModal();
 }
 
-function shiftExpenseDateValue(dateString,type){
-  const d=parseDate(dateString);
-
-  if(type==="-day") return addDays(d,-1);
-  if(type==="+day") return addDays(d,1);
-  if(type==="-week") return addDays(d,-7);
-  if(type==="+week") return addDays(d,7);
-
-  if(type==="-month"){
-    d.setMonth(d.getMonth()-1);
-    return d;
-  }
-
-  if(type==="+month"){
-    d.setMonth(d.getMonth()+1);
-    return d;
-  }
-
-  return d;
-}
-
 function shiftViewExpenseDate(type){
-  const d=shiftExpenseDateValue($("#viewExpenseDate").value,type);
+  let d=parseDate($("#viewExpenseDate").value);
+
+  if(type==="-day") d=addDays(d,-1);
+  if(type==="+day") d=addDays(d,1);
+  if(type==="-week") d=addDays(d,-7);
+  if(type==="+week") d=addDays(d,7);
+  if(type==="-month") d.setMonth(d.getMonth()-1);
+  if(type==="+month") d.setMonth(d.getMonth()+1);
 
   $("#viewExpenseDate").value=dateKey(d);
   $("#viewExpenseDateLabel").textContent=dotDate(d);
@@ -743,41 +731,29 @@ function renderViewExpenses(){
 
   const key=$("#viewExpenseDate").value || dateKey(selectedDate);
   const d=parseDate(key);
-
-  const list=expenses
-    .filter(e=>e.date===key)
-    .sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
+  const list=expenses.filter(e=>e.date===key);
 
   $("#viewExpenseDayTotal").textContent=
     totalsText("Gastos del día",expenseTotalsForDate(d));
 
-  $("#viewExpensesList").innerHTML=list.length
-    ? list.map(e=>`
-      <article class="expense-card">
-        <div class="expense-card-main">
-          <strong>${esc(e.title)}</strong>
-          <span class="expense-card-amount">$${money(e.amount)} ${e.currency}</span>
-        </div>
-
-        ${e.description ? `<p>${esc(e.description)}</p>` : ""}
-
-        <div class="expense-card-actions">
-          <button class="expense-edit-btn" data-expense-edit="${e.id}" title="Editar gasto">
-            ✏ Editar
-          </button>
-          <button class="expense-delete-btn" data-expense-delete="${e.id}" title="Borrar gasto">
-            🗑 Borrar
-          </button>
-        </div>
-      </article>
-    `).join("")
-    : `<div class="empty">No hay gastos registrados en este día.</div>`;
+  $("#viewExpensesList").innerHTML=list.length ? list.map(e=>`
+    <article class="expense-card">
+      <div class="expense-card-main">
+        <strong>${esc(e.title)}</strong>
+        <span class="expense-card-amount">$${money(e.amount)} ${e.currency}</span>
+      </div>
+      ${e.description ? `<p>${esc(e.description)}</p>` : ""}
+      <div class="expense-card-actions">
+        <button class="expense-edit-btn" data-expense-edit="${e.id}">✏ Editar</button>
+        <button class="expense-delete-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
+      </div>
+    </article>
+  `).join("") : `<div class="empty">No hay gastos registrados en este día.</div>`;
 
   $$("[data-expense-edit]").forEach(btn=>{
     btn.onclick=()=>{
       const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
       if(!expense) return;
-
       $("#viewExpensesDialog").close();
       openExpenseDialog(expense);
     };
@@ -791,10 +767,8 @@ function renderViewExpenses(){
       if(confirm(`¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`)){
         expenses=expenses.filter(e=>e.id!==expense.id);
         saveExpenses();
-
         renderViewExpenses();
         renderAll();
-
         toast("Gasto borrado.");
       }
     };
@@ -890,15 +864,9 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   if(id){
     const i=expenses.findIndex(x=>x.id===id);
-    if(i>=0){
-      expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
-    }
+    if(i>=0) expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
   }else{
-    expenses.push({
-      id:uid(),
-      ...data,
-      createdAt:new Date().toISOString()
-    });
+    expenses.push({id:uid(),...data,createdAt:new Date().toISOString()});
   }
 
   selectedDate=parseDate(data.date);
@@ -907,9 +875,9 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   saveExpenses();
   $("#expenseDialog").close();
-
   renderAll();
-  if($("#viewExpensesDialog")?.open){
+
+  if($("#viewExpensesDialog") && $("#viewExpensesDialog").open){
     $("#viewExpenseDate").value=data.date;
     $("#viewExpenseDateLabel").textContent=dotDate(parseDate(data.date));
     renderViewExpenses();
