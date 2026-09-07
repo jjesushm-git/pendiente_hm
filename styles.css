@@ -418,3 +418,19 @@ button{cursor:pointer}
   border:1px solid rgba(255,102,120,.35);
   background:rgba(255,72,92,.12);color:#ff6678
 }
+
+/* V10.2.1 - marcador de gasto en calendario */
+.calendar-day{
+  position:relative;
+}
+.calendar-expense-mark{
+  position:absolute;
+  top:4px;
+  right:5px;
+  font-size:.72rem;
+  font-weight:900;
+  line-height:1;
+  color:#d9a928;
+  text-shadow:0 0 5px rgba(217,169,40,.25);
+  pointer-events:none;
+}
