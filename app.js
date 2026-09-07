@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "x10.0.3.1";
+const APP_VERSION = "10.0.4";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -252,6 +252,27 @@ function recurrenceLabel(r){
   return ({daily:"Diaria",weekly:"Semanal",monthly:"Mensual",yearly:"Anual"})[r]||"";
 }
 function statusLabel(s){ return ({pending:"Pendiente",completed:"Completada",missed:"No completada"})[s]; }
+const TASK_EMOJIS={
+  work:["📌","✅","☑️","📝","📋","📁","📂","📊","📈","📉","💼","🗂️","🗓️","⏰","⌛","🔔","📞","📧","💻","🖥️","🖨️","🔧","🛠️","⚙️","🔍","✏️","📐","📎","🧾","💰","🏦","🚚","📦","🏢","👷"],
+  tasks:["🏠","🧹","🧺","🛒","🍳","🚗","⛽","💡","🔑","🔒","📚","🎓","🏃","🏋️","🚶","💊","🩺","🧴","🪴","🐶","🐱","✈️","🚌","📍","⭐","⚡","🎯","🔄","🧠","💧"],
+  social:["👥","🤝","🎂","🎉","🎁","❤️","😊","👍","🙏","☕","🍽️","🎬","🎵","📷","🎮","⚽","🏀","🌟","🌙","☀️"]
+};
+function renderEmojiPicker(){
+  const fill=(id,list)=>{
+    const el=$("#"+id);
+    if(!el) return;
+    el.innerHTML=list.map(e=>`<button type="button" class="emoji-choice" data-task-emoji="${e}">${e}</button>`).join("");
+  };
+  fill("emojiWorkGrid",TASK_EMOJIS.work);
+  fill("emojiTaskGrid",TASK_EMOJIS.tasks);
+  fill("emojiSocialGrid",TASK_EMOJIS.social);
+  $$("[data-task-emoji]").forEach(b=>b.onclick=()=>{
+    $("#taskEmoji").value=b.dataset.taskEmoji;
+    $("#taskEmojiPreview").textContent=b.dataset.taskEmoji;
+    $("#emojiDialog").close();
+  });
+}
+
 
 function renderAll(){
   normalizeStatuses();
@@ -322,13 +343,17 @@ function renderDay(){
   }
 
   $("#statsGrid").innerHTML = `
-    <div class="stat-card"><strong>${allPending.length}</strong><small>Pendientes</small></div>
-    <div class="stat-card"><strong>${allCompleted.length}</strong><small>Completadas</small></div>
-    <div class="stat-card"><strong>${allMissed.length}</strong><small>Vencidas</small></div>`;
+    <button class="stat-card stat-link" data-stat-target="pendingSection"><strong>${allPending.length}</strong><small>Pendientes</small></button>
+    <button class="stat-card stat-link" data-stat-target="completedSection"><strong>${allCompleted.length}</strong><small>Completadas</small></button>
+    <button class="stat-card stat-link" data-stat-target="missedSection"><strong>${allMissed.length}</strong><small>Vencidas</small></button>`;
 
   $("#pendingList").innerHTML=listHtml(filtered);
   $("#completedList").innerHTML=listHtml(allCompleted);
   $("#missedList").innerHTML=listHtml(allMissed);
+  $$("[data-stat-target]").forEach(btn=>btn.onclick=()=>{
+    const target=document.getElementById(btn.dataset.statTarget);
+    if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+  });
   bindTaskActions();
 }
 function expandedTasksForDate(d){ return tasks.filter(t=>occursOn(t,d)); }
@@ -362,6 +387,7 @@ function taskCard(t){
   return `<article class="task-card ${t.status}">
     <div class="task-row">
       <input class="task-check" type="checkbox" data-complete="${t.id}" ${t.status==="completed"?"checked":""} ${t.status==="missed"?"disabled":""}/>
+      <span class="task-emoji" aria-hidden="true">${esc(t.emoji||"📌")}</span>
       <div>
         <div class="task-title">${esc(t.title)}</div>
         ${t.description?`<div class="task-desc">${esc(t.description)}</div>`:""}
@@ -456,14 +482,23 @@ function renderCalendar(){
 function renderWeek(){
   const end=addDays(weekCursor,6);
   $("#weekTitle").textContent=`${shortDate(weekCursor)} – ${shortDate(end)}`;
-  $("#weekBoard").innerHTML=[...Array(7)].map((_,i)=>{
+
+  const days=[...Array(7)].map((_,i)=>{
     const d=addDays(weekCursor,i);
     const list=expandedTasksForDate(d).sort(compareTasksByDate);
-    return `<section class="week-column">
+    return {d,list};
+  }).filter(x=>x.list.length>0);
+
+  $("#weekBoard").innerHTML=days.length ? days.map(({d,list})=>`
+    <section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
-      ${list.length?list.map(t=>`<div class="mini-task" data-edit="${t.id}"><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)}</small></div>`).join(""):`<div class="empty">Sin tareas</div>`}
-    </section>`;
-  }).join("");
+      ${list.map(t=>`<div class="mini-task" data-edit="${t.id}">
+        <span class="mini-task-emoji">${esc(t.emoji||"📌")}</span>
+        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)}</small></span>
+      </div>`).join("")}
+    </section>
+  `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
+
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
 }
 function renderBoard(){
@@ -481,7 +516,7 @@ function renderBoard(){
 
   const boardCard=t=>`<article class="board-card ${t.status}">
     <div class="board-card-head">
-      <strong>${esc(t.title)}</strong>
+      <div class="board-title-with-emoji"><span class="board-task-emoji">${esc(t.emoji||"📌")}</span><strong>${esc(t.title)}</strong></div>
       <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
     </div>
     ${t.description?`<p>${esc(t.description)}</p>`:""}
@@ -498,7 +533,7 @@ function renderBoard(){
         <option value="completed" ${boardStageOf(t)==="completed"?"selected":""}>Completada</option>
       </select>
     </label>
-    <div class="board-card-actions">
+    <div class="card-actions board-card-actions">
       <button data-edit="${t.id}">Editar</button>
       <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
     </div>
@@ -596,6 +631,8 @@ function openTask(t=null){
   const today=dateKey(new Date());
   $("#title").value=t?.title||"";
   $("#description").value=t?.description||"";
+  $("#taskEmoji").value=t?.emoji||"📌";
+  $("#taskEmojiPreview").textContent=t?.emoji||"📌";
   $("#startDate").value=t?.startDate||today;
   $("#dueDate").value=t?.dueDate||"";
   $("#allDay").checked=t?!!t.allDay:true;
@@ -624,6 +661,7 @@ function readForm(){
   return {
     title:$("#title").value.trim(),
     description:$("#description").value.trim(),
+    emoji:$("#taskEmoji").value||"📌",
     startDate:start,
     dueDate:due||"",
     allDay:$("#allDay").checked,
@@ -734,8 +772,8 @@ function applySettings(){
 }
 function saveSettingsFromDialog(){
   const title=$("#customAppTitle").value.trim()||"Mis Tareas";
-  if(title.length>10){
-    alert("El título es muy largo. El máximo permitido es de 10 caracteres.");
+  if(title.length>18){
+    alert("El título es muy largo. El máximo permitido es de 18 caracteres.");
     return;
   }
   settings.defaultPendingFilter=$("#defaultPendingFilter").value;
@@ -929,6 +967,9 @@ $("#deleteTaskBtn").onclick=async()=>{
   }
 };
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
+$("#chooseTaskEmojiBtn").onclick=()=>{renderEmojiPicker();$("#emojiDialog").showModal();};
+$("#closeEmojiDialog").onclick=()=>$("#emojiDialog").close();
+
 $("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
 
 function syncDueDependentFields(){

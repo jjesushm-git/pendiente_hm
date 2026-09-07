@@ -1,8 +1,13 @@
-# Mis Tareas — x10.0.3.1
+# Mis Tareas — Versión 10.0.4
 
-Base: x10.0.3 estable.
+Base: x10.0.3.1 estable.
 
-Cambio:
-- En la franja superior de días, el indicador de gasto y el punto de tarea ahora aparecen en la misma línea.
-- Orden corregido: izquierda el signo $ dorado, derecha el punto verde.
-- Se conserva el resto de la funcionalidad de x10.0.3.
+Cambios:
+- Semana solo muestra los días que tienen tareas; los días vacíos quedan ocultos.
+- El título personalizable aumenta de 10 a 18 caracteres.
+- Cada tarea puede tener un emoticono Unicode genérico.
+- Selector de emoticonos en modal, priorizando trabajo/tareas antes que sociales.
+- El emoticono aparece junto a la casilla de verificación, antes del texto de la tarea.
+- Los contadores Pendientes, Completadas y Vencidas de Día ahora son botones y llevan a su sección correspondiente.
+- En Tablero, Editar y Eliminar usan el mismo estilo de acciones de las tarjetas de Día.
+- Se conserva el resto de la funcionalidad existente.

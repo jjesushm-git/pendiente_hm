@@ -66,7 +66,7 @@
 
         <div class="stats-grid" id="statsGrid"></div>
 
-        <section class="panel">
+        <section class="panel" id="pendingSection">
           <div class="panel-head">
             <div>
               <h3>Próximas</h3>
@@ -82,7 +82,7 @@
           <div id="pendingList" class="task-list"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="completedSection">
           <div class="panel-head">
             <div>
               <h3 class="green">Completadas</h3>
@@ -92,7 +92,7 @@
           <div id="completedList" class="task-list"></div>
         </section>
 
-        <section class="panel">
+        <section class="panel" id="missedSection">
           <div class="panel-head">
             <div>
               <h3 class="red">No completadas</h3>
@@ -232,6 +232,14 @@
         <textarea id="description" rows="4" maxlength="2000" placeholder="Descripción larga de la tarea..."></textarea>
       </label>
 
+      <label>Emoticono de la tarea
+        <button type="button" id="chooseTaskEmojiBtn" class="emoji-picker-trigger">
+          <span id="taskEmojiPreview" class="emoji-preview">📌</span>
+          <span>Elegir emoticono</span>
+        </button>
+        <input id="taskEmoji" type="hidden" value="📌" />
+      </label>
+
       <div class="two-cols">
         <label>Fecha de inicio *
           <input id="startDate" type="date" required />
@@ -328,7 +336,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10.0.3.1</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">10.0.4</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -345,8 +353,8 @@
         </label>
 
         <label>Título de la aplicación
-          <input id="customAppTitle" type="text" placeholder="Mis Tareas" autocomplete="off" />
-          <small>Máximo 10 caracteres.</small>
+          <input id="customAppTitle" type="text" maxlength="18" placeholder="Mis Tareas" autocomplete="off" />
+          <small>Máximo 18 caracteres.</small>
         </label>
 
         <button id="saveSettingsBtn" class="primary-btn" type="button">Guardar cambios</button>
@@ -486,6 +494,29 @@
         <button type="button" id="comicConfirmCancel" class="ghost-btn">Cancelar</button>
         <button type="button" id="comicConfirmOk" class="danger-btn">Sí, continuar</button>
       </div>
+    </div>
+  </dialog>
+
+  
+  <dialog id="emojiDialog" class="modal emoji-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Personaliza tu tarea</p>
+        <h2>Elegir emoticono</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeEmojiDialog">✕</button>
+    </div>
+    <div class="emoji-section">
+      <h3>Tareas y trabajo</h3>
+      <div id="emojiWorkGrid" class="emoji-grid"></div>
+    </div>
+    <div class="emoji-section">
+      <h3>Organización y actividades</h3>
+      <div id="emojiTaskGrid" class="emoji-grid"></div>
+    </div>
+    <div class="emoji-section">
+      <h3>Sociales y otros</h3>
+      <div id="emojiSocialGrid" class="emoji-grid"></div>
     </div>
   </dialog>
 
