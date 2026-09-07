@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "x10 estable";
+const APP_VERSION = "x10.0.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -31,6 +31,45 @@ function longDate(d){ return d.toLocaleDateString("es-MX",{weekday:"long",day:"n
 function shortDate(d){ return d.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"}); }
 function dotDate(d){ return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`; }
 function money(n){ return Number(n||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function formatMoneyInput(raw){
+  let s=String(raw??"").replace(/[^\d.]/g,"");
+  const firstDot=s.indexOf(".");
+  if(firstDot>=0){
+    s=s.slice(0,firstDot+1)+s.slice(firstDot+1).replace(/\./g,"");
+  }
+  let [intPart="",decPart=""]=s.split(".");
+  intPart=intPart.replace(/^0+(?=\d)/,"");
+  if(!intPart) intPart="0";
+  intPart=intPart.slice(0,8);
+  decPart=decPart.slice(0,2);
+  const n=Number(intPart||0);
+  const formattedInt=n.toLocaleString("en-US",{maximumFractionDigits:0});
+  return formattedInt + (firstDot>=0 ? "."+decPart : "");
+}
+function parseMoneyInput(display){
+  const cleaned=String(display||"").replace(/,/g,"").replace(/[^\d.]/g,"");
+  const n=Number(cleaned||0);
+  return Number.isFinite(n)?n:0;
+}
+function formatExportStamp(iso){
+  if(!iso) return "Nunca descargado";
+  const d=new Date(iso);
+  return `Última descarga: ${d.toLocaleDateString("es-MX")} ${d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}`;
+}
+function renderExportMarks(){
+  if($("#lastExportTxt")) $("#lastExportTxt").textContent=formatExportStamp(settings.lastExportTxt);
+  if($("#lastExportCsv")) $("#lastExportCsv").textContent=formatExportStamp(settings.lastExportCsv);
+  if($("#lastExportBackup")) $("#lastExportBackup").textContent=formatExportStamp(settings.lastExportBackup);
+}
+function markExport(kind){
+  const stamp=new Date().toISOString();
+  if(kind==="txt") settings.lastExportTxt=stamp;
+  if(kind==="csv") settings.lastExportCsv=stamp;
+  if(kind==="backup") settings.lastExportBackup=stamp;
+  saveSettings();
+  renderExportMarks();
+}
+
 function expenseTotalsForDate(d){
   const key=dateKey(d);
   const day=expenses.filter(e=>e.date===key);
@@ -94,10 +133,13 @@ function loadSettings(){
       defaultPendingFilter:"upcoming",
       expenseCycleDay:1,
       appTitle:"Mis Tareas",
+      lastExportTxt:"",
+      lastExportCsv:"",
+      lastExportBackup:"",
       ...(JSON.parse(localStorage.getItem(SETTINGS_KEY))||{})
     };
   }catch{
-    return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas"};
+    return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:""};
   }
 }
 function saveSettings(){
@@ -619,20 +661,10 @@ function scheduleNotifications(){
   });
 }
 
-function seedExamples(){
-  const now=startOfDay(new Date());
-  const ex=[
-    {id:uid(),title:"Preparar presentación",description:"Preparar la presentación para la reunión con el cliente.",startDate:dateKey(addDays(now,1)),dueDate:dateKey(addDays(now,1)),allDay:false,startTime:"08:30",dueTime:"09:00",recurrence:"none",status:"pending",notify:true,notifyAmount:1,notifyUnit:"days",comment:"Revisar última versión."},
-    {id:uid(),title:"Enviar reporte semanal",description:"Consolidar y enviar el reporte al equipo.",startDate:dateKey(addDays(now,1)),dueDate:dateKey(addDays(now,1)),allDay:false,startTime:"16:00",dueTime:"17:00",recurrence:"weekly",status:"pending",notify:true,notifyAmount:1,notifyUnit:"days",comment:""},
-    {id:uid(),title:"Ejercicio",description:"Rutina de ejercicio.",startDate:dateKey(now),dueDate:dateKey(now),allDay:false,startTime:"18:30",dueTime:"19:30",recurrence:"daily",status:"pending",notify:false,notifyAmount:1,notifyUnit:"days",comment:""},
-    {id:uid(),title:"Revisar correos",description:"Responder correos importantes.",startDate:dateKey(now),dueDate:dateKey(now),allDay:true,startTime:"",dueTime:"",recurrence:"none",status:"completed",notify:false,notifyAmount:1,notifyUnit:"days",comment:"",completedAt:new Date().toISOString()},
-    {id:uid(),title:"Llamar al proveedor",description:"Confirmar pedido de material.",startDate:dateKey(addDays(now,-2)),dueDate:dateKey(addDays(now,-1)),allDay:false,startTime:"14:00",dueTime:"15:00",recurrence:"none",status:"missed",notify:false,notifyAmount:1,notifyUnit:"days",comment:""}
-  ];
-  tasks=[...tasks,...ex]; saveTasks(); toast("Ejemplos agregados.");
-}
 function exportData(){
   const blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),tasks,trash},null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`mis_tareas_${dateKey(new Date())}.json`; a.click(); URL.revokeObjectURL(a.href);
+  markExport("backup");
 }
 async function importData(file){
   try{
@@ -647,6 +679,7 @@ function populateSettings(){
   $("#expenseCycleDay").innerHTML=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
   $("#expenseCycleDay").value=String(settings.expenseCycleDay||1);
   $("#customAppTitle").value=settings.appTitle||"Mis Tareas";
+  renderExportMarks();
 }
 function applySettings(){
   if($("#pendingFilter")) $("#pendingFilter").value=settings.defaultPendingFilter||"upcoming";
@@ -690,7 +723,9 @@ function openExpenseDialog(expense=null){
   $("#expenseDateLabel").textContent=dotDate(d);
   $("#expenseTitle").value=expense?.title||"";
   $("#expenseDescription").value=expense?.description||"";
-  $("#expenseAmount").value=expense ? Number(expense.amount||0).toFixed(2) : "";
+  const amountValue=expense ? Number(expense.amount||0).toFixed(2) : "";
+  $("#expenseAmount").value=amountValue;
+  $("#expenseAmountDisplay").value=amountValue ? formatMoneyInput(amountValue) : "";
   $("#expenseCurrencyBtn").textContent=expense?.currency||"MN";
 
   const heading=document.querySelector("#expenseDialog h2");
@@ -789,6 +824,7 @@ function exportExpensesTxt(){
     rows.push(`${dotDate(parseDate(e.date))} | ${e.title} | ${e.description||""} | $${money(e.amount)} ${e.currency}`);
   });
   downloadText(`gastos_${dateKey(new Date())}.txt`,rows.join("\n"));
+  markExport("txt");
 }
 function csvCell(v){
   const s=String(v??"").replace(/"/g,'""');
@@ -801,6 +837,7 @@ function exportExpensesCsv(){
   ]));
   const csv="\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
   downloadText(`gastos_${dateKey(new Date())}.csv`,csv,"text/csv;charset=utf-8");
+  markExport("csv");
 }
 
 $("#taskForm").addEventListener("submit",e=>{
@@ -834,6 +871,27 @@ $$("[data-view-expense-shift]").forEach(btn=>{
 $("#addExpenseBtn").onclick=()=>openExpenseDialog();
 $("#closeExpenseDialog").onclick=$("#cancelExpenseBtn").onclick=()=>$("#expenseDialog").close();
 $$("[data-expense-shift]").forEach(b=>b.onclick=()=>shiftExpenseDate(b.dataset.expenseShift));
+
+$("#expenseAmountDisplay").addEventListener("input",e=>{
+  const caretWasAtEnd=e.target.selectionStart===e.target.value.length;
+  const formatted=formatMoneyInput(e.target.value);
+  e.target.value=formatted;
+  const amount=parseMoneyInput(formatted);
+  $("#expenseAmount").value=amount>0 ? String(amount) : "";
+  if(caretWasAtEnd){
+    const len=e.target.value.length;
+    try{ e.target.setSelectionRange(len,len); }catch{}
+  }
+});
+$("#expenseAmountDisplay").addEventListener("blur",e=>{
+  const amount=parseMoneyInput(e.target.value);
+  if(amount>0){
+    const fixed=Math.min(amount,99999999.99).toFixed(2);
+    e.target.value=formatMoneyInput(fixed);
+    $("#expenseAmount").value=String(Number(fixed));
+  }
+});
+
 $("#expenseCurrencyBtn").onclick=()=>{
   $("#expenseCurrencyBtn").textContent=$("#expenseCurrencyBtn").textContent==="MN"?"DLS":"MN";
 };
@@ -841,7 +899,7 @@ $("#expenseForm").addEventListener("submit",e=>{
   e.preventDefault();
 
   const title=$("#expenseTitle").value.trim();
-  const amount=Number($("#expenseAmount").value||0);
+  const amount=parseMoneyInput($("#expenseAmountDisplay").value);
 
   if(!title){
     toast("Escribe en qué gastaste.");
@@ -925,7 +983,6 @@ $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
 $("#exportExpensesCsvBtn").onclick=exportExpensesCsv;
 $("#exportBtn").onclick=exportData;
 $("#importInput").onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
-$("#seedBtn").onclick=seedExamples;
 $("#clearBtn").onclick=()=>{if(confirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?")){tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");}};
 $("#emptyTrashBtn").onclick=()=>{
   if(!trash.length){toast("La papelera ya está vacía.");return;}

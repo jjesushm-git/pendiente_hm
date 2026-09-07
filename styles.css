@@ -449,3 +449,79 @@ button{cursor:pointer}
     font-size:.69rem !important;
   }
 }
+
+
+/* =========================================================
+   X10.0.1
+   ========================================================= */
+
+.money-input-pretty{
+  grid-template-columns:auto minmax(0,1fr) auto;
+}
+
+.money-symbol{
+  font-size:1.25rem;
+  font-weight:900;
+  color:#d7a928;
+}
+
+#expenseAmountDisplay{
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.02em;
+}
+
+.money-help{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  font-size:.75rem;
+}
+
+.last-export-mark{
+  display:block;
+  margin-top:4px;
+  color:#8f9caf;
+  font-size:.72rem;
+  font-weight:600;
+}
+
+.expense-actions{
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  gap:8px;
+}
+
+.expense-eye-btn{
+  width:44px;
+  height:44px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(120,135,155,.34);
+  border-radius:13px;
+  background:rgba(13,27,46,.55);
+  color:#8e9caf;
+  cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease;
+}
+
+.expense-eye-btn:hover{
+  border-color:rgba(145,157,175,.52);
+  background:rgba(18,35,57,.7);
+}
+
+.expense-eye-btn:active{
+  transform:scale(.96);
+}
+
+.expense-eye-svg{
+  width:21px;
+  height:21px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.65;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  opacity:.86;
+}
+

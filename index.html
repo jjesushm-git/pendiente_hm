@@ -37,7 +37,10 @@
       </div>
       <div class="expense-actions">
         <button id="viewExpensesBtn" class="expense-eye-btn" title="Ver gastos registrados" aria-label="Ver gastos registrados">
-          <span class="eye-outline" aria-hidden="true"></span>
+          <svg class="expense-eye-svg" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M2.5 12s3.4-5.5 9.5-5.5S21.5 12 21.5 12 18.1 17.5 12 17.5 2.5 12 2.5 12Z"></path>
+            <circle cx="12" cy="12" r="2.6"></circle>
+          </svg>
         </button>
         <button id="addExpenseBtn" class="expense-add-btn" title="Agregar gasto">+$</button>
       </div>
@@ -325,7 +328,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10 estable</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10.0.1</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -357,17 +360,29 @@
 
       <button id="exportExpensesTxtBtn" class="settings-item">
         <span>📄</span>
-        <div><strong>Exportar gastos TXT</strong><small>Descarga todos los gastos registrados en formato de texto.</small></div>
+        <div>
+          <strong>Exportar gastos TXT</strong>
+          <small>Descarga todos los gastos registrados en formato de texto.</small>
+          <small id="lastExportTxt" class="last-export-mark">Nunca descargado</small>
+        </div>
       </button>
 
       <button id="exportExpensesCsvBtn" class="settings-item">
         <span>📊</span>
-        <div><strong>Exportar gastos CSV</strong><small>Descarga los gastos para abrirlos en Excel u otra hoja de cálculo.</small></div>
+        <div>
+          <strong>Exportar gastos CSV</strong>
+          <small>Descarga los gastos para abrirlos en Excel u otra hoja de cálculo.</small>
+          <small id="lastExportCsv" class="last-export-mark">Nunca descargado</small>
+        </div>
       </button>
 
       <button id="exportBtn" class="settings-item">
         <span>⬇️</span>
-        <div><strong>Exportar respaldo de tareas</strong><small>Descarga tus tareas en formato JSON.</small></div>
+        <div>
+          <strong>Exportar respaldo de tareas</strong>
+          <small>Descarga tus tareas en formato JSON.</small>
+          <small id="lastExportBackup" class="last-export-mark">Nunca descargado</small>
+        </div>
       </button>
 
       <label class="settings-item file-item">
@@ -375,11 +390,6 @@
         <div><strong>Importar respaldo de tareas</strong><small>Restaura tareas desde un archivo JSON.</small></div>
         <input id="importInput" type="file" accept=".json,application/json" hidden />
       </label>
-
-      <button id="seedBtn" class="settings-item">
-        <span>✨</span>
-        <div><strong>Cargar ejemplos</strong><small>Agrega tareas de muestra para probar la aplicación.</small></div>
-      </button>
 
       <button id="clearBtn" class="settings-item danger-outline">
         <span>🗑️</span>
@@ -421,11 +431,13 @@
       </label>
 
       <label>Monto *
-        <div class="money-input-wrap">
-          <span>$</span>
-          <input id="expenseAmount" type="number" inputmode="decimal" min="0.01" max="99999999.99" step="0.01" required placeholder="000000.00" />
+        <div class="money-input-wrap money-input-pretty">
+          <span class="money-symbol">$</span>
+          <input id="expenseAmountDisplay" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" />
+          <input id="expenseAmount" type="hidden" />
           <button type="button" id="expenseCurrencyBtn" class="currency-btn">MN</button>
         </div>
+        <small class="money-help">Máximo $99,999,999.99</small>
       </label>
 
       <div class="modal-actions">
