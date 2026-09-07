@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "v10.2";
+const APP_VERSION = "x10";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -379,8 +379,12 @@ function renderCalendar(){
     const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===calendarCursor.getMonth();
     const dayTasks=expandedTasksForDate(d);
     const dots=dayTasks.slice(0,4).map(t=>`<i class="${t.status==="missed"?"red":t.status==="completed"?"green":""}"></i>`).join("");
+    const hasExpense=expenses.some(e=>e.date===key);
+
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
-      ${d.getDate()}<span class="calendar-dots">${dots}</span>
+      ${d.getDate()}
+      ${hasExpense?`<span class="calendar-expense-mark" title="Hay gastos registrados">$</span>`:""}
+      <span class="calendar-dots">${dots}</span>
     </button>`;
   }).join("");
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
@@ -687,8 +691,9 @@ function openExpenseDialog(expense=null){
   $("#expenseDescription").value=expense?.description||"";
   $("#expenseAmount").value=expense ? Number(expense.amount||0).toFixed(2) : "";
   $("#expenseCurrencyBtn").textContent=expense?.currency||"MN";
-  const h=$("#expenseDialog h2");
-  if(h) h.textContent=expense ? "Editar gasto" : "Agregar gasto";
+
+  const title=$("#expenseDialog h2");
+  if(title) title.textContent=expense ? "Editar gasto" : "Agregar gasto";
   $("#expenseDialog").showModal();
 }
 function openViewExpensesDialog(){
@@ -697,64 +702,102 @@ function openViewExpensesDialog(){
   renderViewExpenses();
   $("#viewExpensesDialog").showModal();
 }
-function shiftDateByType(d,type){
-  const x=new Date(d);
-  if(type==="-day") return addDays(x,-1);
-  if(type==="+day") return addDays(x,1);
-  if(type==="-week") return addDays(x,-7);
-  if(type==="+week") return addDays(x,7);
-  if(type==="-month"){ x.setMonth(x.getMonth()-1); return x; }
-  if(type==="+month"){ x.setMonth(x.getMonth()+1); return x; }
-  return x;
+
+function shiftExpenseDateValue(dateString,type){
+  const d=parseDate(dateString);
+
+  if(type==="-day") return addDays(d,-1);
+  if(type==="+day") return addDays(d,1);
+  if(type==="-week") return addDays(d,-7);
+  if(type==="+week") return addDays(d,7);
+
+  if(type==="-month"){
+    d.setMonth(d.getMonth()-1);
+    return d;
+  }
+
+  if(type==="+month"){
+    d.setMonth(d.getMonth()+1);
+    return d;
+  }
+
+  return d;
 }
+
 function shiftViewExpenseDate(type){
-  const d=shiftDateByType(parseDate($("#viewExpenseDate").value),type);
+  const d=shiftExpenseDateValue($("#viewExpenseDate").value,type);
+
   $("#viewExpenseDate").value=dateKey(d);
   $("#viewExpenseDateLabel").textContent=dotDate(d);
+
   selectedDate=startOfDay(d);
   calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
   weekCursor=startOfWeek(selectedDate);
+
   renderViewExpenses();
   renderAll();
 }
+
 function renderViewExpenses(){
   if(!$("#viewExpensesList")) return;
+
   const key=$("#viewExpenseDate").value || dateKey(selectedDate);
   const d=parseDate(key);
-  const list=expenses.filter(e=>e.date===key);
-  $("#viewExpenseDayTotal").textContent=totalsText("Gastos del día",expenseTotalsForDate(d));
 
-  $("#viewExpensesList").innerHTML=list.length ? list.map(e=>`
-    <article class="expense-card">
-      <div class="expense-card-main">
-        <strong>${esc(e.title)}</strong>
-        <span class="expense-card-amount">$${money(e.amount)} ${e.currency}</span>
-      </div>
-      ${e.description?`<p>${esc(e.description)}</p>`:""}
-      <div class="expense-card-actions">
-        <button data-expense-edit="${e.id}" class="expense-edit-btn">✏ Editar</button>
-        <button data-expense-delete="${e.id}" class="expense-delete-btn">🗑 Borrar</button>
-      </div>
-    </article>
-  `).join("") : `<div class="empty">No hay gastos registrados en este día.</div>`;
+  const list=expenses
+    .filter(e=>e.date===key)
+    .sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));
 
-  $$("[data-expense-edit]").forEach(b=>b.onclick=()=>{
-    const e=expenses.find(x=>x.id===b.dataset.expenseEdit);
-    if(!e) return;
-    $("#viewExpensesDialog").close();
-    openExpenseDialog(e);
+  $("#viewExpenseDayTotal").textContent=
+    totalsText("Gastos del día",expenseTotalsForDate(d));
+
+  $("#viewExpensesList").innerHTML=list.length
+    ? list.map(e=>`
+      <article class="expense-card">
+        <div class="expense-card-main">
+          <strong>${esc(e.title)}</strong>
+          <span class="expense-card-amount">$${money(e.amount)} ${e.currency}</span>
+        </div>
+
+        ${e.description ? `<p>${esc(e.description)}</p>` : ""}
+
+        <div class="expense-card-actions">
+          <button class="expense-edit-btn" data-expense-edit="${e.id}" title="Editar gasto">
+            ✏ Editar
+          </button>
+          <button class="expense-delete-btn" data-expense-delete="${e.id}" title="Borrar gasto">
+            🗑 Borrar
+          </button>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty">No hay gastos registrados en este día.</div>`;
+
+  $$("[data-expense-edit]").forEach(btn=>{
+    btn.onclick=()=>{
+      const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
+      if(!expense) return;
+
+      $("#viewExpensesDialog").close();
+      openExpenseDialog(expense);
+    };
   });
 
-  $$("[data-expense-delete]").forEach(b=>b.onclick=()=>{
-    const e=expenses.find(x=>x.id===b.dataset.expenseDelete);
-    if(!e) return;
-    if(confirm(`¿Borrar "${e.title}" por $${money(e.amount)} ${e.currency}?`)){
-      expenses=expenses.filter(x=>x.id!==e.id);
-      saveExpenses();
-      renderViewExpenses();
-      renderAll();
-      toast("Gasto borrado.");
-    }
+  $$("[data-expense-delete]").forEach(btn=>{
+    btn.onclick=()=>{
+      const expense=expenses.find(e=>e.id===btn.dataset.expenseDelete);
+      if(!expense) return;
+
+      if(confirm(`¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`)){
+        expenses=expenses.filter(e=>e.id!==expense.id);
+        saveExpenses();
+
+        renderViewExpenses();
+        renderAll();
+
+        toast("Gasto borrado.");
+      }
+    };
   });
 }
 
@@ -811,7 +854,9 @@ $("#dueDate").addEventListener("change",syncDueDependentFields);
 
 $("#viewExpensesBtn").onclick=openViewExpensesDialog;
 $("#closeViewExpensesDialog").onclick=()=>$("#viewExpensesDialog").close();
-$$("[data-view-expense-shift]").forEach(b=>b.onclick=()=>shiftViewExpenseDate(b.dataset.viewExpenseShift));
+$$("[data-view-expense-shift]").forEach(btn=>{
+  btn.onclick=()=>shiftViewExpenseDate(btn.dataset.viewExpenseShift);
+});
 $("#addExpenseBtn").onclick=()=>openExpenseDialog();
 $("#closeExpenseDialog").onclick=$("#cancelExpenseBtn").onclick=()=>$("#expenseDialog").close();
 $$("[data-expense-shift]").forEach(b=>b.onclick=()=>shiftExpenseDate(b.dataset.expenseShift));
@@ -820,10 +865,19 @@ $("#expenseCurrencyBtn").onclick=()=>{
 };
 $("#expenseForm").addEventListener("submit",e=>{
   e.preventDefault();
-  const amount=Number($("#expenseAmount").value||0);
+
   const title=$("#expenseTitle").value.trim();
-  if(!title){toast("Escribe en qué gastaste.");return;}
-  if(amount<=0){toast("Ingresa un monto válido.");return;}
+  const amount=Number($("#expenseAmount").value||0);
+
+  if(!title){
+    toast("Escribe en qué gastaste.");
+    return;
+  }
+
+  if(amount<=0 || amount>99999999.99){
+    toast("El monto debe estar entre $0.01 y $99,999,999.99.");
+    return;
+  }
 
   const id=$("#expenseId").value;
   const data={
@@ -836,9 +890,15 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   if(id){
     const i=expenses.findIndex(x=>x.id===id);
-    if(i>=0) expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
+    if(i>=0){
+      expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
+    }
   }else{
-    expenses.push({id:uid(),...data,createdAt:new Date().toISOString()});
+    expenses.push({
+      id:uid(),
+      ...data,
+      createdAt:new Date().toISOString()
+    });
   }
 
   selectedDate=parseDate(data.date);
@@ -847,9 +907,15 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   saveExpenses();
   $("#expenseDialog").close();
+
   renderAll();
-  if($("#viewExpensesDialog")?.open) renderViewExpenses();
-  toast(id?"Gasto actualizado.":"Gasto guardado.");
+  if($("#viewExpensesDialog")?.open){
+    $("#viewExpenseDate").value=data.date;
+    $("#viewExpenseDateLabel").textContent=dotDate(parseDate(data.date));
+    renderViewExpenses();
+  }
+
+  toast(id ? "Gasto actualizado." : "Gasto guardado.");
 });
 
 $("#bottomAddBtn").onclick=()=>openTask();

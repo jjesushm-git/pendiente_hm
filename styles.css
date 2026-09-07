@@ -368,53 +368,190 @@ button{cursor:pointer}
   .expense-date-nav button:nth-of-type(6){grid-row:3}
 }
 
-/* V10.2 ESTABLE */
-.expense-actions{display:flex;align-items:center;gap:8px}
-.expense-eye-btn{
-  min-width:46px;min-height:46px;border:1px solid var(--line);
-  border-radius:14px;background:#101d31;color:var(--text);
-  font-size:1.05rem;cursor:pointer
+
+/* =========================================
+   X10 - Mejoras de gastos sobre V10 estable
+   ========================================= */
+
+.expense-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
 }
+
+/* Ojo discreto, solo contorno */
+.expense-eye-btn{
+  width:46px;
+  height:46px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(138,151,171,.28);
+  border-radius:14px;
+  background:transparent;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+.expense-eye-btn:active{
+  transform:scale(.97);
+}
+
+.eye-outline{
+  position:relative;
+  width:21px;
+  height:13px;
+  border:1.8px solid currentColor;
+  border-radius:55% 45% 55% 45% / 65% 65% 35% 35%;
+  transform:rotate(45deg);
+  opacity:.82;
+}
+
+.eye-outline::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:5px;
+  height:5px;
+  border:1.6px solid currentColor;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+}
+
+/* Las flechas caben en una sola línea */
 #expenseDialog .expense-date-nav,
 #viewExpensesDialog .expense-date-nav{
   display:grid !important;
-  grid-template-columns:32px 32px 32px minmax(104px,1fr) 32px 32px 32px !important;
+  grid-template-columns:30px 30px 30px minmax(104px,1fr) 30px 30px 30px !important;
   gap:4px !important;
   align-items:center;
 }
+
 #expenseDialog .expense-date-nav button,
 #viewExpensesDialog .expense-date-nav button{
   min-width:0 !important;
   min-height:30px !important;
-  padding:2px 3px !important;
-  font-size:.72rem !important;
+  padding:2px !important;
+  font-size:.68rem !important;
+  border-radius:8px !important;
   grid-row:auto !important;
 }
+
 #expenseDialog .expense-date-nav strong,
 #viewExpensesDialog .expense-date-nav strong{
-  font-size:.82rem !important;
+  min-width:0;
+  font-size:.78rem !important;
   text-align:center;
+  white-space:nowrap;
   grid-column:auto !important;
   grid-row:auto !important;
   padding:0 !important;
-  white-space:nowrap;
 }
+
 .expense-view-total{
-  padding:10px 12px;margin:8px 0 12px;border:1px solid var(--line);
-  border-radius:12px;background:rgba(13,29,49,.72);font-weight:800
+  margin:8px 0 12px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(13,29,49,.70);
+  font-weight:800;
 }
-.expense-list{display:grid;gap:10px;max-height:58vh;overflow:auto}
+
+.expense-list{
+  display:grid;
+  gap:10px;
+  max-height:58vh;
+  overflow:auto;
+}
+
 .expense-card{
-  border:1px solid var(--line);border-radius:15px;padding:12px;
-  background:linear-gradient(180deg,rgba(20,40,66,.94),rgba(12,28,48,.94))
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:linear-gradient(180deg,rgba(20,40,66,.94),rgba(12,28,48,.94));
 }
-.expense-card-main{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.expense-card-amount{font-weight:800;white-space:nowrap;color:#8f8bff}
-.expense-card p{margin:8px 0 0;color:var(--muted);font-size:.9rem}
-.expense-card-actions{display:flex;gap:10px;margin-top:12px}
-.expense-card-actions button{flex:1;min-height:38px;border-radius:10px}
-.expense-edit-btn{border:1px solid var(--line);background:#101d31;color:var(--text)}
+
+.expense-card-main{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+}
+
+.expense-card-main strong{
+  min-width:0;
+}
+
+.expense-card-amount{
+  white-space:nowrap;
+  font-weight:800;
+  color:#9a91ff;
+}
+
+.expense-card p{
+  margin:8px 0 0;
+  color:var(--muted);
+  font-size:.90rem;
+}
+
+.expense-card-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+
+.expense-card-actions button{
+  flex:1;
+  min-height:38px;
+  border-radius:10px;
+  font:inherit;
+}
+
+.expense-edit-btn{
+  border:1px solid var(--line);
+  background:#101d31;
+  color:var(--text);
+}
+
 .expense-delete-btn{
-  border:1px solid rgba(255,102,120,.35);
-  background:rgba(255,72,92,.12);color:#ff6678
+  border:1px solid rgba(255,102,120,.34);
+  background:rgba(255,72,92,.11);
+  color:#ff6678;
+}
+
+/* Pequeño $ dorado en calendario */
+.calendar-day{
+  position:relative;
+}
+
+.calendar-expense-mark{
+  position:absolute;
+  right:5px;
+  top:4px;
+  color:#d7a928;
+  font-size:.70rem;
+  font-weight:900;
+  line-height:1;
+  opacity:.92;
+  pointer-events:none;
+}
+
+/* Mantener navegación de flechas en una línea incluso en móvil */
+@media(max-width:600px){
+  #expenseDialog .expense-date-nav,
+  #viewExpensesDialog .expense-date-nav{
+    grid-template-columns:27px 27px 27px minmax(92px,1fr) 27px 27px 27px !important;
+    gap:3px !important;
+  }
+
+  #expenseDialog .expense-date-nav button,
+  #viewExpensesDialog .expense-date-nav button{
+    min-height:28px !important;
+    font-size:.62rem !important;
+  }
+
+  #expenseDialog .expense-date-nav strong,
+  #viewExpensesDialog .expense-date-nav strong{
+    font-size:.72rem !important;
+  }
 }
