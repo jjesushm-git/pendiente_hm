@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "v10.1";
+const APP_VERSION = "v10.1.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -882,16 +882,23 @@ $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll
 $("#settingsBtnTop").onclick=()=>{populateSettings();$("#settingsSavedMessage").classList.add("hidden");$("#settingsDialog").showModal();};
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
+  toast("Actualizando aplicación...");
   try{
     if("serviceWorker" in navigator){
-      const reg=await navigator.serviceWorker.getRegistration();
-      if(reg) await reg.update();
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs){
+        await reg.update();
+        if(reg.waiting) reg.waiting.postMessage({type:"SKIP_WAITING"});
+      }
     }
-    toast("Buscando actualización...");
-    setTimeout(()=>location.reload(),700);
-  }catch{
-    location.reload();
-  }
+    if("caches" in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.filter(k=>k!=="mis-tareas-v10-1-1").map(k=>caches.delete(k)));
+    }
+  }catch{}
+  const u=new URL(location.href);
+  u.searchParams.set("v","10.1.1");
+  setTimeout(()=>location.replace(u.toString()),500);
 };
 $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
@@ -908,7 +915,30 @@ window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNot
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=10.1.1").then(async reg=>{
+    try{
+      await reg.update();
+      if(reg.waiting){
+        reg.waiting.postMessage({type:"SKIP_WAITING"});
+      }
+      reg.addEventListener("updatefound",()=>{
+        const nw=reg.installing;
+        if(!nw) return;
+        nw.addEventListener("statechange",()=>{
+          if(nw.state==="installed" && navigator.serviceWorker.controller){
+            nw.postMessage({type:"SKIP_WAITING"});
+          }
+        });
+      });
+    }catch{}
+  }).catch(()=>{});
+
+  let refreshing=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(refreshing) return;
+    refreshing=true;
+    location.reload();
+  });
 }
 populateSettings();
 applySettings();
