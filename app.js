@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "x10.0.2";
+const APP_VERSION = "x10.0.3";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -261,13 +261,24 @@ function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
   $("#weekStrip").innerHTML = [...Array(7)].map((_,i)=>{
     const d=addDays(week,i), key=dateKey(d);
-    const has=tasks.some(t=>occursOn(t,d)&&t.status==="pending");
+    const hasTask=tasks.some(t=>occursOn(t,d)&&t.status==="pending");
+    const hasExpense=expenses.some(e=>e.date===key);
+
     return `<button class="week-day ${key===dateKey(selectedDate)?"active":""}" data-date="${key}">
       <span class="dow">${d.toLocaleDateString("es-MX",{weekday:"short"}).replace(".","")}</span>
-      <span class="num">${d.getDate()}</span>${has?'<span class="dot"></span>':""}
+      <span class="num">${d.getDate()}</span>
+      <span class="week-day-indicators">
+        ${hasTask?'<span class="dot"></span>':""}
+        ${hasExpense?'<span class="week-expense-mark" title="Hay gastos registrados">$</span>':""}
+      </span>
     </button>`;
   }).join("");
-  $$(".week-day").forEach(b=>b.onclick=()=>{selectedDate=parseDate(b.dataset.date); switchView("day"); renderAll();});
+
+  $$(".week-day").forEach(b=>b.onclick=()=>{
+    selectedDate=parseDate(b.dataset.date);
+    switchView("day");
+    renderAll();
+  });
 }
 function renderDay(){
   $("#selectedDateTitle").textContent = longDate(selectedDate);

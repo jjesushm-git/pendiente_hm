@@ -660,3 +660,33 @@ button{cursor:pointer}
     margin:14px;
   }
 }
+
+
+/* =========================================================
+   X10.0.3 - indicador de gastos en franja semanal
+   ========================================================= */
+
+.week-day-indicators{
+  min-height:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  margin-top:4px;
+}
+
+.week-day-indicators .dot{
+  margin:0 !important;
+}
+
+.week-expense-mark{
+  color:#d7a928;
+  font-size:.72rem;
+  font-weight:900;
+  line-height:1;
+  text-shadow:0 0 4px rgba(215,169,40,.18);
+}
+
+.week-day.active .week-expense-mark{
+  color:#f0c24d;
+}

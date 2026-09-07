@@ -1,12 +1,11 @@
-# Mis Tareas — x10.0.2
+# Mis Tareas — x10.0.3
 
-Base: x10.0.1 estable.
+Base: x10.0.2 estable.
 
-Cambios:
-- El botón del ojo queda forzado a la izquierda de +$, en la misma fila.
-- No se permite registrar gastos en fechas futuras.
-- Si una flecha intenta llevar el gasto al futuro, regresa a hoy y muestra aviso.
-- El guardado también valida que la fecha no sea futura.
-- Las confirmaciones de borrado usan una burbuja estilo cómic acorde a los colores de la app.
-- Se aplicó la burbuja a borrar gasto, borrar tarea, vaciar papelera y borrar todos los datos.
-- Se mantiene el resto de la funcionalidad de x10.0.1.
+Cambio:
+- En la franja superior de días aparece un $ dorado cuando ese día tiene gastos registrados.
+- El $ se muestra junto al punto verde de tareas cuando ambos existen.
+- Si hay gasto pero no tarea pendiente, se muestra únicamente el $.
+- Como la franja superior es común a todas las vistas, el indicador aparece en Calendario, Día, Semana y Tablero.
+- Se conserva el $ dorado ya existente dentro del calendario mensual.
+- Todo lo demás de x10.0.2 permanece sin cambios.
