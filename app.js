@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "10.0.4";
+const APP_VERSION = "10.0.4.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -252,6 +252,8 @@ function recurrenceLabel(r){
   return ({daily:"Diaria",weekly:"Semanal",monthly:"Mensual",yearly:"Anual"})[r]||"";
 }
 function statusLabel(s){ return ({pending:"Pendiente",completed:"Completada",missed:"No completada"})[s]; }
+let emojiEditTaskId=null;
+
 const TASK_EMOJIS={
   work:["📌","✅","☑️","📝","📋","📁","📂","📊","📈","📉","💼","🗂️","🗓️","⏰","⌛","🔔","📞","📧","💻","🖥️","🖨️","🔧","🛠️","⚙️","🔍","✏️","📐","📎","🧾","💰","🏦","🚚","📦","🏢","👷"],
   tasks:["🏠","🧹","🧺","🛒","🍳","🚗","⛽","💡","🔑","🔒","📚","🎓","🏃","🏋️","🚶","💊","🩺","🧴","🪴","🐶","🐱","✈️","🚌","📍","⭐","⚡","🎯","🔄","🧠","💧"],
@@ -263,12 +265,31 @@ function renderEmojiPicker(){
     if(!el) return;
     el.innerHTML=list.map(e=>`<button type="button" class="emoji-choice" data-task-emoji="${e}">${e}</button>`).join("");
   };
+
   fill("emojiWorkGrid",TASK_EMOJIS.work);
   fill("emojiTaskGrid",TASK_EMOJIS.tasks);
   fill("emojiSocialGrid",TASK_EMOJIS.social);
+
   $$("[data-task-emoji]").forEach(b=>b.onclick=()=>{
-    $("#taskEmoji").value=b.dataset.taskEmoji;
-    $("#taskEmojiPreview").textContent=b.dataset.taskEmoji;
+    const newEmoji=b.dataset.taskEmoji;
+
+    if(emojiEditTaskId){
+      const task=tasks.find(t=>t.id===emojiEditTaskId);
+      if(task){
+        task.emoji=newEmoji;
+        saveTasks();
+      }
+
+      emojiEditTaskId=null;
+      $("#emojiDialog").close();
+
+      $("#emojiSavedIcon").textContent=newEmoji;
+      $("#emojiSavedDialog").showModal();
+      return;
+    }
+
+    $("#taskEmoji").value=newEmoji;
+    $("#taskEmojiPreview").textContent=newEmoji;
     $("#emojiDialog").close();
   });
 }
@@ -387,7 +408,7 @@ function taskCard(t){
   return `<article class="task-card ${t.status}">
     <div class="task-row">
       <input class="task-check" type="checkbox" data-complete="${t.id}" ${t.status==="completed"?"checked":""} ${t.status==="missed"?"disabled":""}/>
-      <span class="task-emoji" aria-hidden="true">${esc(t.emoji||"📌")}</span>
+      <button type="button" class="task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
       <div>
         <div class="task-title">${esc(t.title)}</div>
         ${t.description?`<div class="task-desc">${esc(t.description)}</div>`:""}
@@ -432,7 +453,23 @@ function reopenTask(t){
   t.missedAt=null;
   t.completedAt=null;
 }
+
+function openEmojiOnlyEditor(taskId){
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task) return;
+
+  emojiEditTaskId=taskId;
+  renderEmojiPicker();
+  $("#emojiDialog").showModal();
+}
+
 function bindTaskActions(){
+  $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openEmojiOnlyEditor(btn.dataset.emojiTask);
+  });
+
   $$("[data-complete]").forEach(ch=>ch.onchange=()=>{
     const t=tasks.find(x=>x.id===ch.dataset.complete); if(!t)return;
     t.status=ch.checked?"completed":"pending";
@@ -493,12 +530,17 @@ function renderWeek(){
     <section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
       ${list.map(t=>`<div class="mini-task" data-edit="${t.id}">
-        <span class="mini-task-emoji">${esc(t.emoji||"📌")}</span>
+        <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
         <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)}</small></span>
       </div>`).join("")}
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
 
+  $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openEmojiOnlyEditor(btn.dataset.emojiTask);
+  });
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
 }
 function renderBoard(){
@@ -516,7 +558,7 @@ function renderBoard(){
 
   const boardCard=t=>`<article class="board-card ${t.status}">
     <div class="board-card-head">
-      <div class="board-title-with-emoji"><span class="board-task-emoji">${esc(t.emoji||"📌")}</span><strong>${esc(t.title)}</strong></div>
+      <div class="board-title-with-emoji"><button type="button" class="board-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button><strong>${esc(t.title)}</strong></div>
       <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
     </div>
     ${t.description?`<p>${esc(t.description)}</p>`:""}
@@ -967,8 +1009,24 @@ $("#deleteTaskBtn").onclick=async()=>{
   }
 };
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
-$("#chooseTaskEmojiBtn").onclick=()=>{renderEmojiPicker();$("#emojiDialog").showModal();};
-$("#closeEmojiDialog").onclick=()=>$("#emojiDialog").close();
+$("#chooseTaskEmojiBtn").onclick=()=>{emojiEditTaskId=null;renderEmojiPicker();$("#emojiDialog").showModal();};
+$("#closeEmojiDialog").onclick=()=>{emojiEditTaskId=null;$("#emojiDialog").close();};
+$("#emojiDialog").addEventListener("click",e=>{
+  if(e.target===$("#emojiDialog")){
+    emojiEditTaskId=null;
+    $("#emojiDialog").close();
+  }
+});
+
+$("#closeEmojiSavedDialog").onclick=()=>$("#emojiSavedDialog").close();
+$("#emojiSavedDialog").addEventListener("click",e=>{
+  if(e.target===$("#emojiSavedDialog")) $("#emojiSavedDialog").close();
+});
+$("#emojiSavedDialog").addEventListener("cancel",e=>{
+  e.preventDefault();
+  $("#emojiSavedDialog").close();
+});
+
 
 $("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
 

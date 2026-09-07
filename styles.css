@@ -804,3 +804,87 @@ button{cursor:pointer}
 @media(max-width:600px){
   .emoji-grid{grid-template-columns:repeat(6,1fr)}
 }
+
+
+/* =========================================================
+   10.0.4.2 - edición rápida de emoticono
+   ========================================================= */
+
+.task-emoji-edit,
+.mini-task-emoji.task-emoji-edit,
+.board-task-emoji.task-emoji-edit{
+  border:0;
+  background:transparent;
+  padding:2px;
+  margin:0;
+  min-width:0;
+  min-height:0;
+  cursor:pointer;
+  border-radius:8px;
+  color:inherit;
+  line-height:1;
+}
+
+.task-emoji-edit:active{
+  transform:scale(.90);
+}
+
+.task-emoji-edit:hover{
+  background:rgba(126,91,255,.10);
+}
+
+.emoji-saved-dialog{
+  border:0;
+  padding:0;
+  background:transparent;
+  width:min(88vw,360px);
+  color:var(--text);
+}
+
+.emoji-saved-dialog::backdrop{
+  background:rgba(2,8,18,.62);
+  backdrop-filter:blur(2px);
+}
+
+.emoji-saved-bubble{
+  position:relative;
+  padding:24px 20px 20px;
+  border:1px solid rgba(126,91,255,.48);
+  border-radius:22px;
+  background:
+    radial-gradient(circle at top right,rgba(118,78,255,.17),transparent 36%),
+    linear-gradient(180deg,#12243c,#0c1b2f);
+  box-shadow:0 20px 55px rgba(0,0,0,.42);
+  text-align:center;
+}
+
+.emoji-saved-close{
+  position:absolute;
+  top:10px;
+  right:10px;
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#101d31;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+.emoji-saved-icon{
+  font-size:2.4rem;
+  margin:2px 0 8px;
+}
+
+.emoji-saved-bubble h3{
+  margin:0 0 7px;
+  font-size:1.12rem;
+}
+
+.emoji-saved-bubble p{
+  margin:0;
+  color:var(--muted);
+  line-height:1.4;
+}
