@@ -368,139 +368,53 @@ button{cursor:pointer}
   .expense-date-nav button:nth-of-type(6){grid-row:3}
 }
 
-
-/* =========================
-   V10.1 - Consulta/edición de gastos
-   ========================= */
-.expense-actions{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
+/* V10.2 ESTABLE */
+.expense-actions{display:flex;align-items:center;gap:8px}
 .expense-eye-btn{
-  min-width:46px;
-  min-height:46px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:#101d31;
-  color:var(--text);
-  font-size:1.05rem;
-  cursor:pointer;
+  min-width:46px;min-height:46px;border:1px solid var(--line);
+  border-radius:14px;background:#101d31;color:var(--text);
+  font-size:1.05rem;cursor:pointer
 }
-.expense-date-nav.compact{
-  display:grid;
-  grid-template-columns:34px 34px 34px minmax(105px,1fr) 34px 34px 34px;
-  gap:4px;
+#expenseDialog .expense-date-nav,
+#viewExpensesDialog .expense-date-nav{
+  display:grid !important;
+  grid-template-columns:32px 32px 32px minmax(104px,1fr) 32px 32px 32px !important;
+  gap:4px !important;
   align-items:center;
 }
-.expense-date-nav.compact button,
-#expenseDialog .expense-date-nav button{
-  min-width:0;
-  min-height:32px;
-  padding:3px 5px;
-  font-size:.75rem;
-  border-radius:8px;
-}
-#expenseDialog .expense-date-nav{
-  grid-template-columns:34px 34px 34px minmax(105px,1fr) 34px 34px 34px;
-  gap:4px;
+#expenseDialog .expense-date-nav button,
+#viewExpensesDialog .expense-date-nav button{
+  min-width:0 !important;
+  min-height:30px !important;
+  padding:2px 3px !important;
+  font-size:.72rem !important;
+  grid-row:auto !important;
 }
 #expenseDialog .expense-date-nav strong,
-.expense-date-nav.compact strong{
-  font-size:.86rem;
+#viewExpensesDialog .expense-date-nav strong{
+  font-size:.82rem !important;
+  text-align:center;
+  grid-column:auto !important;
+  grid-row:auto !important;
+  padding:0 !important;
+  white-space:nowrap;
 }
 .expense-view-total{
-  margin:6px 0 12px;
-  padding:10px 12px;
-  border:1px solid var(--line);
-  border-radius:12px;
-  background:rgba(13,29,49,.7);
-  font-weight:800;
+  padding:10px 12px;margin:8px 0 12px;border:1px solid var(--line);
+  border-radius:12px;background:rgba(13,29,49,.72);font-weight:800
 }
-.expense-list{
-  display:grid;
-  gap:10px;
-  max-height:58vh;
-  overflow:auto;
-}
+.expense-list{display:grid;gap:10px;max-height:58vh;overflow:auto}
 .expense-card{
-  border:1px solid var(--line);
-  border-radius:15px;
-  background:linear-gradient(180deg,rgba(20,40,66,.94),rgba(12,28,48,.94));
-  padding:12px;
+  border:1px solid var(--line);border-radius:15px;padding:12px;
+  background:linear-gradient(180deg,rgba(20,40,66,.94),rgba(12,28,48,.94))
 }
-.expense-card-main{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-}
-.expense-card-main strong{
-  min-width:0;
-}
-.expense-card-amount{
-  white-space:nowrap;
-  font-weight:800;
-  color:#8f8bff;
-}
-.expense-card p{
-  margin:8px 0 0;
-  color:var(--muted);
-  font-size:.9rem;
-}
-.expense-card-actions{
-  display:flex;
-  justify-content:space-between;
-  gap:10px;
-  margin-top:12px;
-}
-.expense-edit-btn,
+.expense-card-main{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.expense-card-amount{font-weight:800;white-space:nowrap;color:#8f8bff}
+.expense-card p{margin:8px 0 0;color:var(--muted);font-size:.9rem}
+.expense-card-actions{display:flex;gap:10px;margin-top:12px}
+.expense-card-actions button{flex:1;min-height:38px;border-radius:10px}
+.expense-edit-btn{border:1px solid var(--line);background:#101d31;color:var(--text)}
 .expense-delete-btn{
-  flex:1;
-  min-height:38px;
-  border-radius:10px;
-  border:1px solid var(--line);
-  background:#101d31;
-  color:var(--text);
-}
-.expense-delete-btn{
-  border-color:rgba(255,102,120,.35);
-  background:rgba(255,72,92,.12);
-  color:#ff6678;
-}
-
-@media(max-width:600px){
-  #expenseDialog .expense-date-nav,
-  .expense-date-nav.compact{
-    grid-template-columns:28px 28px 28px minmax(96px,1fr) 28px 28px 28px;
-    gap:3px;
-  }
-  #expenseDialog .expense-date-nav button,
-  .expense-date-nav.compact button{
-    min-height:30px;
-    padding:2px 2px;
-    font-size:.68rem;
-  }
-  #expenseDialog .expense-date-nav strong,
-  .expense-date-nav.compact strong{
-    font-size:.78rem;
-  }
-}
-
-@media(max-width:600px){
-  #expenseDialog .expense-date-nav,
-  #viewExpensesDialog .expense-date-nav{
-    display:grid !important;
-    grid-template-columns:28px 28px 28px minmax(96px,1fr) 28px 28px 28px !important;
-  }
-  #expenseDialog .expense-date-nav strong,
-  #viewExpensesDialog .expense-date-nav strong{
-    grid-column:auto !important;
-    grid-row:auto !important;
-    padding:0 !important;
-  }
-  #expenseDialog .expense-date-nav button,
-  #viewExpensesDialog .expense-date-nav button{
-    grid-row:auto !important;
-  }
+  border:1px solid rgba(255,102,120,.35);
+  background:rgba(255,72,92,.12);color:#ff6678
 }
