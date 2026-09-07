@@ -35,7 +35,10 @@
         <strong id="expenseDayTotal">Gastos del día: $0.00 MN</strong>
         <small id="expenseMonthTotal">Total del mes: $0.00 MN</small>
       </div>
-      <button id="addExpenseBtn" class="expense-add-btn" title="Agregar gasto">+$</button>
+      <div class="expense-actions">
+        <button id="viewExpensesBtn" class="expense-eye-btn" title="Ver gastos del día">👁</button>
+        <button id="addExpenseBtn" class="expense-add-btn" title="Agregar gasto">+$</button>
+      </div>
     </section>
 
     <main>
@@ -320,7 +323,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v10</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">v10.1</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -405,6 +408,7 @@
       </div>
 
       <input id="expenseDate" type="hidden" />
+      <input id="expenseId" type="hidden" />
 
       <label>¿En qué gasté? *
         <input id="expenseTitle" maxlength="120" required placeholder="Ej. Comida, gasolina, farmacia..." />
@@ -432,5 +436,31 @@
   <div id="toast" class="toast"></div>
 
   <script src="app.js"></script>
+
+  <dialog id="viewExpensesDialog" class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Consulta de gastos</p>
+        <h2>Gastos registrados</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeViewExpensesDialog">✕</button>
+    </div>
+
+    <div class="expense-date-nav compact" id="viewExpenseDateNav">
+      <button type="button" data-view-expense-shift="-month" title="Mes anterior">&lt;&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-week" title="Semana anterior">&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-day" title="Día anterior">&lt;</button>
+      <strong id="viewExpenseDateLabel">08.09.2026</strong>
+      <button type="button" data-view-expense-shift="+day" title="Día siguiente">&gt;</button>
+      <button type="button" data-view-expense-shift="+week" title="Semana siguiente">&gt;&gt;</button>
+      <button type="button" data-view-expense-shift="+month" title="Mes siguiente">&gt;&gt;&gt;</button>
+    </div>
+
+    <input id="viewExpenseDate" type="hidden" />
+
+    <div class="expense-view-total" id="viewExpenseDayTotal">Gastos del día: $0.00 MN</div>
+    <div id="viewExpensesList" class="expense-list"></div>
+  </dialog>
+
 </body>
 </html>

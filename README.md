@@ -1,18 +1,12 @@
-# Mis Tareas — Versión 10
+# Mis Tareas — Versión 10.1
 
-Cambios principales:
-- La app abre directamente en Calendario.
-- Ajustes permite guardar el filtro predeterminado: Todas, Hoy, Próximas o Recurrentes.
-- Ajustes permite cambiar el título de la app, máximo 10 caracteres.
-- Ajustes permite elegir el día 1–31 en que inicia la sumatoria mensual de gastos.
-- Las tareas No completadas incluyen Reabrir con reprogramación inteligente:
-  - si hoy todavía no llega la hora de inicio, se reabre para hoy;
-  - si la hora ya pasó, se reabre para mañana;
-  - conserva la duración en días si tenía un rango de fechas.
-- Nueva barra de gastos debajo de las pestañas en Calendario, Día, Semana y Tablero.
-- Modal de gasto con navegación por día, semana y mes.
-- Campos: fecha, ¿En qué gasté?, descripción, monto y moneda MN/DLS.
-- Totales diarios y total del periodo mensual según el día configurado.
-- Exportación de gastos en TXT y CSV.
-- Se conservan tareas, Calendario, Día, Semana, Tablero, Papelera, Editar, Eliminar y notificaciones locales.
-- Los datos siguen guardándose localmente; Supabase queda para una versión posterior.
+Cambios sobre la V10:
+- Flechas del modal de gasto más compactas para mostrarse en una sola línea.
+- Nuevo botón 👁 junto a +$ para consultar los gastos registrados.
+- La consulta de gastos tiene las mismas flechas de día, semana y mes.
+- Muestra únicamente los gastos del día seleccionado.
+- Cada gasto muestra título, monto, descripción (si existe), Editar y Borrar.
+- Editar reutiliza el modal de gasto y actualiza el registro existente.
+- Borrar solicita confirmación.
+- Los totales de gastos se actualizan inmediatamente al agregar, editar, borrar, cambiar día o cambiar de pestaña.
+- Se mantiene toda la funcionalidad de la V10.
