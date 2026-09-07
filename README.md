@@ -1,13 +1,13 @@
-# Mis Tareas — Versión 10.1 ESTABLE
+# Mis Tareas — Versión 10.2 ESTABLE
 
-Base: Versión 10.0 funcional.
+Esta versión se reconstruyó desde la V10 estable.
 
-Únicos cambios:
-- Botones de navegación de fecha del modal de gasto más pequeños y en una sola línea.
-- Botón 👁 junto a +$ para ver los gastos del día.
-- Modal de consulta con las mismas flechas día/semana/mes.
-- Tarjetas con título, monto, descripción, Editar y Borrar.
-- Editar actualiza el gasto existente.
-- Borrar pide confirmación.
-- Totales se actualizan al agregar, editar, borrar y cambiar fecha.
-- No se modificó la lógica de Calendario, Día, Semana, Tablero, tareas, Papelera ni Ajustes.
+Incluye:
+- Calendario funcional al abrir.
+- Botón +$ funcional para registrar gastos.
+- Botón 👁 para consultar gastos del día.
+- Flechas compactas en una sola línea en ambos modales de gastos.
+- Editar y borrar gastos.
+- Actualización inmediata de los totales al agregar, editar o borrar.
+- Conserva tareas, Día, Semana, Tablero, Papelera, ajustes y exportación.
+- No usa el parche agresivo de Service Worker de la 10.1.1.
