@@ -1,7 +1,13 @@
-# Mis Tareas — Versión 10.2.1
+# Mis Tareas — Versión 10.2 ESTABLE
 
-Cambios:
-- Monto máximo por gasto: $99,999,999.99.
-- El formulario impide guardar montos superiores al máximo.
-- El calendario muestra un pequeño símbolo $ dorado en los días que tienen al menos un gasto registrado.
-- Se conserva el resto de la funcionalidad de la versión base compartida.
+Esta versión se reconstruyó desde la V10 estable.
+
+Incluye:
+- Calendario funcional al abrir.
+- Botón +$ funcional para registrar gastos.
+- Botón 👁 para consultar gastos del día.
+- Flechas compactas en una sola línea en ambos modales de gastos.
+- Editar y borrar gastos.
+- Actualización inmediata de los totales al agregar, editar o borrar.
+- Conserva tareas, Día, Semana, Tablero, Papelera, ajustes y exportación.
+- No usa el parche agresivo de Service Worker de la 10.1.1.

@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "v10.2.1";
+const APP_VERSION = "v10.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -379,9 +379,8 @@ function renderCalendar(){
     const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===calendarCursor.getMonth();
     const dayTasks=expandedTasksForDate(d);
     const dots=dayTasks.slice(0,4).map(t=>`<i class="${t.status==="missed"?"red":t.status==="completed"?"green":""}"></i>`).join("");
-    const hasExpense=expenses.some(e=>e.date===key);
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
-      ${d.getDate()}${hasExpense?`<span class="calendar-expense-mark" title="Hay gastos registrados">$</span>`:""}<span class="calendar-dots">${dots}</span>
+      ${d.getDate()}<span class="calendar-dots">${dots}</span>
     </button>`;
   }).join("");
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
@@ -824,7 +823,7 @@ $("#expenseForm").addEventListener("submit",e=>{
   const amount=Number($("#expenseAmount").value||0);
   const title=$("#expenseTitle").value.trim();
   if(!title){toast("Escribe en qué gastaste.");return;}
-  if(amount<=0 || amount>99999999.99){toast("El monto debe estar entre $0.01 y $99,999,999.99.");return;}
+  if(amount<=0){toast("Ingresa un monto válido.");return;}
 
   const id=$("#expenseId").value;
   const data={
