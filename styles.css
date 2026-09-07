@@ -254,3 +254,116 @@ button{cursor:pointer}
   }
   .board-column{scroll-snap-align:start}
 }
+
+
+/* =========================
+   V10 - Gastos y preferencias
+   ========================= */
+.expense-summary-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:12px 0 16px;
+  padding:12px 14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(12,27,47,.84);
+}
+.expense-summary-bar>div{
+  min-width:0;
+  display:grid;
+  gap:3px;
+}
+.expense-summary-bar strong{
+  font-size:1rem;
+}
+.expense-summary-bar small{
+  color:var(--muted);
+  font-size:.78rem;
+}
+.expense-add-btn{
+  min-width:54px;
+  min-height:46px;
+  border:0;
+  border-radius:14px;
+  background:linear-gradient(135deg,#5a55f7,#8d55ff);
+  color:white;
+  font-size:1.1rem;
+  font-weight:800;
+  cursor:pointer;
+}
+.settings-form-card{
+  display:grid;
+  gap:14px;
+  padding:15px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(13,29,49,.7);
+}
+.saved-message{
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(55,210,130,.13);
+  color:#64e5a0;
+  border:1px solid rgba(55,210,130,.28);
+  text-align:center;
+  font-weight:700;
+}
+.expense-date-nav{
+  display:grid;
+  grid-template-columns:auto auto auto minmax(115px,1fr) auto auto auto;
+  gap:6px;
+  align-items:center;
+  margin:8px 0 18px;
+}
+.expense-date-nav button{
+  min-height:38px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#101d31;
+  color:var(--text);
+}
+.expense-date-nav strong{
+  text-align:center;
+  white-space:nowrap;
+}
+.money-input-wrap{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:8px;
+}
+.money-input-wrap>span{
+  font-size:1.35rem;
+  font-weight:800;
+}
+.currency-btn{
+  min-width:64px;
+  min-height:44px;
+  border:1px solid rgba(109,82,255,.42);
+  border-radius:12px;
+  background:rgba(109,82,255,.15);
+  color:var(--text);
+  font-weight:800;
+}
+@media(max-width:600px){
+  .expense-summary-bar{
+    margin-left:0;
+    margin-right:0;
+  }
+  .expense-date-nav{
+    grid-template-columns:repeat(3,1fr);
+  }
+  .expense-date-nav strong{
+    grid-column:1/-1;
+    grid-row:1;
+    padding:7px 0;
+  }
+  .expense-date-nav button:nth-of-type(1),
+  .expense-date-nav button:nth-of-type(2),
+  .expense-date-nav button:nth-of-type(3){grid-row:2}
+  .expense-date-nav button:nth-of-type(4),
+  .expense-date-nav button:nth-of-type(5),
+  .expense-date-nav button:nth-of-type(6){grid-row:3}
+}
