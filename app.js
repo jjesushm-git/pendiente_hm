@@ -4,7 +4,7 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "x10.0.1";
+const APP_VERSION = "x10.0.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -404,10 +404,13 @@ function bindTaskActions(){
   });
   $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
   $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); if(!t)return; reopenTask(t); saveTasks(); toast(`Tarea reabierta para ${shortDate(parseDate(t.startDate))}.`);});
-  $$("[data-delete]").forEach(b=>b.onclick=()=>{
+  $$("[data-delete]").forEach(b=>b.onclick=async()=>{
     const t=tasks.find(x=>x.id===b.dataset.delete);
     if(!t) return;
-    if(confirm(`¿Eliminar "${t.title}"?\n\nSe moverá a la papelera y podrás restaurarla durante 24 horas.`)){
+    if(await comicConfirm(`¿Eliminar "${t.title}"? Se moverá a la papelera y podrás restaurarla durante 24 horas.`,{
+      title:"Eliminar tarea",
+      okText:"🗑 Eliminar"
+    })){
       moveToTrash(t.id);
       toast("Tarea movida a la papelera.");
     }
@@ -561,7 +564,7 @@ function renderTrash(){
       </div>
     </article>`).join("");
   $$("[data-restore]").forEach(b=>b.onclick=()=>{restoreFromTrash(b.dataset.restore);toast("Tarea restaurada.");});
-  $$("[data-delete-forever]").forEach(b=>b.onclick=()=>{
+  $$("[data-delete-forever]").forEach(b=>b.onclick=async()=>{
     if(confirm("¿Eliminar esta tarea definitivamente? Esta acción no se puede deshacer.")){
       deleteForever(b.dataset.deleteForever); toast("Tarea eliminada definitivamente.");
     }
@@ -626,6 +629,39 @@ function readForm(){
 }
 function toggleTimeFields(){ $("#timeFields").classList.toggle("hidden",$("#allDay").checked); }
 function toggleNotifyFields(){ $("#notifyFields").classList.toggle("hidden",!$("#notify").checked); }
+
+
+function comicConfirm(message, options={}){
+  return new Promise(resolve=>{
+    const dialog=$("#comicConfirmDialog");
+    const title=$("#comicConfirmTitle");
+    const text=$("#comicConfirmMessage");
+    const ok=$("#comicConfirmOk");
+    const cancel=$("#comicConfirmCancel");
+
+    title.textContent=options.title||"Confirmar";
+    text.textContent=message;
+    ok.textContent=options.okText||"Sí, continuar";
+    cancel.textContent=options.cancelText||"Cancelar";
+
+    const finish=value=>{
+      ok.onclick=null;
+      cancel.onclick=null;
+      dialog.oncancel=null;
+      if(dialog.open) dialog.close();
+      resolve(value);
+    };
+
+    ok.onclick=()=>finish(true);
+    cancel.onclick=()=>finish(false);
+    dialog.oncancel=e=>{
+      e.preventDefault();
+      finish(false);
+    };
+
+    dialog.showModal();
+  });
+}
 
 function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("show"),2600); }
 
@@ -703,14 +739,30 @@ function saveSettingsFromDialog(){
   m._t=setTimeout(()=>m.classList.add("hidden"),2600);
   toast("Los cambios han sido guardados.");
 }
+
+function isFutureDate(d){
+  return startOfDay(d)>startOfDay(new Date());
+}
+function clampExpenseDateToToday(d){
+  const today=startOfDay(new Date());
+  return startOfDay(d)>today ? today : d;
+}
+
 function shiftExpenseDate(type){
   let d=parseDate($("#expenseDate").value);
+
   if(type==="-day") d=addDays(d,-1);
   if(type==="+day") d=addDays(d,1);
   if(type==="-week") d=addDays(d,-7);
   if(type==="+week") d=addDays(d,7);
   if(type==="-month") d.setMonth(d.getMonth()-1);
   if(type==="+month") d.setMonth(d.getMonth()+1);
+
+  if(isFutureDate(d)){
+    toast("No puedes registrar gastos en una fecha futura.");
+    d=startOfDay(new Date());
+  }
+
   $("#expenseDate").value=dateKey(d);
   $("#expenseDateLabel").textContent=dotDate(d);
 }
@@ -718,7 +770,7 @@ function openExpenseDialog(expense=null){
   $("#expenseForm").reset();
   $("#expenseId").value=expense?.id||"";
 
-  const d=expense?.date ? parseDate(expense.date) : selectedDate;
+  const d=expense?.date ? parseDate(expense.date) : clampExpenseDateToToday(selectedDate);
   $("#expenseDate").value=dateKey(d);
   $("#expenseDateLabel").textContent=dotDate(d);
   $("#expenseTitle").value=expense?.title||"";
@@ -786,7 +838,7 @@ function renderViewExpenses(){
   `).join("") : `<div class="empty">No hay gastos registrados en este día.</div>`;
 
   $$("[data-expense-edit]").forEach(btn=>{
-    btn.onclick=()=>{
+    btn.onclick=async()=>{
       const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
       if(!expense) return;
       $("#viewExpensesDialog").close();
@@ -795,11 +847,14 @@ function renderViewExpenses(){
   });
 
   $$("[data-expense-delete]").forEach(btn=>{
-    btn.onclick=()=>{
+    btn.onclick=async()=>{
       const expense=expenses.find(e=>e.id===btn.dataset.expenseDelete);
       if(!expense) return;
 
-      if(confirm(`¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`)){
+      if(await comicConfirm(`¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`,{
+        title:"Borrar gasto",
+        okText:"🗑 Borrar"
+      })){
         expenses=expenses.filter(e=>e.id!==expense.id);
         saveExpenses();
         renderViewExpenses();
@@ -850,7 +905,18 @@ $("#taskForm").addEventListener("submit",e=>{
     $("#taskDialog").close(); saveTasks(); toast("Tarea guardada.");
   }catch(err){toast(err.message||"Revisa los datos.");}
 });
-$("#deleteTaskBtn").onclick=()=>{const id=$("#taskId").value;if(id&&confirm("¿Mover esta tarea a la papelera? Podrás recuperarla durante 24 horas.")){moveToTrash(id);$("#taskDialog").close();toast("Tarea movida a la papelera.");}};
+$("#deleteTaskBtn").onclick=async()=>{
+  const id=$("#taskId").value;
+  if(!id) return;
+  if(await comicConfirm("¿Mover esta tarea a la papelera? Podrás recuperarla durante 24 horas.",{
+    title:"Eliminar tarea",
+    okText:"🗑 Eliminar"
+  })){
+    moveToTrash(id);
+    $("#taskDialog").close();
+    toast("Tarea movida a la papelera.");
+  }
+};
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
 $("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
 
@@ -900,6 +966,12 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   const title=$("#expenseTitle").value.trim();
   const amount=parseMoneyInput($("#expenseAmountDisplay").value);
+  const expenseDateValue=parseDate($("#expenseDate").value);
+
+  if(isFutureDate(expenseDateValue)){
+    toast("No puedes registrar gastos en una fecha futura.");
+    return;
+  }
 
   if(!title){
     toast("Escribe en qué gastaste.");
@@ -983,10 +1055,13 @@ $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
 $("#exportExpensesCsvBtn").onclick=exportExpensesCsv;
 $("#exportBtn").onclick=exportData;
 $("#importInput").onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
-$("#clearBtn").onclick=()=>{if(confirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?")){tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");}};
-$("#emptyTrashBtn").onclick=()=>{
+$("#clearBtn").onclick=async()=>{if(await comicConfirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?",{title:"Borrar todos los datos",okText:"🗑 Borrar todo"})){tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");}};
+$("#emptyTrashBtn").onclick=async()=>{
   if(!trash.length){toast("La papelera ya está vacía.");return;}
-  if(confirm("¿Vaciar la papelera? Las tareas se eliminarán definitivamente.")){trash=[];saveTrash();renderTrash();toast("Papelera vaciada.");}
+  if(await comicConfirm("¿Vaciar la papelera? Las tareas se eliminarán definitivamente.",{
+    title:"Vaciar papelera",
+    okText:"🗑 Vaciar"
+  })){trash=[];saveTrash();renderTrash();toast("Papelera vaciada.");}
 };
 window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNotifications();});
 setInterval(()=>{normalizeStatuses();renderAll();},60000);

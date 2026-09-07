@@ -328,7 +328,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10.0.1</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">x10.0.2</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -474,6 +474,20 @@
     <div id="viewExpensesList" class="expense-list"></div>
   </dialog>
 
+
+  
+  <dialog id="comicConfirmDialog" class="comic-confirm-dialog">
+    <div class="comic-bubble">
+      <div class="comic-bubble-tail"></div>
+      <div class="comic-confirm-icon">!</div>
+      <h3 id="comicConfirmTitle">Confirmar</h3>
+      <p id="comicConfirmMessage">¿Deseas continuar?</p>
+      <div class="comic-confirm-actions">
+        <button type="button" id="comicConfirmCancel" class="ghost-btn">Cancelar</button>
+        <button type="button" id="comicConfirmOk" class="danger-btn">Sí, continuar</button>
+      </div>
+    </div>
+  </dialog>
 
   <script src="app.js" defer></script>
 </body>
