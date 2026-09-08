@@ -1654,315 +1654,605 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 
 
 /* =========================================================
-   11.1 REPARADA — SOLO TEMA DEFAULT ESMERALDA + DORADO
-   Inspirado visualmente en la referencia compartida:
-   crema/blanco, verde esmeralda profundo y detalles dorados.
+   VERSION 11.5 — ESMERALDA CLÁSICO / MARFIL / DORADO
+   El bloque está totalmente acotado a emerald_gold.
+   Los demás temas conservan exactamente su diseño anterior.
    ========================================================= */
 
 :root[data-theme="emerald_gold"]{
-  --bg:#f7f5e8;
-  --panel:#fffdf4;
-  --panel-2:#f4f6df;
-  --text:#17382b;
-  --muted:#65766b;
-  --line:rgba(190,150,37,.46);
-  --accent:#0f5c43;
-  --accent-2:#d2aa34;
-  --primary:#0f5c43;
-  --primary-2:#168259;
-  --green:#2aa567;
-  --red:#b85460;
-  --orange:#bd7c2d;
-  --yellow:#d2aa34;
+  --bg:#f1f0eb;
+  --panel:#fbfbed;
+  --panel-2:#f7f8e7;
+  --text:#17362b;
+  --muted:#607069;
+  --line:rgba(186,151,62,.52);
+  --primary:#155d40;
+  --primary-2:#287a55;
+  --green:#26995f;
+  --red:#b75460;
+  --orange:#b8792b;
+  --yellow:#cfa737;
+  --accent:#155d40;
+  --accent-2:#cfa737;
+  --danger:#b75460;
+  --success:#26995f;
+  --shadow:0 16px 38px rgba(67,77,54,.11);
   color-scheme:light;
+}
+
+:root[data-theme="emerald_gold"] html{
+  background:#e8e9df !important;
 }
 
 :root[data-theme="emerald_gold"] body{
   background:
-    radial-gradient(circle at 88% 8%,rgba(210,170,52,.10),transparent 24%),
-    linear-gradient(180deg,#fbfaf1 0%,#f5f4e8 100%) !important;
-  color:#17382b !important;
+    linear-gradient(90deg,#e8e9df 0,#f1f0eb 7%,#f1f0eb 93%,#e8e9df 100%) !important;
+  color:var(--text) !important;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
 }
 
-/* HEADER VERDE CON BORDE DORADO */
+/* Página central marfil como la referencia */
+:root[data-theme="emerald_gold"] .app-shell{
+  width:min(100%,1140px) !important;
+  min-height:100vh;
+  margin:0 auto !important;
+  padding:0 28px 118px !important;
+  background:#fbfaf3 !important;
+  box-shadow:0 0 32px rgba(59,69,48,.10) !important;
+}
+
+/* Títulos con personalidad clásica */
+:root[data-theme="emerald_gold"] h1,
+:root[data-theme="emerald_gold"] h2,
+:root[data-theme="emerald_gold"] h3,
+:root[data-theme="emerald_gold"] .task-title,
+:root[data-theme="emerald_gold"] .book-card-copy strong,
+:root[data-theme="emerald_gold"] .board-card strong,
+:root[data-theme="emerald_gold"] .mini-task strong{
+  font-family:Georgia,"Times New Roman",serif !important;
+  letter-spacing:-.01em;
+}
+
+/* Encabezado verde profundo y dorado */
 :root[data-theme="emerald_gold"] .topbar{
-  background:linear-gradient(135deg,#084831 0%,#126948 100%) !important;
-  color:#fffdf4 !important;
-  border:1px solid rgba(205,165,46,.62) !important;
-  border-bottom:3px solid #cda62e !important;
-  box-shadow:0 8px 24px rgba(31,70,50,.12) !important;
+  margin:0 -28px 34px !important;
+  padding:28px 24px 24px !important;
+  min-height:104px;
+  position:sticky !important;
+  top:0;
+  z-index:40;
+  background:linear-gradient(135deg,#124e35 0%,#0f5a3d 55%,#186746 100%) !important;
+  border:0 !important;
+  border-bottom:3px solid #c8a64a !important;
+  border-radius:0 !important;
+  box-shadow:0 8px 24px rgba(28,66,46,.14) !important;
+  backdrop-filter:none !important;
 }
 
 :root[data-theme="emerald_gold"] .topbar h1{
   color:#fffdf4 !important;
+  font-size:clamp(1.65rem,3vw,2rem) !important;
+  font-weight:800 !important;
 }
 
 :root[data-theme="emerald_gold"] .topbar .eyebrow{
-  color:#dfc263 !important;
+  color:#e1bf66 !important;
+  font-weight:800;
+  letter-spacing:.18em !important;
 }
 
-:root[data-theme="emerald_gold"] .active-book-select-wrap,
-:root[data-theme="emerald_gold"] .topbar .icon-btn{
+:root[data-theme="emerald_gold"] .top-actions{
+  align-items:center;
+}
+
+:root[data-theme="emerald_gold"] .active-book-select-wrap{
+  min-height:46px !important;
+  padding:0 11px !important;
+  border:1px solid rgba(225,191,102,.62) !important;
+  border-radius:999px !important;
   background:rgba(255,255,255,.055) !important;
-  border-color:rgba(215,181,70,.46) !important;
-  color:#fffdf4 !important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
 }
 
 :root[data-theme="emerald_gold"] .active-book-select{
+  min-height:44px !important;
+  background:transparent !important;
   color:#fffdf4 !important;
+  border:0 !important;
 }
-
 :root[data-theme="emerald_gold"] .active-book-select option{
-  color:#17382b !important;
-  background:#fffdf4 !important;
+  color:#17362b !important;
+  background:#fffdf5 !important;
 }
 
-/* CONTENEDORES CLAROS */
-:root[data-theme="emerald_gold"] .view-tabs,
-:root[data-theme="emerald_gold"] .expense-summary-bar,
-:root[data-theme="emerald_gold"] .panel,
-:root[data-theme="emerald_gold"] .calendar-shell,
-:root[data-theme="emerald_gold"] .calendar-grid,
-:root[data-theme="emerald_gold"] .week-column,
-:root[data-theme="emerald_gold"] .board-column,
-:root[data-theme="emerald_gold"] .settings-group,
-:root[data-theme="emerald_gold"] .books-add-panel,
-:root[data-theme="emerald_gold"] .books-footer-note,
-:root[data-theme="emerald_gold"] .expense-view-total,
-:root[data-theme="emerald_gold"] .comment-dialog-body{
-  background:#fffdf4 !important;
-  color:#17382b !important;
-  border-color:rgba(190,150,37,.42) !important;
-  box-shadow:0 9px 24px rgba(67,77,50,.06) !important;
-}
-
-/* TARJETAS CLARAS CON DETALLE DORADO */
-:root[data-theme="emerald_gold"] .task-card,
-:root[data-theme="emerald_gold"] .board-card,
-:root[data-theme="emerald_gold"] .book-select-card,
-:root[data-theme="emerald_gold"] .book-card,
-:root[data-theme="emerald_gold"] .expense-card,
-:root[data-theme="emerald_gold"] .mini-task,
-:root[data-theme="emerald_gold"] .stat-card{
-  background:linear-gradient(180deg,#fffef8,#f7f8e8) !important;
-  color:#17382b !important;
-  border-color:rgba(190,150,37,.40) !important;
-  box-shadow:0 7px 18px rgba(58,70,48,.055) !important;
-}
-
-:root[data-theme="emerald_gold"] .task-card::before{
-  background:#0f5c43 !important;
-}
-
-:root[data-theme="emerald_gold"] .task-card.completed::before{
-  background:#25a466 !important;
-}
-
-:root[data-theme="emerald_gold"] .task-card.missed::before{
-  background:#b85460 !important;
-}
-
-/* TEXTOS */
-:root[data-theme="emerald_gold"] .task-title,
-:root[data-theme="emerald_gold"] .section-heading h2,
-:root[data-theme="emerald_gold"] .panel-head h3,
-:root[data-theme="emerald_gold"] .modal h2,
-:root[data-theme="emerald_gold"] .book-card-copy strong{
-  color:#17382b !important;
-}
-
-:root[data-theme="emerald_gold"] .task-desc,
-:root[data-theme="emerald_gold"] .task-meta,
-:root[data-theme="emerald_gold"] .panel-head p,
-:root[data-theme="emerald_gold"] .book-card-copy small,
-:root[data-theme="emerald_gold"] .expense-card p,
-:root[data-theme="emerald_gold"] .empty{
-  color:#65766b !important;
-}
-
-/* CAMPOS Y AJUSTES */
-:root[data-theme="emerald_gold"] input,
-:root[data-theme="emerald_gold"] textarea,
-:root[data-theme="emerald_gold"] select,
-:root[data-theme="emerald_gold"] .settings-item,
-:root[data-theme="emerald_gold"] .emoji-picker-trigger,
-:root[data-theme="emerald_gold"] .book-form-toggle,
-:root[data-theme="emerald_gold"] .ghost-btn{
-  background:#fffef8 !important;
-  color:#17382b !important;
-  border-color:rgba(190,150,37,.38) !important;
-}
-
-:root[data-theme="emerald_gold"] .settings-item strong,
-:root[data-theme="emerald_gold"] .settings-group summary span{
-  color:#17382b !important;
-}
-
-/* BOTONES PRINCIPALES */
-:root[data-theme="emerald_gold"] .primary-btn,
-:root[data-theme="emerald_gold"] .expense-add-btn,
-:root[data-theme="emerald_gold"] .view-tab.active{
-  background:linear-gradient(135deg,#0d593e,#168158) !important;
+:root[data-theme="emerald_gold"] .topbar .icon-btn{
+  width:48px !important;
+  height:48px !important;
+  padding:0 !important;
+  border-radius:50% !important;
+  border:1px solid rgba(225,191,102,.72) !important;
+  background:rgba(255,255,255,.045) !important;
   color:#fffdf4 !important;
-  border-color:#caa32b !important;
-  box-shadow:0 6px 16px rgba(15,92,67,.15) !important;
+  box-shadow:none !important;
 }
 
-/* PESTAÑAS */
-:root[data-theme="emerald_gold"] .view-tab{
-  color:#5f7166 !important;
+/* Franja semanal */
+:root[data-theme="emerald_gold"] .week-strip{
+  gap:10px !important;
+  margin:0 0 20px !important;
 }
-
-:root[data-theme="emerald_gold"] .bottom-nav{
-  background:rgba(255,253,244,.97) !important;
-  color:#65766b !important;
-  border-color:rgba(190,150,37,.35) !important;
-  box-shadow:0 -7px 18px rgba(67,77,50,.06) !important;
-}
-
-:root[data-theme="emerald_gold"] .bottom-tab{
-  color:#65766b !important;
-}
-
-:root[data-theme="emerald_gold"] .bottom-tab.active{
-  color:#0f5c43 !important;
-}
-
-/* SEMANA Y CALENDARIO */
 :root[data-theme="emerald_gold"] .week-day{
-  color:#63756a !important;
+  min-height:78px;
+  border:1px solid transparent !important;
+  border-radius:18px !important;
+  background:transparent !important;
+  color:#69786f !important;
+  padding:11px 5px !important;
 }
-
+:root[data-theme="emerald_gold"] .week-day .dow{
+  color:#6f7e75 !important;
+  font-weight:700;
+}
 :root[data-theme="emerald_gold"] .week-day .num{
-  color:#17382b !important;
+  color:#18382c !important;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:1.16rem !important;
 }
-
 :root[data-theme="emerald_gold"] .week-day.active{
-  background:linear-gradient(135deg,#0d593e,#168158) !important;
+  background:linear-gradient(135deg,#155b3f,#287a55) !important;
+  border-color:#c8a64a !important;
   color:#fffdf4 !important;
-  border-color:#caa32b !important;
+  box-shadow:0 10px 20px rgba(28,84,57,.14) !important;
 }
-
+:root[data-theme="emerald_gold"] .week-day.active .dow,
 :root[data-theme="emerald_gold"] .week-day.active .num{
   color:#fffdf4 !important;
 }
+:root[data-theme="emerald_gold"] .week-day .dot{
+  background:#48b777 !important;
+  box-shadow:0 0 0 2px rgba(255,255,255,.14);
+}
 
-:root[data-theme="emerald_gold"] .calendar-day{
+/* Pestañas principales marfil con borde dorado */
+:root[data-theme="emerald_gold"] .view-tabs{
+  gap:6px !important;
+  margin-bottom:22px !important;
+  padding:5px !important;
+  border:1px solid rgba(186,151,62,.48) !important;
+  border-radius:18px !important;
+  background:#fbfbed !important;
+  box-shadow:0 8px 20px rgba(70,78,55,.045) !important;
+}
+:root[data-theme="emerald_gold"] .view-tab{
+  padding:12px 6px !important;
+  color:#52685d !important;
+  border-radius:13px !important;
+  font-weight:700;
+}
+:root[data-theme="emerald_gold"] .view-tab.active{
+  background:linear-gradient(135deg,#155b3f,#247650) !important;
+  color:#fffdf4 !important;
+  box-shadow:0 5px 14px rgba(25,84,56,.13) !important;
+}
+
+/* Resumen de gastos */
+:root[data-theme="emerald_gold"] .expense-summary-bar{
+  padding:18px 20px !important;
+  margin-bottom:22px !important;
+  border:1px solid rgba(186,151,62,.48) !important;
+  border-radius:20px !important;
+  background:linear-gradient(180deg,#fbfbed,#f7f8e8) !important;
+  color:#17362b !important;
+  box-shadow:0 9px 22px rgba(70,78,55,.055) !important;
+}
+:root[data-theme="emerald_gold"] .expense-summary-bar strong{
+  color:#17362b !important;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:1.08rem;
+}
+:root[data-theme="emerald_gold"] .expense-summary-bar small{
+  color:#6a786f !important;
+}
+:root[data-theme="emerald_gold"] .expense-eye-btn{
+  background:#fffdf5 !important;
+  border:1px solid rgba(186,151,62,.50) !important;
+  color:#155b3f !important;
+  border-radius:50% !important;
+  box-shadow:none !important;
+}
+:root[data-theme="emerald_gold"] .expense-add-btn{
+  background:linear-gradient(135deg,#155b3f,#287a55) !important;
+  color:#fffdf4 !important;
+  border:1px solid #c8a64a !important;
+  border-radius:14px !important;
+  box-shadow:0 6px 14px rgba(26,81,55,.12) !important;
+}
+
+/* Encabezados de secciones */
+:root[data-theme="emerald_gold"] .section-heading{
+  margin:18px 2px !important;
+}
+:root[data-theme="emerald_gold"] .section-heading h2{
+  color:#17362b !important;
+}
+:root[data-theme="emerald_gold"] .section-heading .eyebrow{
+  color:#a27f2a !important;
+  font-weight:800;
+}
+
+/* Paneles marfil */
+:root[data-theme="emerald_gold"] .panel,
+:root[data-theme="emerald_gold"] .week-column,
+:root[data-theme="emerald_gold"] .board-column{
+  background:linear-gradient(180deg,#fffef8,#f8f9e9) !important;
+  color:#17362b !important;
+  border:1px solid rgba(186,151,62,.48) !important;
+  border-radius:22px !important;
+  box-shadow:0 10px 24px rgba(70,78,55,.055) !important;
+}
+:root[data-theme="emerald_gold"] .panel-head{
+  padding:18px 18px 10px !important;
+}
+:root[data-theme="emerald_gold"] .panel-head h3{
+  color:#17362b !important;
+  font-size:1.16rem;
+}
+:root[data-theme="emerald_gold"] .panel-head h3.green{color:#278e5d !important}
+:root[data-theme="emerald_gold"] .panel-head h3.red{color:#b75460 !important}
+:root[data-theme="emerald_gold"] .panel-head p,
+:root[data-theme="emerald_gold"] .empty{
+  color:#67776e !important;
+}
+
+/* Tarjetas de tareas, inspiradas en las tarjetas claras de la referencia */
+:root[data-theme="emerald_gold"] .task-card,
+:root[data-theme="emerald_gold"] .board-card,
+:root[data-theme="emerald_gold"] .mini-task{
+  background:linear-gradient(180deg,#fffef8,#f8f9ea) !important;
+  color:#17362b !important;
+  border:1px solid rgba(186,151,62,.43) !important;
+  border-radius:18px !important;
+  box-shadow:0 6px 16px rgba(66,76,52,.045) !important;
+}
+:root[data-theme="emerald_gold"] .task-card{
+  padding:15px 14px 14px 18px !important;
+}
+:root[data-theme="emerald_gold"] .task-card::before{
+  width:4px !important;
+  background:#155b3f !important;
+}
+:root[data-theme="emerald_gold"] .task-card.completed::before{background:#289762 !important}
+:root[data-theme="emerald_gold"] .task-card.missed::before{background:#b75460 !important}
+:root[data-theme="emerald_gold"] .task-title{
+  color:#17362b !important;
+  font-size:1.02rem;
+}
+:root[data-theme="emerald_gold"] .task-desc,
+:root[data-theme="emerald_gold"] .task-meta,
+:root[data-theme="emerald_gold"] .board-card p,
+:root[data-theme="emerald_gold"] .mini-task small{
+  color:#63736a !important;
+}
+
+/* Emoji de tarea como medallón verde/dorado */
+:root[data-theme="emerald_gold"] .task-emoji-edit,
+:root[data-theme="emerald_gold"] .board-task-emoji.task-emoji-edit,
+:root[data-theme="emerald_gold"] .mini-task-emoji.task-emoji-edit{
+  width:38px !important;
+  height:38px !important;
+  min-width:38px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border:1px solid #c8a64a !important;
+  border-radius:50% !important;
+  background:#155b3f !important;
+  box-shadow:0 4px 10px rgba(28,77,53,.10) !important;
+  font-size:1.05rem !important;
+}
+
+/* Checks */
+:root[data-theme="emerald_gold"] .task-check{
+  border-color:#6c8075 !important;
   background:#fffef8 !important;
-  color:#17382b !important;
-  border-color:rgba(190,150,37,.31) !important;
+}
+:root[data-theme="emerald_gold"] .task-check:checked{
+  background:#2aa065 !important;
+  border-color:#2aa065 !important;
+}
+:root[data-theme="emerald_gold"] .task-check:checked::after{color:#fff !important}
+
+/* Chips */
+:root[data-theme="emerald_gold"] .status-pill,
+:root[data-theme="emerald_gold"] .board-pill,
+:root[data-theme="emerald_gold"] .state-chip,
+:root[data-theme="emerald_gold"] .recur-pill,
+:root[data-theme="emerald_gold"] .importance-chip{
+  border:1px solid rgba(186,151,62,.32) !important;
+  background:#f2f4df !important;
+  color:#385848 !important;
+}
+:root[data-theme="emerald_gold"] .status-pill.completed,
+:root[data-theme="emerald_gold"] .state-chip.completed{
+  background:#e4f3e5 !important;
+  color:#23774e !important;
+  border-color:rgba(38,151,96,.25) !important;
+}
+:root[data-theme="emerald_gold"] .status-pill.missed,
+:root[data-theme="emerald_gold"] .state-chip.missed{
+  background:#f8e6e6 !important;
+  color:#a64450 !important;
+  border-color:rgba(183,84,96,.25) !important;
+}
+:root[data-theme="emerald_gold"] .importance-chip.active{
+  background:#fff6d9 !important;
+  color:#98721b !important;
+  border-color:rgba(186,151,62,.50) !important;
 }
 
-:root[data-theme="emerald_gold"] .calendar-day.selected,
+/* Botones de tarjeta */
+:root[data-theme="emerald_gold"] .card-actions button,
+:root[data-theme="emerald_gold"] .task-action-row button{
+  background:#edf3e1 !important;
+  color:#194a35 !important;
+  border:1px solid rgba(21,91,63,.16) !important;
+  border-radius:10px !important;
+}
+:root[data-theme="emerald_gold"] .card-actions .task-delete-btn,
+:root[data-theme="emerald_gold"] .task-action-row .task-delete-btn{
+  background:#f8e7e8 !important;
+  color:#aa4552 !important;
+  border-color:rgba(183,84,96,.35) !important;
+}
+
+/* Estadísticas */
+:root[data-theme="emerald_gold"] .stat-card{
+  background:#fbfbed !important;
+  border:1px solid rgba(186,151,62,.44) !important;
+  color:#17362b !important;
+  border-radius:17px !important;
+  box-shadow:0 6px 14px rgba(66,76,52,.04) !important;
+}
+:root[data-theme="emerald_gold"] .stat-card small{color:#68786f !important}
+
+/* Calendario */
+:root[data-theme="emerald_gold"] .calendar-weekdays span{
+  color:#65776c !important;
+  font-weight:700;
+}
+:root[data-theme="emerald_gold"] .calendar-day{
+  min-height:76px !important;
+  background:#fffef8 !important;
+  color:#18382c !important;
+  border:1px solid rgba(186,151,62,.35) !important;
+  border-radius:13px !important;
+}
 :root[data-theme="emerald_gold"] .calendar-day.today{
-  background:#eaf2d7 !important;
-  outline-color:#0f5c43 !important;
+  background:#eef3dc !important;
+  outline:1px solid rgba(21,91,63,.30) !important;
 }
-
-/* DORADOS */
+:root[data-theme="emerald_gold"] .calendar-day.selected{
+  background:#155b3f !important;
+  color:#fffdf4 !important;
+  outline:2px solid #c8a64a !important;
+}
 :root[data-theme="emerald_gold"] .calendar-expense-mark,
 :root[data-theme="emerald_gold"] .week-expense-mark,
-:root[data-theme="emerald_gold"] .money-symbol,
-:root[data-theme="emerald_gold"] .importance-chip.active,
-:root[data-theme="emerald_gold"] .recur-pill{
-  color:#a97e09 !important;
+:root[data-theme="emerald_gold"] .money-symbol{
+  color:#af861e !important;
 }
 
-/* MODALES */
+/* Tablero */
+:root[data-theme="emerald_gold"] .board-column{
+  background:#fbfbed !important;
+}
+:root[data-theme="emerald_gold"] .board-column-head span{
+  background:#e9f1dc !important;
+  color:#155b3f !important;
+  border:1px solid rgba(186,151,62,.30);
+}
+
+/* Inputs y controles */
+:root[data-theme="emerald_gold"] .select,
+:root[data-theme="emerald_gold"] select,
+:root[data-theme="emerald_gold"] input,
+:root[data-theme="emerald_gold"] textarea,
+:root[data-theme="emerald_gold"] .date-picker-btn{
+  background:#fffef8 !important;
+  color:#17362b !important;
+  border-color:rgba(186,151,62,.42) !important;
+}
+:root[data-theme="emerald_gold"] input::placeholder,
+:root[data-theme="emerald_gold"] textarea::placeholder{color:#8d988f !important}
+
+:root[data-theme="emerald_gold"] .ghost-btn,
+:root[data-theme="emerald_gold"] .icon-btn{
+  background:#fffdf5 !important;
+  color:#155b3f !important;
+  border:1px solid rgba(186,151,62,.42) !important;
+}
+:root[data-theme="emerald_gold"] .primary-btn{
+  background:linear-gradient(135deg,#155b3f,#287a55) !important;
+  color:#fffdf4 !important;
+  border:1px solid #c8a64a !important;
+}
+:root[data-theme="emerald_gold"] .danger-btn{
+  background:#f8e7e8 !important;
+  color:#a94450 !important;
+  border:1px solid rgba(183,84,96,.35) !important;
+}
+
+/* Switches */
+:root[data-theme="emerald_gold"] .switch-row{
+  background:#fbfbed !important;
+  border-color:rgba(186,151,62,.40) !important;
+}
+:root[data-theme="emerald_gold"] .switch-row strong{color:#17362b !important}
+:root[data-theme="emerald_gold"] .switch-row small{color:#68786f !important}
+:root[data-theme="emerald_gold"] .switch span{background:#d9ded4 !important}
+:root[data-theme="emerald_gold"] .switch input:checked+span{background:#1d7450 !important}
+
+/* Modales: cuerpo crema y cabecera verde */
 :root[data-theme="emerald_gold"] .modal{
-  background:#fffdf4 !important;
-  color:#17382b !important;
-  border-color:rgba(190,150,37,.50) !important;
-  box-shadow:0 18px 48px rgba(36,66,45,.18) !important;
+  background:#fffdf5 !important;
+  color:#17362b !important;
+  border:1px solid rgba(186,151,62,.55) !important;
+  box-shadow:0 22px 55px rgba(35,63,44,.20) !important;
 }
-
 :root[data-theme="emerald_gold"] .modal::backdrop{
-  background:rgba(28,55,40,.40) !important;
+  background:rgba(28,52,39,.42) !important;
+  backdrop-filter:blur(3px) !important;
+}
+:root[data-theme="emerald_gold"] .modal-head{
+  margin:-18px -18px 18px !important;
+  padding:18px 18px 16px !important;
+  background:linear-gradient(135deg,#124e35,#176544) !important;
+  border-bottom:2px solid #c8a64a !important;
+  border-radius:21px 21px 0 0 !important;
+}
+:root[data-theme="emerald_gold"] .modal-head h2{color:#fffdf4 !important}
+:root[data-theme="emerald_gold"] .modal-head .eyebrow{color:#dfbf65 !important}
+:root[data-theme="emerald_gold"] .modal-head .icon-btn{
+  background:rgba(255,255,255,.055) !important;
+  color:#fff !important;
+  border-color:rgba(223,191,101,.58) !important;
+}
+:root[data-theme="emerald_gold"] .modal form label{color:#29493a !important}
+
+/* Settings tipo tarjetas claras */
+:root[data-theme="emerald_gold"] .settings-group{
+  background:#fbfbed !important;
+  border:1px solid rgba(186,151,62,.45) !important;
+  color:#17362b !important;
+  box-shadow:0 5px 14px rgba(66,76,52,.035) !important;
+}
+:root[data-theme="emerald_gold"] .settings-group summary span,
+:root[data-theme="emerald_gold"] .settings-item strong{color:#17362b !important}
+:root[data-theme="emerald_gold"] .settings-group summary small,
+:root[data-theme="emerald_gold"] .settings-item small{color:#68786f !important}
+:root[data-theme="emerald_gold"] .settings-item{
+  background:#fffef8 !important;
+  border-color:rgba(186,151,62,.34) !important;
+  color:#17362b !important;
 }
 
-/* EMOTICONOS */
+/* Libros */
+:root[data-theme="emerald_gold"] .book-select-card,
+:root[data-theme="emerald_gold"] .book-card{
+  background:linear-gradient(180deg,#fffef8,#f7f8e8) !important;
+  border:1px solid rgba(186,151,62,.44) !important;
+  color:#17362b !important;
+}
+:root[data-theme="emerald_gold"] .book-select-card.selected{
+  border-color:#c8a64a !important;
+  box-shadow:inset 4px 0 0 var(--book-accent),0 6px 16px rgba(66,76,52,.04) !important;
+}
+:root[data-theme="emerald_gold"] .book-card-icon,
+:root[data-theme="emerald_gold"] .book-icon{
+  background:#155b3f !important;
+  color:#f6d76f !important;
+  border:1px solid #c8a64a !important;
+  border-radius:50% !important;
+}
+:root[data-theme="emerald_gold"] .book-custom-check{
+  border-color:#9a8a59 !important;
+  background:#fffef8 !important;
+}
+:root[data-theme="emerald_gold"] .book-check-wrap input:checked + .book-custom-check{
+  background:#155b3f !important;
+  border-color:#c8a64a !important;
+  color:#fff !important;
+}
+
+/* Selectores de emoji */
+:root[data-theme="emerald_gold"] .emoji-section h3,
+:root[data-theme="emerald_gold"] .book-customize-label{color:#28483a !important}
 :root[data-theme="emerald_gold"] .emoji-choice,
 :root[data-theme="emerald_gold"] .book-icon-option,
-:root[data-theme="emerald_gold"] .book-color-option{
+:root[data-theme="emerald_gold"] .book-color-option,
+:root[data-theme="emerald_gold"] .emoji-picker-trigger{
   background:#fffef8 !important;
-  border-color:rgba(190,150,37,.34) !important;
-  color:#17382b !important;
+  color:#17362b !important;
+  border-color:rgba(186,151,62,.38) !important;
 }
-
 :root[data-theme="emerald_gold"] .emoji-choice:hover,
 :root[data-theme="emerald_gold"] .book-icon-option:hover{
-  background:#edf3d9 !important;
-  border-color:#caa32b !important;
+  background:#eff3dd !important;
+  border-color:#c8a64a !important;
 }
-
-/* LIBROS: ICONOS POR SECCIONES */
-.book-icon-picker{
-  display:grid !important;
-  gap:14px !important;
-  max-height:330px !important;
-  overflow:auto !important;
-  padding-right:4px;
-}
-
-.book-emoji-section{
-  display:grid;
-  gap:7px;
-}
-
-.book-emoji-section h4{
-  margin:0;
-  font-size:.82rem;
-  color:var(--muted);
-}
-
-.book-emoji-grid{
-  display:grid;
-  grid-template-columns:repeat(7,minmax(34px,1fr));
-  gap:6px;
-}
-
-.book-emoji-grid .book-icon-option{
-  width:100% !important;
-  min-width:34px;
-  min-height:38px;
-}
-
-:root[data-theme="emerald_gold"] .book-adventure-section{
-  padding:10px;
-  border:1px solid rgba(190,150,37,.30);
-  border-radius:12px;
-  background:linear-gradient(180deg,rgba(15,92,67,.045),rgba(210,170,52,.055));
-}
-
-:root[data-theme="emerald_gold"] .book-adventure-section h4{
-  color:#96700d !important;
-}
-
-/* Aventura solo en tema default */
-.theme-zelda-only{
-  display:none;
-}
-
 :root[data-theme="emerald_gold"] .theme-zelda-only{
-  display:block;
+  padding:12px !important;
+  border:1px solid rgba(186,151,62,.36) !important;
+  border-radius:15px !important;
+  background:linear-gradient(180deg,rgba(21,91,63,.045),rgba(207,167,55,.075)) !important;
 }
 
-/* Aura alta importancia */
+/* Gastos registrados */
+:root[data-theme="emerald_gold"] .expense-card,
+:root[data-theme="emerald_gold"] .expense-view-card{
+  background:#fffef8 !important;
+  color:#17362b !important;
+  border-color:rgba(186,151,62,.42) !important;
+}
+
+/* Burbujas del sistema */
+:root[data-theme="emerald_gold"] .comic-bubble,
+:root[data-theme="emerald_gold"] .emoji-saved-bubble{
+  background:#fffdf5 !important;
+  color:#17362b !important;
+  border-color:#c8a64a !important;
+}
+:root[data-theme="emerald_gold"] .comic-bubble h3,
+:root[data-theme="emerald_gold"] .emoji-saved-bubble h3{color:#17362b !important}
+:root[data-theme="emerald_gold"] .comic-bubble p,
+:root[data-theme="emerald_gold"] .emoji-saved-bubble p{color:#67776e !important}
+
+/* Barra inferior clara */
+:root[data-theme="emerald_gold"] .bottom-nav{
+  width:min(100%,1140px) !important;
+  background:rgba(255,253,244,.97) !important;
+  border-top:1px solid rgba(186,151,62,.50) !important;
+  box-shadow:0 -7px 20px rgba(67,77,54,.08) !important;
+  backdrop-filter:blur(14px) !important;
+}
+:root[data-theme="emerald_gold"] .bottom-tab,
+:root[data-theme="emerald_gold"] .bottom-add{
+  color:#66776e !important;
+}
+:root[data-theme="emerald_gold"] .bottom-tab.active{
+  color:#155b3f !important;
+}
+:root[data-theme="emerald_gold"] .bottom-add span{
+  background:linear-gradient(135deg,#155b3f,#287a55) !important;
+  color:#fffdf4 !important;
+  border:2px solid #c8a64a !important;
+  box-shadow:0 7px 18px rgba(25,82,56,.16) !important;
+}
+
+/* Dorado visual en recurrencias/gastos */
+:root[data-theme="emerald_gold"] .recur-pill{color:#936f19 !important}
+
+/* Alta importancia: brillo lento verde/dorado */
 :root[data-theme="emerald_gold"] .high-importance{
-  animation:importantAuraRepair 4s ease-in-out infinite !important;
+  animation:emeraldGoldAura115 4.6s ease-in-out infinite !important;
+}
+@keyframes emeraldGoldAura115{
+  0%,100%{box-shadow:0 6px 16px rgba(66,76,52,.045),0 0 0 rgba(200,166,74,0)}
+  50%{box-shadow:0 8px 20px rgba(21,91,63,.10),0 0 20px rgba(200,166,74,.19)}
 }
 
-@keyframes importantAuraRepair{
-  0%,100%{
-    box-shadow:0 7px 18px rgba(58,70,48,.055),0 0 0 rgba(210,170,52,0)
+@media(max-width:760px){
+  :root[data-theme="emerald_gold"] .app-shell{
+    padding:0 14px 112px !important;
+    box-shadow:none !important;
   }
-  50%{
-    box-shadow:0 9px 22px rgba(15,92,67,.10),0 0 18px rgba(210,170,52,.18)
+  :root[data-theme="emerald_gold"] .topbar{
+    margin:0 -14px 24px !important;
+    padding:20px 16px 18px !important;
+    min-height:88px;
   }
-}
-
-@media(max-width:600px){
-  .book-emoji-grid{
-    grid-template-columns:repeat(6,minmax(32px,1fr));
-  }
+  :root[data-theme="emerald_gold"] .topbar h1{font-size:1.55rem !important}
+  :root[data-theme="emerald_gold"] .week-strip{gap:4px !important}
+  :root[data-theme="emerald_gold"] .week-day{min-height:68px;padding:9px 2px !important}
+  :root[data-theme="emerald_gold"] .bottom-nav{width:100% !important}
 }
