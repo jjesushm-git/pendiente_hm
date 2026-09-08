@@ -357,17 +357,19 @@
       <details class="settings-group" id="settingsTransferGroup">
         <summary><span>⇅ Exportar / importar</span><small>Respaldos y archivos</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar gastos TXT</strong><small>Descarga todos los gastos registrados en formato de texto.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
-          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar gastos CSV</strong><small>Descarga los gastos para abrirlos en Excel u otra hoja de cálculo.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar gastos TXT</strong><small>Exporta únicamente el periodo de gastos en curso del libro activo.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar gastos CSV</strong><small>Exporta únicamente el periodo de gastos en curso del libro activo.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
           <button id="exportBtn" class="settings-item"><span>⬇️</span><div><strong>Exportar respaldo de tareas</strong><small>Descarga tus tareas en formato JSON.</small><small id="lastExportBackup" class="last-export-mark">Nunca descargado</small></div></button>
-          <label class="settings-item file-item"><span>⬆️</span><div><strong>Importar respaldo de tareas</strong><small>Restaura tareas desde un archivo JSON.</small></div><input id="importInput" type="file" accept=".json,application/json" hidden /></label>
+          <button id="importBtn" class="settings-item"><span>⬆️</span><div><strong>Importar</strong><small>Elige si deseas importar tareas o gastos.</small></div></button>
+          <input id="importInput" type="file" accept=".json,application/json" hidden />
+          <input id="importExpensesInput" type="file" accept=".csv,.txt,.json,text/csv,text/plain,application/json" hidden />
         </div>
       </details>
 
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.5.1.1</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.5.2</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -419,6 +421,10 @@
         </div>
         <small class="money-help">Máximo $99,999,999.99</small>
       </label>
+
+      <div class="expense-extra-actions">
+        <button type="button" id="expenseLogBtn" class="ghost-btn expense-log-btn">📚 Bitácora</button>
+      </div>
 
       <div class="modal-actions">
         <button type="button" id="cancelExpenseBtn" class="ghost-btn">Cancelar</button>
@@ -478,18 +484,31 @@
       </div>
       <button type="button" class="icon-btn" id="closeEmojiDialog">✕</button>
     </div>
+
     <div class="emoji-section">
-      <h3>Tareas y trabajo</h3>
+      <h3>Trabajo y oficina</h3>
       <div id="emojiWorkGrid" class="emoji-grid"></div>
     </div>
     <div class="emoji-section">
-      <h3>Organización y actividades</h3>
+      <h3>Tareas y organización</h3>
       <div id="emojiTaskGrid" class="emoji-grid"></div>
     </div>
-    <div class="emoji-section"><h3>Dinero y compras</h3><div id="emojiMoneyGrid" class="emoji-grid"></div></div>
-    <div class="emoji-section"><h3>Comida</h3><div id="emojiFoodGrid" class="emoji-grid"></div></div>
-    <div class="emoji-section"><h3>Sociales y otros</h3><div id="emojiSocialGrid" class="emoji-grid"></div></div>
-    <div class="emoji-section theme-zelda-only"><h3>Estilo aventura</h3><div id="emojiZeldaGrid" class="emoji-grid"></div></div>
+    <div class="emoji-section">
+      <h3>Dinero y compras</h3>
+      <div id="emojiMoneyGrid" class="emoji-grid"></div>
+    </div>
+    <div class="emoji-section">
+      <h3>Comida</h3>
+      <div id="emojiFoodGrid" class="emoji-grid"></div>
+    </div>
+    <div class="emoji-section">
+      <h3>Sociales y otros</h3>
+      <div id="emojiSocialGrid" class="emoji-grid"></div>
+    </div>
+    <div class="emoji-section theme-zelda-only">
+      <h3>Aventura</h3>
+      <div id="emojiZeldaGrid" class="emoji-grid"></div>
+    </div>
   </dialog>
 
   
@@ -561,6 +580,52 @@
       <button type="button" class="icon-btn" id="closeCommentDialog">✕</button>
     </div>
     <div id="commentDialogBody" class="comment-dialog-body"></div>
+  </dialog>
+
+  
+  <dialog id="importChoiceDialog" class="modal import-choice-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Importar información</p>
+        <h2>¿Qué deseas importar?</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeImportChoiceDialog">✕</button>
+    </div>
+
+    <div class="import-choice-grid">
+      <button type="button" id="chooseImportTasksBtn" class="import-choice-card">
+        <span>✅</span>
+        <strong>Tareas</strong>
+        <small>Importar respaldo JSON de tareas.</small>
+      </button>
+      <button type="button" id="chooseImportExpensesBtn" class="import-choice-card">
+        <span>💰</span>
+        <strong>Gastos</strong>
+        <small>Importar gastos CSV, TXT o JSON al libro activo.</small>
+      </button>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelImportChoiceBtn" class="ghost-btn">Cancelar</button>
+    </div>
+  </dialog>
+
+  <dialog id="expenseLogDialog" class="modal expense-log-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Historial de gastos</p>
+        <h2>Bitácora</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeExpenseLogDialog">✕</button>
+    </div>
+
+    <p class="expense-log-help">Selecciona uno o varios periodos anteriores para exportarlos. El periodo actual no aparece aquí.</p>
+    <div id="expenseLogPeriods" class="expense-log-periods"></div>
+
+    <div class="modal-actions expense-log-actions">
+      <button type="button" id="cancelExpenseLogBtn" class="ghost-btn">Cancelar</button>
+      <button type="button" id="exportExpenseLogBtn" class="primary-btn">Exportar seleccionados</button>
+    </div>
   </dialog>
 
   <script src="app.js" defer></script>

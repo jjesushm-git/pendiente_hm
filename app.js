@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.5.1.1";
+const APP_VERSION = "11.5.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -84,21 +84,49 @@ function expenseTotalsForDate(d){
   };
 }
 
+function getBookExpenseCycleDayForDate(book,d){
+  if(!book) return 1;
+  const fallback=Math.min(31,Math.max(1,Number(book.expenseCycleDay||1)));
+  const history=Array.isArray(book.expenseCycleHistory)?book.expenseCycleHistory:[];
+  if(!history.length) return fallback;
+
+  const key=dateKey(d);
+  const valid=history
+    .filter(h=>h && h.from && h.from<=key)
+    .sort((a,b)=>a.from.localeCompare(b.from));
+
+  const last=valid[valid.length-1];
+  return last ? Math.min(31,Math.max(1,Number(last.day||fallback))) : fallback;
+}
+
 function getActiveBookExpenseCycleDay(){
   const book=activeBook();
-  const value=Number(book?.expenseCycleDay||1);
-  return Math.min(31,Math.max(1,value));
+  return getBookExpenseCycleDayForDate(book,new Date());
 }
 
 function setActiveBookExpenseCycleDay(day){
   const book=activeBook();
   if(!book) return;
-  book.expenseCycleDay=Math.min(31,Math.max(1,Number(day||1)));
+
+  const next=Math.min(31,Math.max(1,Number(day||1)));
+  const today=dateKey(new Date());
+  const current=getBookExpenseCycleDayForDate(book,new Date());
+
+  book.expenseCycleDay=next;
+  if(!Array.isArray(book.expenseCycleHistory)) book.expenseCycleHistory=[];
+
+  if(next!==current){
+    const existing=book.expenseCycleHistory.find(h=>h.from===today);
+    if(existing) existing.day=next;
+    else book.expenseCycleHistory.push({from:today,day:next});
+    book.expenseCycleHistory.sort((a,b)=>a.from.localeCompare(b.from));
+  }
+
   localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
 }
 
 function expenseCycleRange(d){
-  const cycle=getActiveBookExpenseCycleDay();
+  const cycle=getBookExpenseCycleDayForDate(activeBook(),d);
   const y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
   let start;
   if(day>=cycle){
@@ -267,6 +295,7 @@ function ensureBookMigration(){
       icon:"📖",
       color:"#725cff",
       expenseCycleDay:1,
+      expenseCycleHistory:[{from:"1970-01-01",day:1}],
       createdAt:new Date().toISOString(),
       isDefault:true
     };
@@ -278,6 +307,10 @@ function ensureBookMigration(){
     const beforeIcon=book.icon, beforeColor=book.color, beforeCycle=book.expenseCycleDay;
     normalizeBookAppearance(book);
     if(!book.expenseCycleDay) book.expenseCycleDay=1;
+    if(!Array.isArray(book.expenseCycleHistory) || !book.expenseCycleHistory.length){
+      book.expenseCycleHistory=[{from:"1970-01-01",day:Number(book.expenseCycleDay||1)}];
+      changedBooks=true;
+    }
     if(beforeIcon!==book.icon || beforeColor!==book.color || beforeCycle!==book.expenseCycleDay) changedBooks=true;
   });
 
@@ -1186,6 +1219,7 @@ function addBook(){
     icon,
     color,
     expenseCycleDay:1,
+    expenseCycleHistory:[{from:dateKey(new Date()),day:1}],
     createdAt:new Date().toISOString()
   });
 
@@ -1246,6 +1280,117 @@ async function importData(file){
     if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
+function parseCsvRows(text){
+  const rows=[];
+  let row=[],cell="",quoted=false;
+
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(quoted){
+      if(ch==='"' && text[i+1]==='"'){cell+='"';i++;}
+      else if(ch==='"'){quoted=false;}
+      else cell+=ch;
+    }else{
+      if(ch==='"') quoted=true;
+      else if(ch===','){row.push(cell);cell="";}
+      else if(ch==='\\n'){
+        row.push(cell.replace(/\\r$/,""));
+        rows.push(row);
+        row=[];cell="";
+      }else cell+=ch;
+    }
+  }
+  if(cell.length || row.length){row.push(cell.replace(/\\r$/,""));rows.push(row);}
+  return rows;
+}
+
+function parseImportedDate(value){
+  const v=String(value||"").trim();
+  if(/^\\d{4}-\\d{2}-\\d{2}$/.test(v)) return v;
+  const m=v.match(/^(\\d{1,2})[.\\/-](\\d{1,2})[.\\/-](\\d{4})$/);
+  if(!m) return "";
+  return `${m[3]}-${String(m[2]).padStart(2,"0")}-${String(m[1]).padStart(2,"0")}`;
+}
+
+async function importExpensesData(file){
+  try{
+    const raw=await file.text();
+    let imported=[];
+
+    if(file.name.toLowerCase().endsWith(".json")){
+      const data=JSON.parse(raw);
+      const arr=Array.isArray(data)?data:data.expenses;
+      if(!Array.isArray(arr)) throw new Error("json");
+      imported=arr.map(e=>({
+        date:parseImportedDate(e.date),
+        title:String(e.title||e.name||"Gasto").trim(),
+        description:String(e.description||"").trim(),
+        amount:Number(e.amount||0),
+        currency:String(e.currency||"MN").toUpperCase()==="DLS"?"DLS":"MN"
+      }));
+    }else if(file.name.toLowerCase().endsWith(".csv")){
+      const rows=parseCsvRows(raw.replace(/^\\ufeff/,""));
+      if(rows.length<2) throw new Error("csv");
+      const header=rows[0].map(x=>x.trim().toLowerCase());
+      const idx=(...names)=>header.findIndex(h=>names.includes(h));
+      const iDate=idx("fecha");
+      const iTitle=idx("en que gaste","en qué gasté","titulo","título");
+      const iDesc=idx("descripcion","descripción");
+      const iAmount=idx("monto","importe");
+      const iCurrency=idx("moneda");
+      if(iDate<0 || iTitle<0 || iAmount<0) throw new Error("headers");
+
+      imported=rows.slice(1).filter(r=>r.some(Boolean)).map(r=>({
+        date:parseImportedDate(r[iDate]),
+        title:String(r[iTitle]||"Gasto").trim(),
+        description:iDesc>=0?String(r[iDesc]||"").trim():"",
+        amount:Number(String(r[iAmount]||"0").replace(/[$,\\s]/g,"")),
+        currency:iCurrency>=0 && String(r[iCurrency]||"MN").trim().toUpperCase()==="DLS"?"DLS":"MN"
+      }));
+    }else{
+      imported=raw.split(/\\r?\\n/)
+        .filter(line=>line.includes("|"))
+        .map(line=>{
+          const parts=line.split("|").map(x=>x.trim());
+          return {
+            date:parseImportedDate(parts[0]),
+            title:parts[1]||"Gasto",
+            description:parts[2]||"",
+            amount:Number(String(parts[3]||"0").replace(/[^0-9.-]/g,"")),
+            currency:String(parts[4]||"MN").toUpperCase().includes("DLS")?"DLS":"MN"
+          };
+        });
+    }
+
+    imported=imported.filter(e=>
+      e.date &&
+      e.title &&
+      Number.isFinite(e.amount) &&
+      e.amount>0 &&
+      e.amount<=99999999.99
+    );
+
+    if(!imported.length) throw new Error("empty");
+
+    imported.forEach(e=>{
+      expenses.push({
+        id:uid(),
+        bookId:activeBookId,
+        cycleDay:getBookExpenseCycleDayForDate(activeBook(),parseDate(e.date)),
+        ...e,
+        createdAt:new Date().toISOString(),
+        importedAt:new Date().toISOString()
+      });
+    });
+
+    saveExpenses();
+    renderAll();
+    toast(`${imported.length} ${imported.length===1?"gasto importado":"gastos importados"} al libro activo.`);
+  }catch{
+    toast("Archivo de gastos no válido.");
+  }
+}
+
 
 
 function populateSettings(){
@@ -1359,6 +1504,105 @@ function shiftViewExpenseDate(type){
   renderAll();
 }
 
+function expensePeriodKey(period){
+  return `${dateKey(period.start)}__${dateKey(period.end)}`;
+}
+
+function getExpenseLogPeriods(){
+  const current=currentExpensePeriod();
+  const currentKey=expensePeriodKey(current);
+  const map=new Map();
+
+  activeExpenses().forEach(e=>{
+    const d=parseDate(e.date);
+    const period=expenseCycleRange(d);
+    const key=expensePeriodKey(period);
+    if(key===currentKey) return;
+
+    if(!map.has(key)){
+      map.set(key,{
+        key,
+        start:period.start,
+        end:period.end,
+        token:periodFileToken(period),
+        count:0,
+        totalMN:0,
+        totalDLS:0
+      });
+    }
+
+    const p=map.get(key);
+    p.count++;
+    if(e.currency==="DLS") p.totalDLS+=Number(e.amount||0);
+    else p.totalMN+=Number(e.amount||0);
+  });
+
+  return [...map.values()].sort((a,b)=>a.start-b.start);
+}
+
+function renderExpenseLog(){
+  const box=$("#expenseLogPeriods");
+  if(!box) return;
+
+  const periods=getExpenseLogPeriods();
+  box.innerHTML=periods.length ? periods.map(p=>`
+    <label class="expense-log-period-card">
+      <input type="checkbox" data-expense-period="${p.key}">
+      <span class="expense-log-check">✓</span>
+      <span class="expense-log-copy">
+        <strong>${p.token}</strong>
+        <small>${dotDate(p.start)}–${dotDate(p.end)} · ${p.count} ${p.count===1?"gasto":"gastos"}</small>
+        <small>${p.totalMN?`$${money(p.totalMN)} MN`:""}${p.totalMN&&p.totalDLS?" · ":""}${p.totalDLS?`$${money(p.totalDLS)} DLS`:""}</small>
+      </span>
+    </label>
+  `).join("") : `<div class="empty">Todavía no hay periodos anteriores con gastos.</div>`;
+}
+
+function openExpenseLog(){
+  renderExpenseLog();
+  $("#expenseLogDialog").showModal();
+}
+
+function exportSelectedExpensePeriods(){
+  const selected=[...$$("[data-expense-period]:checked")].map(x=>x.dataset.expensePeriod);
+  if(!selected.length){
+    toast("Selecciona al menos un periodo.");
+    return;
+  }
+
+  const periods=getExpenseLogPeriods()
+    .filter(p=>selected.includes(p.key))
+    .sort((a,b)=>a.start-b.start);
+
+  const rows=[];
+  periods.forEach(period=>{
+    expensesInRange(period.start,period.end).forEach(e=>{
+      rows.push({...e,_period:period.token});
+    });
+  });
+
+  const csvRows=[["Periodo","Fecha","En que gaste","Descripcion","Monto","Moneda","Libro"]];
+  const book=activeBook();
+  rows.forEach(e=>csvRows.push([
+    e._period,
+    dotDate(parseDate(e.date)),
+    e.title,
+    e.description||"",
+    Number(e.amount||0).toFixed(2),
+    e.currency,
+    book?.name||""
+  ]));
+
+  const csv="\\ufeff"+csvRows.map(r=>r.map(csvCell).join(",")).join("\\r\\n");
+  const first=periods[0].token;
+  const last=periods[periods.length-1].token;
+  const name=periods.length===1 ? `gastos_${first}.csv` : `gastos_${first}-${last}.csv`;
+
+  downloadText(name,csv,"text/csv;charset=utf-8");
+  toast(`${periods.length} ${periods.length===1?"periodo exportado":"periodos exportados"}.`);
+  $("#expenseLogDialog").close();
+}
+
 function renderViewExpenses(){
   if(!$("#viewExpensesList")) return;
 
@@ -1442,26 +1686,75 @@ function downloadText(filename,text,type="text/plain;charset=utf-8"){
   a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),500);
 }
-function exportExpensesTxt(){
-  const rows=[`GASTOS - ${settings.appTitle||"Mis Tareas"}`,""];
-  [...expenses].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>{
+function monthAbbrEs(d){
+  return ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][d.getMonth()];
+}
+
+function periodFileToken(period){
+  const labelDate=period.end;
+  return `${monthAbbrEs(labelDate)}${String(labelDate.getFullYear()).slice(-2)}`;
+}
+
+function expensesInRange(start,end){
+  return activeExpenses()
+    .filter(e=>{
+      const d=parseDate(e.date);
+      return d>=start && d<=end;
+    })
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function buildExpensesTxt(list,title){
+  const book=activeBook();
+  const rows=[
+    `GASTOS - ${book?.name||"Libro"}`,
+    title,
+    ""
+  ];
+  list.forEach(e=>{
     rows.push(`${dotDate(parseDate(e.date))} | ${e.title} | ${e.description||""} | $${money(e.amount)} ${e.currency}`);
   });
-  downloadText(`gastos_${dateKey(new Date())}.txt`,rows.join("\n"));
+  return rows.join("\\n");
+}
+
+function buildExpensesCsv(list){
+  const rows=[["Fecha","En que gaste","Descripcion","Monto","Moneda","Libro"]];
+  const book=activeBook();
+  list.forEach(e=>rows.push([
+    dotDate(parseDate(e.date)),
+    e.title,
+    e.description||"",
+    Number(e.amount||0).toFixed(2),
+    e.currency,
+    book?.name||""
+  ]));
+  return "\\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\\r\\n");
+}
+
+function currentExpensePeriod(){
+  return expenseCycleRange(new Date());
+}
+
+function exportExpensesTxt(){
+  const period=currentExpensePeriod();
+  const list=expensesInRange(period.start,period.end);
+  const token=periodFileToken(period);
+  const title=`Periodo: ${dotDate(period.start)}–${dotDate(period.end)}`;
+  downloadText(`gastos_${token}.txt`,buildExpensesTxt(list,title));
   markExport("txt");
+  toast(`Gastos del periodo ${token} exportados.`);
 }
 function csvCell(v){
   const s=String(v??"").replace(/"/g,'""');
   return `"${s}"`;
 }
 function exportExpensesCsv(){
-  const rows=[["Fecha","En que gaste","Descripcion","Monto","Moneda"]];
-  [...expenses].sort((a,b)=>a.date.localeCompare(b.date)).forEach(e=>rows.push([
-    dotDate(parseDate(e.date)),e.title,e.description||"",Number(e.amount||0).toFixed(2),e.currency
-  ]));
-  const csv="\ufeff"+rows.map(r=>r.map(csvCell).join(",")).join("\r\n");
-  downloadText(`gastos_${dateKey(new Date())}.csv`,csv,"text/csv;charset=utf-8");
+  const period=currentExpensePeriod();
+  const list=expensesInRange(period.start,period.end);
+  const token=periodFileToken(period);
+  downloadText(`gastos_${token}.csv`,buildExpensesCsv(list),"text/csv;charset=utf-8");
   markExport("csv");
+  toast(`Gastos del periodo ${token} exportados.`);
 }
 
 $("#taskForm").addEventListener("submit",e=>{
@@ -1518,6 +1811,15 @@ $$("[data-view-expense-shift]").forEach(btn=>{
 });
 $("#addExpenseBtn").onclick=()=>openExpenseDialog();
 $("#closeExpenseDialog").onclick=$("#cancelExpenseBtn").onclick=()=>$("#expenseDialog").close();
+$("#expenseLogBtn").onclick=()=>{
+  $("#expenseDialog").close();
+  openExpenseLog();
+};
+$("#closeExpenseLogDialog").onclick=$("#cancelExpenseLogBtn").onclick=()=>$("#expenseLogDialog").close();
+$("#exportExpenseLogBtn").onclick=exportSelectedExpensePeriods;
+$("#expenseLogDialog").addEventListener("click",e=>{
+  if(e.target===$("#expenseLogDialog")) $("#expenseLogDialog").close();
+});
 $$("[data-expense-shift]").forEach(b=>b.onclick=()=>shiftExpenseDate(b.dataset.expenseShift));
 
 $("#expenseAmountDisplay").addEventListener("input",e=>{
@@ -1578,7 +1880,7 @@ $("#expenseForm").addEventListener("submit",e=>{
     const i=expenses.findIndex(x=>x.id===id);
     if(i>=0) expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
   }else{
-    expenses.push({id:uid(),bookId:activeBookId,...data,createdAt:new Date().toISOString()});
+    expenses.push({id:uid(),bookId:activeBookId,cycleDay:getActiveBookExpenseCycleDay(),...data,createdAt:new Date().toISOString()});
   }
 
   selectedDate=parseDate(data.date);
@@ -1657,6 +1959,14 @@ $$("dialog [id*='cancel'], dialog [id*='Cancel'], dialog .cancel-btn").forEach(b
     if(dialog && dialog.open) dialog.close();
   });
 });
+$$(".bottom-nav button").forEach(btn=>{
+  btn.addEventListener("pointerdown",()=>{
+    btn.classList.remove("nav-pulse");
+    void btn.offsetWidth;
+    btn.classList.add("nav-pulse");
+    setTimeout(()=>btn.classList.remove("nav-pulse"),420);
+  });
+});
 $("#bottomAddBtn").onclick=()=>openTask();
 function setSelectedDay(d){
   selectedDate=startOfDay(d);
@@ -1694,7 +2004,29 @@ $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
 $("#exportExpensesCsvBtn").onclick=exportExpensesCsv;
 $("#exportBtn").onclick=exportData;
-$("#importInput").onchange=e=>e.target.files[0]&&importData(e.target.files[0]);
+$("#importBtn").onclick=()=>$("#importChoiceDialog").showModal();
+$("#closeImportChoiceDialog").onclick=$("#cancelImportChoiceBtn").onclick=()=>$("#importChoiceDialog").close();
+$("#chooseImportTasksBtn").onclick=()=>{
+  $("#importChoiceDialog").close();
+  $("#importInput").click();
+};
+$("#chooseImportExpensesBtn").onclick=()=>{
+  $("#importChoiceDialog").close();
+  $("#importExpensesInput").click();
+};
+$("#importInput").onchange=e=>{
+  const file=e.target.files[0];
+  if(file) importData(file);
+  e.target.value="";
+};
+$("#importExpensesInput").onchange=e=>{
+  const file=e.target.files[0];
+  if(file) importExpensesData(file);
+  e.target.value="";
+};
+$("#importChoiceDialog").addEventListener("click",e=>{
+  if(e.target===$("#importChoiceDialog")) $("#importChoiceDialog").close();
+});
 $("#clearBtn").onclick=async()=>{if(await comicConfirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?",{title:"Borrar todos los datos",okText:"🗑 Borrar todo"})){tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");}};
 $("#emptyTrashBtn").onclick=async()=>{
   if(!trash.length){toast("La papelera ya está vacía.");return;}
