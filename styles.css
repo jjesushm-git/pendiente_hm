@@ -2256,3 +2256,192 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
   :root[data-theme="emerald_gold"] .week-day{min-height:68px;padding:9px 2px !important}
   :root[data-theme="emerald_gold"] .bottom-nav{width:100% !important}
 }
+
+
+/* =========================================================
+   VERSION 11.5.1 — AJUSTES VISUALES DEL TEMA DEFAULT
+   ========================================================= */
+
+/* Barra inferior: fondo blanco/crema; solo + conserva verde/dorado */
+:root[data-theme="emerald_gold"] .bottom-nav{
+  background:#fffdf5 !important;
+  border-top:1px solid rgba(190,150,37,.35) !important;
+  box-shadow:0 -7px 18px rgba(67,77,50,.06) !important;
+}
+
+:root[data-theme="emerald_gold"] .bottom-tab{
+  background:transparent !important;
+  color:#5f7166 !important;
+  border:0 !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] .bottom-tab.active{
+  background:transparent !important;
+  color:#0f5c43 !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] .bottom-add,
+:root[data-theme="emerald_gold"] .bottom-add span{
+  background:linear-gradient(135deg,#0d593e,#168158) !important;
+  color:#fffdf4 !important;
+  border-color:#caa32b !important;
+  box-shadow:0 6px 16px rgba(15,92,67,.15) !important;
+}
+
+/* Gastos: contenido totalmente blanco/crema */
+:root[data-theme="emerald_gold"] #expenseDialog,
+:root[data-theme="emerald_gold"] #viewExpensesDialog,
+:root[data-theme="emerald_gold"] .expense-dialog,
+:root[data-theme="emerald_gold"] .view-expenses-dialog{
+  background:#fffdf5 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.50) !important;
+}
+
+:root[data-theme="emerald_gold"] #expenseDialog .modal-head,
+:root[data-theme="emerald_gold"] #viewExpensesDialog .modal-head,
+:root[data-theme="emerald_gold"] .expense-dialog .modal-head,
+:root[data-theme="emerald_gold"] .view-expenses-dialog .modal-head{
+  background:linear-gradient(135deg,#084831,#126948) !important;
+  color:#fffdf4 !important;
+  border-bottom:2px solid #cda62e !important;
+}
+
+:root[data-theme="emerald_gold"] .expense-date-nav,
+:root[data-theme="emerald_gold"] .expense-view-total,
+:root[data-theme="emerald_gold"] .expense-total-card,
+:root[data-theme="emerald_gold"] .expense-card,
+:root[data-theme="emerald_gold"] .expenses-list,
+:root[data-theme="emerald_gold"] .expense-summary-detail{
+  background:#fffdf8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+:root[data-theme="emerald_gold"] .expense-date-nav button,
+:root[data-theme="emerald_gold"] .expense-nav-btn{
+  background:#fffdf8 !important;
+  color:#17382b !important;
+  border:1px solid rgba(190,150,37,.40) !important;
+}
+
+/* Libros: blanco/crema en lista y administrar */
+:root[data-theme="emerald_gold"] #booksDialog,
+:root[data-theme="emerald_gold"] .books-dialog{
+  background:#fffdf5 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.50) !important;
+}
+
+:root[data-theme="emerald_gold"] #booksDialog .modal-head,
+:root[data-theme="emerald_gold"] .books-dialog .modal-head{
+  background:linear-gradient(135deg,#084831,#126948) !important;
+  color:#fffdf4 !important;
+  border-bottom:2px solid #cda62e !important;
+}
+
+:root[data-theme="emerald_gold"] .book-select-card,
+:root[data-theme="emerald_gold"] .books-add-panel,
+:root[data-theme="emerald_gold"] .books-footer-note,
+:root[data-theme="emerald_gold"] .book-form-toggle{
+  background:#fffdf8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.40) !important;
+}
+
+:root[data-theme="emerald_gold"] .book-form-toggle{
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] .book-row-actions button{
+  background:#fffdf8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+/* Modal de comentarios: deja de verse oscuro */
+:root[data-theme="emerald_gold"] #commentDialog,
+:root[data-theme="emerald_gold"] .comment-dialog{
+  background:#fffdf5 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.50) !important;
+}
+
+:root[data-theme="emerald_gold"] #commentDialog .modal-head,
+:root[data-theme="emerald_gold"] .comment-dialog .modal-head{
+  background:linear-gradient(135deg,#084831,#126948) !important;
+  color:#fffdf4 !important;
+  border-bottom:2px solid #cda62e !important;
+}
+
+:root[data-theme="emerald_gold"] .comment-dialog-body{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border:1px solid rgba(190,150,37,.38) !important;
+  box-shadow:none !important;
+}
+
+/* Cierres en modales sobre encabezado verde */
+:root[data-theme="emerald_gold"] .books-dialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] .comment-dialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] .expense-dialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] .view-expenses-dialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] #booksDialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] #commentDialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] #expenseDialog .modal-head .icon-btn,
+:root[data-theme="emerald_gold"] #viewExpensesDialog .modal-head .icon-btn{
+  background:rgba(255,255,255,.05) !important;
+  color:#fffdf4 !important;
+  border-color:rgba(205,165,46,.55) !important;
+}
+
+/* Libros: selector de emoticonos por secciones */
+.book-icon-picker{
+  display:grid !important;
+  gap:14px !important;
+  max-height:350px !important;
+  overflow:auto !important;
+  padding-right:4px;
+}
+
+.book-emoji-section{
+  display:grid;
+  gap:7px;
+}
+
+.book-emoji-section h4{
+  margin:0;
+  font-size:.82rem;
+  color:var(--muted);
+}
+
+.book-emoji-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(34px,1fr));
+  gap:6px;
+}
+
+.book-emoji-grid .book-icon-option{
+  width:100% !important;
+  min-width:34px;
+  min-height:38px;
+}
+
+:root[data-theme="emerald_gold"] .book-adventure-section{
+  padding:10px;
+  border:1px solid rgba(190,150,37,.30);
+  border-radius:12px;
+  background:linear-gradient(180deg,rgba(15,92,67,.045),rgba(210,170,52,.055));
+}
+
+:root[data-theme="emerald_gold"] .book-adventure-section h4{
+  color:#96700d !important;
+}
+
+@media(max-width:600px){
+  .book-emoji-grid{
+    grid-template-columns:repeat(6,minmax(32px,1fr));
+  }
+}
