@@ -14,12 +14,12 @@
       <div>
         <p class="eyebrow">Organizador personal</p>
         <h1 id="appTitle">Mis Tareas</h1>
-        <button id="activeBookChip" class="active-book-chip" type="button" title="Cambiar libro">
+      </div>
+      <div class="top-actions">
+        <button id="activeBookChip" class="active-book-chip active-book-chip-top" type="button" title="Cambiar libro">
           <span id="activeBookChipIcon">📖</span>
           <span id="activeBookChipName">Libro 1</span>
         </button>
-      </div>
-      <div class="top-actions">
         <button id="notifyBtn" class="icon-btn" title="Activar notificaciones">🔔</button>
         <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
       </div>
@@ -340,7 +340,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.2</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.2.1</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -565,7 +565,10 @@
       <input id="bookIconInput" type="hidden" value="📖" />
       <input id="bookColorInput" type="hidden" value="#725cff" />
 
-      <button id="addBookBtn" type="button" class="primary-btn">＋ Agregar libro</button>
+      <div class="book-form-actions">
+        <button id="deleteBookBtn" type="button" class="danger-btn hidden">🗑 Borrar libro</button>
+        <button id="addBookBtn" type="button" class="primary-btn">＋ Agregar libro</button>
+      </div>
       <small id="bookNameCounter" class="book-counter">0/20</small>
     </div>
 

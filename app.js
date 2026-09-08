@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.2";
+const APP_VERSION = "11.0.2.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -157,7 +157,15 @@ function saveBooks(){
   renderBooks();
 }
 
-const BOOK_ICONS=["📖","📘","📗","📕","📙","📓","📔","🗂️","💼","🏠","⭐","🎯"];
+const BOOK_ICONS=[
+  "📖","📘","📗","📕","📙","📓","📔",
+  "📌","✅","☑️","📝","📋","📁","📂","🗂️","🗃️","🗄️",
+  "💼","🏢","🏭","👷","🧑‍💼","👨‍💻","👩‍💻","💻","🖥️","🖨️","⌨️",
+  "📊","📈","📉","🧾","📦","🚚","📞","📧","📅","🗓️","⏰","🔔",
+  "⚙️","🔧","🛠️","🔩","📐","📏","✏️","🖊️","📎","🔍","🎯",
+  "💰","💵","💴","💶","💷","🪙","💳","🏦","🏧","💹","🧮","🧾",
+  "🛒","🏠","🚗","⛽","✈️","🎓","📚","⭐","⚡","🔑"
+];
 const BOOK_COLORS=["#725cff","#3d8bfd","#22b573","#d7a928","#f06a6a","#b56cff","#5aa7a7","#8d98a8"];
 
 function normalizeBookAppearance(book){
@@ -426,6 +434,7 @@ function renderEmojiPicker(){
 
 
 function renderAll(){
+  updateActiveBookChip();
   normalizeStatuses();
   purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderExpenseSummary();
 }
@@ -888,6 +897,59 @@ function comicConfirm(message, options={}){
 
 
 
+
+async function deleteEditingBook(){
+  if(!editingBookId) return;
+
+  const book=books.find(b=>b.id===editingBookId);
+  if(!book) return;
+
+  if(books.length<=1){
+    toast("Debe existir al menos un libro.");
+    return;
+  }
+
+  const bookTasksCount=tasks.filter(t=>t.bookId===book.id).length;
+  const bookExpensesCount=expenses.filter(e=>e.bookId===book.id).length;
+
+  const ok=await comicConfirm(
+    `¿Borrar el libro "${book.name}"? También se eliminarán ${bookTasksCount} tareas y ${bookExpensesCount} gastos de este libro.`,
+    {title:"Borrar libro",okText:"🗑 Borrar libro"}
+  );
+  if(!ok) return;
+
+  tasks=tasks.filter(t=>t.bookId!==book.id);
+  trash=trash.filter(t=>t.bookId!==book.id);
+  expenses=expenses.filter(e=>e.bookId!==book.id);
+  books=books.filter(b=>b.id!==book.id);
+
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+  localStorage.setItem(TRASH_KEY,JSON.stringify(trash));
+  localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses));
+  localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+
+  if(activeBookId===book.id){
+    activeBookId=books[0]?.id||"";
+    if(activeBookId) localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
+    else localStorage.removeItem(ACTIVE_BOOK_KEY);
+  }
+
+  editingBookId=null;
+  $("#bookNameInput").value="";
+  $("#bookNameCounter").textContent="0/20";
+  $("#bookIconInput").value="📖";
+  $("#bookColorInput").value="#725cff";
+  $("#bookFormLabel").firstChild.textContent="Agregar libro ";
+  $("#addBookBtn").textContent="＋ Agregar libro";
+  $("#deleteBookBtn").classList.add("hidden");
+
+  updateActiveBookChip();
+  renderBookCustomizePickers();
+  renderBooks();
+  renderAll();
+  toast("Libro borrado.");
+}
+
 function moveBook(bookId,direction){
   const index=books.findIndex(b=>b.id===bookId);
   if(index<0) return;
@@ -953,6 +1015,7 @@ function renderBooks(){
     $("#bookColorInput").value=book.color;
     $("#bookFormLabel").firstChild.textContent="Editar libro ";
     $("#addBookBtn").textContent="Guardar";
+    $("#deleteBookBtn").classList.remove("hidden");
     renderBookCustomizePickers();
     $("#bookNameInput").focus();
   });
@@ -970,6 +1033,7 @@ function openBooksDialog(){
   $("#bookColorInput").value="#725cff";
   $("#bookFormLabel").firstChild.textContent="Agregar libro ";
   $("#addBookBtn").textContent="＋ Agregar libro";
+  $("#deleteBookBtn").classList.add("hidden");
   renderBookCustomizePickers();
   renderBooks();
   $("#booksDialog").showModal();
@@ -1006,8 +1070,10 @@ function addBook(){
     $("#bookColorInput").value="#725cff";
     $("#bookFormLabel").firstChild.textContent="Agregar libro ";
     $("#addBookBtn").textContent="＋ Agregar libro";
+    $("#deleteBookBtn").classList.add("hidden");
     renderBookCustomizePickers();
     renderBooks();
+    updateActiveBookChip();
     toast("Nombre de libro actualizado.");
     return;
   }
@@ -1026,6 +1092,7 @@ function addBook(){
   $("#bookIconInput").value="📖";
   $("#bookColorInput").value="#725cff";
   renderBookCustomizePickers();
+  $("#deleteBookBtn").classList.add("hidden");
   renderBooks();
   toast("Libro agregado.");
 }
@@ -1430,6 +1497,7 @@ $("#booksBtn").onclick=openBooksDialog;
 $("#activeBookChip").onclick=openBooksDialog;
 $("#closeBooksDialog").onclick=()=>{finalizeBookSelection();$("#booksDialog").close();};
 $("#addBookBtn").onclick=addBook;
+$("#deleteBookBtn").onclick=deleteEditingBook;
 
 $("#bookNameInput").addEventListener("input",e=>{
   const value=e.target.value.slice(0,20);

@@ -1249,3 +1249,75 @@ button{cursor:pointer}
     max-width:165px;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.0.2.1
+   ========================================================= */
+
+.top-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.active-book-chip-top{
+  margin-top:0 !important;
+  max-width:210px;
+  min-height:44px;
+  padding:7px 11px;
+  border-radius:13px;
+  background:color-mix(in srgb,var(--active-book-color) 10%,#101d31);
+  border:1px solid color-mix(in srgb,var(--active-book-color) 36%,var(--line));
+  color:var(--text);
+}
+
+.active-book-chip-top #activeBookChipName{
+  max-width:145px;
+}
+
+.book-form-actions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.book-form-actions #addBookBtn,
+.book-form-actions #deleteBookBtn{
+  flex:1;
+}
+
+#deleteBookBtn.hidden{
+  display:none !important;
+}
+
+.book-icon-picker{
+  max-height:170px;
+  overflow:auto;
+  padding-right:3px;
+}
+
+.book-icon-option{
+  width:36px;
+  height:36px;
+}
+
+@media(max-width:700px){
+  .topbar{
+    align-items:flex-start;
+  }
+
+  .top-actions{
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .active-book-chip-top{
+    max-width:155px;
+  }
+
+  .active-book-chip-top #activeBookChipName{
+    max-width:100px;
+  }
+}
