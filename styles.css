@@ -1585,3 +1585,53 @@ button{cursor:pointer}
     flex-wrap:wrap;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.0.4
+   ========================================================= */
+
+.comment-icon-btn,
+.mini-comment-btn{
+  border:0;
+  background:transparent;
+  color:inherit;
+  padding:1px 3px;
+  min-width:0;
+  min-height:0;
+  cursor:pointer;
+  border-radius:7px;
+  font-size:1rem;
+}
+
+.comment-icon-btn:hover,
+.mini-comment-btn:hover{
+  background:rgba(126,91,255,.10);
+}
+
+.comment-icon-btn:active,
+.mini-comment-btn:active{
+  transform:scale(.92);
+}
+
+.comment-dialog{
+  max-width:min(92vw,500px);
+}
+
+.comment-dialog-body{
+  min-height:80px;
+  max-height:55vh;
+  overflow:auto;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:rgba(13,29,49,.72);
+  color:var(--text);
+  white-space:pre-wrap;
+  line-height:1.5;
+}
+
+.mini-comment-btn{
+  vertical-align:middle;
+  font-size:.92rem;
+}

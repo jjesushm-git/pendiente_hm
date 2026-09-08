@@ -1,14 +1,17 @@
-# Mis Tareas — Versión 11.0.3.1 corregida
+# Mis Tareas — Versión 11.0.4
 
-Base: Versión 11.0.3.1 estable.
+Base: Versión 11.0.3.1 corregida estable.
 
-Correcciones:
-- Regresan los indicadores Pendiente / En proceso.
-- Completada y No completada se muestran como chips dentro de la tarjeta.
-- Se elimina el indicador grande de estado del extremo derecho.
-- Alta importancia permanece como primer botón.
-- Editar queda a la izquierda y Eliminar al mismo nivel a la derecha.
-- Reabrir queda junto a Editar cuando corresponde.
-- Al reabrir una tarea se agrega automáticamente al comentario:
-  “Tarea reabierta por no ser completada el día DD/MM/AAAA.”
-- Se conserva el comentario anterior y se añade la nota de reapertura.
+Cambios:
+- El día de inicio para sumar gastos del mes ahora se guarda por libro.
+- Cada libro nuevo inicia con día 1 por defecto.
+- Ejemplo:
+  - Libro 1 puede usar día 11.
+  - Libro 2 puede usar día 14.
+  - Al volver a Libro 1, seguirá mostrando día 11.
+- En Ajustes se aclara que este valor pertenece al libro activo.
+- Si una tarea tiene comentario, ya no se muestra todo el texto dentro de la tarjeta.
+- En su lugar aparece únicamente el icono 💬.
+- Al tocar 💬 se abre un modal con el comentario completo.
+- El modal puede cerrarse con X o tocando fuera.
+- El icono de comentario también aparece en Semana y Tablero cuando corresponde.

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.3.1 corregida";
+const APP_VERSION = "11.0.4";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -83,8 +83,22 @@ function expenseTotalsForDate(d){
     DLS:day.filter(e=>e.currency==="DLS").reduce((s,e)=>s+Number(e.amount||0),0)
   };
 }
+
+function getActiveBookExpenseCycleDay(){
+  const book=activeBook();
+  const value=Number(book?.expenseCycleDay||1);
+  return Math.min(31,Math.max(1,value));
+}
+
+function setActiveBookExpenseCycleDay(day){
+  const book=activeBook();
+  if(!book) return;
+  book.expenseCycleDay=Math.min(31,Math.max(1,Number(day||1)));
+  localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+}
+
 function expenseCycleRange(d){
-  const cycle=Math.min(31,Math.max(1,Number(settings.expenseCycleDay||1)));
+  const cycle=getActiveBookExpenseCycleDay();
   const y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
   let start;
   if(day>=cycle){
@@ -240,6 +254,7 @@ function ensureBookMigration(){
       name:"Libro 1",
       icon:"📖",
       color:"#725cff",
+      expenseCycleDay:1,
       createdAt:new Date().toISOString(),
       isDefault:true
     };
@@ -248,9 +263,10 @@ function ensureBookMigration(){
   }
 
   books.forEach(book=>{
-    const beforeIcon=book.icon, beforeColor=book.color;
+    const beforeIcon=book.icon, beforeColor=book.color, beforeCycle=book.expenseCycleDay;
     normalizeBookAppearance(book);
-    if(beforeIcon!==book.icon || beforeColor!==book.color) changedBooks=true;
+    if(!book.expenseCycleDay) book.expenseCycleDay=1;
+    if(beforeIcon!==book.icon || beforeColor!==book.color || beforeCycle!==book.expenseCycleDay) changedBooks=true;
   });
 
   let changedTasks=false;
@@ -584,7 +600,7 @@ function taskCard(t){
           ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
           ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
-          ${t.comment?`<span>💬 ${esc(t.comment)}</span>`:""}
+          ${t.comment?`<button type="button" class="comment-icon-btn" data-comment-task="${t.id}" title="Ver comentario">💬</button>`:""}
         </div>
         <div class="card-actions task-card-actions">
           <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
@@ -642,7 +658,22 @@ function openEmojiOnlyEditor(taskId){
   $("#emojiDialog").showModal();
 }
 
+
+function openCommentDialog(taskId){
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task || !task.comment) return;
+  $("#commentDialogTitle").textContent=task.title||"Comentario";
+  $("#commentDialogBody").textContent=task.comment;
+  $("#commentDialog").showModal();
+}
+
 function bindTaskActions(){
+  $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openCommentDialog(btn.dataset.commentTask);
+  });
+
   $$("[data-important]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
@@ -720,10 +751,16 @@ function renderWeek(){
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
       ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}">
         <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
-        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)}</small></span>
+        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} ${t.comment?`· <button type="button" class="mini-comment-btn" data-comment-task="${t.id}">💬</button>`:""}</small></span>
       </div>`).join("")}
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
+
+  $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openCommentDialog(btn.dataset.commentTask);
+  });
 
   $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
@@ -758,6 +795,7 @@ function renderBoard(){
       ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
       ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
       ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
+      ${t.comment?`<button type="button" class="comment-icon-btn" data-comment-task="${t.id}" title="Ver comentario">💬</button>`:""}
     </div>
     <label class="board-move-label">Mover a
       <select data-board-move="${t.id}">
@@ -1143,6 +1181,7 @@ function addBook(){
     name,
     icon,
     color,
+    expenseCycleDay:1,
     createdAt:new Date().toISOString()
   });
 
@@ -1208,7 +1247,7 @@ async function importData(file){
 function populateSettings(){
   $("#defaultPendingFilter").value=settings.defaultPendingFilter||"upcoming";
   $("#expenseCycleDay").innerHTML=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
-  $("#expenseCycleDay").value=String(settings.expenseCycleDay||1);
+  $("#expenseCycleDay").value=String(getActiveBookExpenseCycleDay());
   $("#customAppTitle").value=settings.appTitle||"Mis Tareas";
   renderExportMarks();
 }
@@ -1223,7 +1262,7 @@ function saveSettingsFromDialog(){
     return;
   }
   settings.defaultPendingFilter=$("#defaultPendingFilter").value;
-  settings.expenseCycleDay=Number($("#expenseCycleDay").value||1);
+  setActiveBookExpenseCycleDay($("#expenseCycleDay").value);
   settings.appTitle=title;
   saveSettings();
   applySettings();
@@ -1553,6 +1592,16 @@ $("#expenseForm").addEventListener("submit",e=>{
   toast(id ? "Gasto actualizado." : "Gasto guardado.");
 });
 
+
+
+$("#closeCommentDialog").onclick=()=>$("#commentDialog").close();
+$("#commentDialog").addEventListener("click",e=>{
+  if(e.target===$("#commentDialog")) $("#commentDialog").close();
+});
+$("#commentDialog").addEventListener("cancel",e=>{
+  e.preventDefault();
+  $("#commentDialog").close();
+});
 
 $("#booksBtn").onclick=openBooksDialog;
 $("#activeBookSelect").onchange=e=>{

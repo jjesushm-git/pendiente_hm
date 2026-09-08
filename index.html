@@ -348,7 +348,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.3.1 corregida</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.4</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -362,6 +362,7 @@
 
         <label>Día de inicio para sumar gastos del mes
           <select id="expenseCycleDay"></select>
+          <small>Este valor se guarda de forma independiente para el libro activo.</small>
         </label>
 
         <label>Título de la aplicación
@@ -591,6 +592,18 @@
       <small>Si cierras sin seleccionar uno, se usará automáticamente el primero de la lista.</small>
     </div>
   </dialog>
-<script src="app.js" defer></script>
+
+  <dialog id="commentDialog" class="modal comment-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Comentario de tarea</p>
+        <h2 id="commentDialogTitle">Comentario</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeCommentDialog">✕</button>
+    </div>
+    <div id="commentDialogBody" class="comment-dialog-body"></div>
+  </dialog>
+
+  <script src="app.js" defer></script>
 </body>
 </html>
