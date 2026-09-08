@@ -1,23 +1,11 @@
-# Mis Tareas — Versión 11.0.4.2
+# Mis Tareas — Versión 11.0.4.2.1 REPARADA
 
-Base: Versión 11.0.4.1 P.
+Corrección de publicación/caché sobre la 11.0.4.2:
 
-Cambios:
-- Se rediseña únicamente el tema predeterminado Esmeralda dorado.
-- El tema predeterminado ahora usa:
-  - fondo blanco/crema,
-  - verde esmeralda profundo,
-  - líneas y detalles dorados,
-  - tarjetas claras con borde dorado,
-  - encabezado verde.
-- Los demás temas permanecen sin cambios.
-- La categoría Aventura de emoticonos se amplía considerablemente.
-- Se agregan muchos más símbolos genéricos de aventura, herramientas, monedas, mapas, llaves, naturaleza y fantasía.
-- Los libros ahora usan un selector de emoticonos por secciones, igual que las tareas:
-  - Trabajo
-  - Tareas y organización
-  - Dinero y compras
-  - Comida
-  - Sociales
-  - Aventura (solo visible con el tema Esmeralda dorado)
-- Los emoticonos de aventura también pueden utilizarse como icono de libro.
+- Conserva todas las funciones y datos de 11.0.4.2.
+- El tema Esmeralda dorado se declara directamente en HTML para evitar una pantalla con estilos antiguos mientras carga JS.
+- CSS, JS y manifest usan una versión en la URL para evitar archivos viejos de caché.
+- Service Worker actualizado con caché mis-tareas-11-0-4-2-1.
+- Los archivos principales usan red primero y caché solo como respaldo.
+- El botón Actualizar aplicación limpia únicamente cachés antiguas; NO borra localStorage, tareas, libros ni gastos.
+- Manifest actualizado a verde esmeralda / crema.

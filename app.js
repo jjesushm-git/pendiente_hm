@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.4.2";
+const APP_VERSION = "11.0.4.2.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1229,7 +1229,8 @@ function exportData(){
 async function importData(file){
   try{
     const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
-    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); saveTrash(); saveTasks(); toast("Respaldo importado.");
+    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration();
+applyTheme(settings.theme||"emerald_gold"); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 
@@ -1665,16 +1666,20 @@ $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll
 $("#settingsBtnTop").onclick=()=>{populateSettings();$("#settingsSavedMessage").classList.add("hidden");$("#settingsDialog").showModal();};
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
+  toast("Buscando actualización...");
   try{
+    if("caches" in window){
+      const keys=await caches.keys();
+      await Promise.all(keys.filter(k=>k!=="mis-tareas-11-0-4-2-1").map(k=>caches.delete(k)));
+    }
     if("serviceWorker" in navigator){
       const reg=await navigator.serviceWorker.getRegistration();
       if(reg) await reg.update();
     }
-    toast("Buscando actualización...");
-    setTimeout(()=>location.reload(),700);
-  }catch{
-    location.reload();
-  }
+  }catch{}
+  const url=new URL(location.href);
+  url.searchParams.set("v","11.0.4.2.1");
+  setTimeout(()=>location.replace(url.toString()),450);
 };
 $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
