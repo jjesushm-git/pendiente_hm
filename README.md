@@ -1,14 +1,17 @@
-# Mis Tareas — Versión 11.0
+# Mis Tareas — Versión 11.0.1
 
-Base: Versión 10.0.4.2 estable.
+Base: Versión 11.0.
 
-Cambios:
-- En la barra inferior se reemplaza Tablero por Libro.
-- La pestaña superior Tablero se conserva.
-- El botón Libro abre un modal de biblioteca.
-- Se puede agregar un libro con nombre de máximo 20 caracteres.
-- Se muestra contador de caracteres 0/20.
-- Los libros se guardan localmente en el dispositivo.
-- Se muestra la lista de libros agregados con su fecha de registro.
-- El modal puede cerrarse con X o tocando fuera.
-- El resto de la aplicación se conserva sin cambios.
+Novedades de Libros:
+- Existe Libro 1 por defecto.
+- Todas las tareas y gastos existentes de versiones anteriores se asignan automáticamente a Libro 1.
+- Cada libro nuevo mantiene sus propias tareas y gastos independientes.
+- Debajo del título Libros se muestra inmediatamente la lista de libros.
+- Solo puede seleccionarse un libro a la vez.
+- La casilla seleccionada puede desmarcarse.
+- Si se cierra el modal sin ningún libro seleccionado, se selecciona automáticamente el primero de la lista.
+- Al tocar el nombre de un libro se entra en modo edición.
+- El botón Agregar libro cambia a Guardar durante la edición.
+- Al guardar se muestra “Nombre de libro actualizado.”
+- Libro 1 permanece al principio de la lista.
+- Las vistas Día, Calendario, Semana y Tablero, además de los gastos y la papelera, muestran únicamente los datos del libro seleccionado.

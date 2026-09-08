@@ -336,7 +336,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.1</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -540,20 +540,20 @@
       <button type="button" class="icon-btn" id="closeBooksDialog">✕</button>
     </div>
 
+    <div id="booksList" class="books-list books-select-list"></div>
+
     <div class="books-add-panel">
-      <label>Nombre del libro
+      <label id="bookFormLabel">Agregar libro
         <input id="bookNameInput" type="text" maxlength="20" placeholder="Máximo 20 caracteres" autocomplete="off" />
       </label>
       <button id="addBookBtn" type="button" class="primary-btn">＋ Agregar libro</button>
       <small id="bookNameCounter" class="book-counter">0/20</small>
     </div>
 
-    <div class="books-list-head">
-      <strong>Mis libros</strong>
-      <small id="booksCount">0 libros</small>
+    <div class="books-footer-note">
+      <span>Solo puede haber un libro seleccionado.</span>
+      <small>Si cierras sin seleccionar uno, se usará automáticamente el primero de la lista.</small>
     </div>
-
-    <div id="booksList" class="books-list"></div>
   </dialog>
 
   <script src="app.js" defer></script>

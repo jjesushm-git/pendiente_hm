@@ -5,7 +5,8 @@ const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
-const APP_VERSION = "11.0";
+const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
+const APP_VERSION = "11.0.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -15,6 +16,8 @@ let trash = loadTrash();
 let settings = loadSettings();
 let expenses = loadExpenses();
 let books = loadBooks();
+let activeBookId = localStorage.getItem(ACTIVE_BOOK_KEY)||"";
+let editingBookId = null;
 let selectedDate = startOfDay(new Date());
 let calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
 let weekCursor = startOfWeek(selectedDate);
@@ -74,7 +77,7 @@ function markExport(kind){
 
 function expenseTotalsForDate(d){
   const key=dateKey(d);
-  const day=expenses.filter(e=>e.date===key);
+  const day=activeExpenses().filter(e=>e.date===key);
   return {
     MN:day.filter(e=>e.currency==="MN").reduce((s,e)=>s+Number(e.amount||0),0),
     DLS:day.filter(e=>e.currency==="DLS").reduce((s,e)=>s+Number(e.amount||0),0)
@@ -102,7 +105,7 @@ function expenseCycleRange(d){
 }
 function expenseTotalsForCycle(d){
   const {start,end}=expenseCycleRange(d);
-  const list=expenses.filter(e=>{
+  const list=activeExpenses().filter(e=>{
     const ed=parseDate(e.date);
     return ed>=start && ed<=end;
   });
@@ -153,6 +156,74 @@ function saveBooks(){
   localStorage.setItem(BOOKS_KEY, JSON.stringify(books));
   renderBooks();
 }
+function ensureBookMigration(){
+  let changedBooks=false;
+  let defaultBook=books.find(b=>b && (b.isDefault || b.name==="Libro 1"));
+
+  if(!defaultBook){
+    defaultBook={id:uid(),name:"Libro 1",createdAt:new Date().toISOString(),isDefault:true};
+    books.unshift(defaultBook);
+    changedBooks=true;
+  }else if(!defaultBook.isDefault){
+    defaultBook.isDefault=true;
+    changedBooks=true;
+  }
+
+  // Libro 1 siempre queda hasta arriba.
+  books=[defaultBook,...books.filter(b=>b.id!==defaultBook.id)];
+
+  let changedTasks=false;
+  tasks.forEach(t=>{
+    if(!t.bookId){t.bookId=defaultBook.id;changedTasks=true;}
+  });
+
+  let changedTrash=false;
+  trash.forEach(t=>{
+    if(!t.bookId){t.bookId=defaultBook.id;changedTrash=true;}
+  });
+
+  let changedExpenses=false;
+  expenses.forEach(e=>{
+    if(!e.bookId){e.bookId=defaultBook.id;changedExpenses=true;}
+  });
+
+  if(!activeBookId || !books.some(b=>b.id===activeBookId)){
+    activeBookId=defaultBook.id;
+    localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
+  }
+
+  if(changedBooks) localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+  if(changedTasks) localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+  if(changedTrash) localStorage.setItem(TRASH_KEY,JSON.stringify(trash));
+  if(changedExpenses) localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses));
+}
+
+function activeBook(){
+  return books.find(b=>b.id===activeBookId) || books[0] || null;
+}
+function activeTasks(){
+  return activeBookId ? tasks.filter(t=>t.bookId===activeBookId) : [];
+}
+function activeExpenses(){
+  return activeBookId ? expenses.filter(e=>e.bookId===activeBookId) : [];
+}
+function activeTrash(){
+  return activeBookId ? trash.filter(t=>t.bookId===activeBookId) : [];
+}
+function setActiveBook(id,{render=true}={}){
+  activeBookId=id||"";
+  if(activeBookId) localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
+  else localStorage.removeItem(ACTIVE_BOOK_KEY);
+  if(render) renderAll();
+}
+function finalizeBookSelection(){
+  if(!activeBookId && books.length){
+    activeBookId=books[0].id;
+    localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
+  }
+  renderAll();
+}
+
 
 function saveExpenses(){
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
@@ -311,8 +382,8 @@ function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
   $("#weekStrip").innerHTML = [...Array(7)].map((_,i)=>{
     const d=addDays(week,i), key=dateKey(d);
-    const hasTask=tasks.some(t=>occursOn(t,d)&&t.status==="pending");
-    const hasExpense=expenses.some(e=>e.date===key);
+    const hasTask=activeTasks().some(t=>occursOn(t,d)&&t.status==="pending");
+    const hasExpense=activeExpenses().some(e=>e.date===key);
 
     return `<button class="week-day ${key===dateKey(selectedDate)?"active":""}" data-date="${key}">
       <span class="dow">${d.toLocaleDateString("es-MX",{weekday:"short"}).replace(".","")}</span>
@@ -335,11 +406,12 @@ function renderDay(){
   if ($("#dayDatePicker")) $("#dayDatePicker").value = dateKey(selectedDate);
 
   // Global sections: do not hide tasks just because they belong to another date.
-  const allPending = tasks
+  const bookTasks=activeTasks();
+  const allPending = bookTasks
     .filter(t=>t.status==="pending")
     .sort(compareTasksByDate);
 
-  const allCompleted = tasks
+  const allCompleted = bookTasks
     .filter(t=>t.status==="completed")
     .sort((a,b)=>{
       const ad=a.completedAt ? new Date(a.completedAt) : (taskDueDate(a)||taskStartDate(a));
@@ -347,7 +419,7 @@ function renderDay(){
       return bd-ad;
     });
 
-  const allMissed = tasks
+  const allMissed = bookTasks
     .filter(t=>t.status==="missed")
     .sort((a,b)=>sortDate(b)-sortDate(a));
 
@@ -385,7 +457,7 @@ function renderDay(){
   });
   bindTaskActions();
 }
-function expandedTasksForDate(d){ return tasks.filter(t=>occursOn(t,d)); }
+function expandedTasksForDate(d){ return activeTasks().filter(t=>occursOn(t,d)); }
 function occursOn(t,d){
   const target=startOfDay(d);
   const start=startOfDay(parseDate(t.startDate));
@@ -506,7 +578,7 @@ function renderCalendar(){
     const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===calendarCursor.getMonth();
     const dayTasks=expandedTasksForDate(d);
     const dots=dayTasks.slice(0,4).map(t=>`<i class="${t.status==="missed"?"red":t.status==="completed"?"green":""}"></i>`).join("");
-    const hasExpense=expenses.some(e=>e.date===key);
+    const hasExpense=activeExpenses().some(e=>e.date===key);
 
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
       ${d.getDate()}
@@ -554,7 +626,7 @@ function renderWeek(){
 function renderBoard(){
   const groups={pending:[],in_progress:[],waiting:[],completed:[]};
 
-  tasks.forEach(t=>{
+  activeTasks().forEach(t=>{
     const stage=boardStageOf(t);
     if(stage==="completed" || t.status==="completed") groups.completed.push(t);
     else if(stage==="in_progress") groups.in_progress.push(t);
@@ -635,11 +707,12 @@ function renderTrash(){
   purgeExpiredTrash();
   const el=$("#trashList");
   if(!el) return;
-  if(!trash.length){
+  const bookTrash=activeTrash();
+  if(!bookTrash.length){
     el.innerHTML=`<div class="empty">La papelera está vacía.</div>`;
     return;
   }
-  el.innerHTML=trash.map(t=>`
+  el.innerHTML=bookTrash.map(t=>`
     <article class="task-card trash-card">
       <div class="task-row">
         <div style="font-size:1.3rem">🗑</div>
@@ -647,7 +720,7 @@ function renderTrash(){
           <div class="task-title">${esc(t.title)}</div>
           ${t.description?`<div class="task-desc">${esc(t.description)}</div>`:""}
           <div class="task-meta">
-            <span>📅 ${shortDate(parseDate(t.dueDate))}</span>
+            <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
             <span>🕒 ${formatTimeMeta(t)}</span>
           </div>
           <div class="trash-countdown">Se elimina definitivamente en ${remainingTrashTime(t)}</div>
@@ -766,24 +839,56 @@ function comicConfirm(message, options={}){
 function renderBooks(){
   if(!$("#booksList")) return;
 
-  $("#booksCount").textContent=`${books.length} ${books.length===1?"libro":"libros"}`;
+  $("#booksList").innerHTML=books.length ? books.map((book,index)=>{
+    const selected=book.id===activeBookId;
+    const taskCount=tasks.filter(t=>t.bookId===book.id).length;
+    const expenseCount=expenses.filter(e=>e.bookId===book.id).length;
+    return `
+      <article class="book-select-card ${selected?"selected":""}">
+        <label class="book-check-wrap" title="${selected?"Quitar selección":"Seleccionar libro"}">
+          <input type="checkbox" data-book-select="${book.id}" ${selected?"checked":""}>
+          <span class="book-custom-check">✓</span>
+        </label>
+        <button type="button" class="book-name-btn" data-book-edit="${book.id}" title="Editar nombre">
+          <span class="book-card-icon">📖</span>
+          <span class="book-card-copy">
+            <strong>${esc(book.name)}</strong>
+            <small>${taskCount} ${taskCount===1?"tarea":"tareas"} · ${expenseCount} ${expenseCount===1?"gasto":"gastos"}</small>
+          </span>
+        </button>
+      </article>`;
+  }).join("") : `<div class="empty">No hay libros.</div>`;
 
-  $("#booksList").innerHTML=books.length
-    ? books.map(book=>`
-      <article class="book-card">
-        <div class="book-icon">📖</div>
-        <div class="book-info">
-          <strong>${esc(book.name)}</strong>
-          <small>Agregado ${new Date(book.createdAt).toLocaleDateString("es-MX")}</small>
-        </div>
-      </article>
-    `).join("")
-    : `<div class="empty">Todavía no has agregado libros.</div>`;
+  $$("[data-book-select]").forEach(ch=>ch.onchange=()=>{
+    const id=ch.dataset.bookSelect;
+    if(ch.checked){
+      setActiveBook(id,{render:false});
+      // selección única
+      $$("[data-book-select]").forEach(other=>{if(other!==ch) other.checked=false;});
+    }else if(activeBookId===id){
+      setActiveBook("",{render:false});
+    }
+    renderBooks();
+  });
+
+  $$("[data-book-edit]").forEach(btn=>btn.onclick=()=>{
+    const book=books.find(b=>b.id===btn.dataset.bookEdit);
+    if(!book) return;
+    editingBookId=book.id;
+    $("#bookNameInput").value=book.name;
+    $("#bookNameCounter").textContent=`${book.name.length}/20`;
+    $("#bookFormLabel").firstChild.textContent="Editar nombre ";
+    $("#addBookBtn").textContent="Guardar";
+    $("#bookNameInput").focus();
+  });
 }
 
 function openBooksDialog(){
+  editingBookId=null;
   $("#bookNameInput").value="";
   $("#bookNameCounter").textContent="0/20";
+  $("#bookFormLabel").firstChild.textContent="Agregar libro ";
+  $("#addBookBtn").textContent="＋ Agregar libro";
   renderBooks();
   $("#booksDialog").showModal();
 }
@@ -792,24 +897,41 @@ function addBook(){
   const name=$("#bookNameInput").value.trim();
 
   if(!name){
-    toast("Escribe el nombre del libro.");
+    toast(editingBookId?"Escribe el nuevo nombre del libro.":"Escribe el nombre del libro.");
     return;
   }
-
   if(name.length>20){
     toast("El nombre del libro no puede superar 20 caracteres.");
     return;
   }
 
-  books.unshift({
+  if(editingBookId){
+    const book=books.find(b=>b.id===editingBookId);
+    if(book){
+      book.name=name;
+      book.updatedAt=new Date().toISOString();
+      localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+    }
+    editingBookId=null;
+    $("#bookNameInput").value="";
+    $("#bookNameCounter").textContent="0/20";
+    $("#bookFormLabel").firstChild.textContent="Agregar libro ";
+    $("#addBookBtn").textContent="＋ Agregar libro";
+    renderBooks();
+    toast("Nombre de libro actualizado.");
+    return;
+  }
+
+  books.push({
     id:uid(),
     name,
     createdAt:new Date().toISOString()
   });
 
-  saveBooks();
+  localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
   $("#bookNameInput").value="";
   $("#bookNameCounter").textContent="0/20";
+  renderBooks();
   toast("Libro agregado.");
 }
 
@@ -855,7 +977,7 @@ function exportData(){
 async function importData(file){
   try{
     const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
-    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; saveTrash(); saveTasks(); toast("Respaldo importado.");
+    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 
@@ -968,7 +1090,7 @@ function renderViewExpenses(){
 
   const key=$("#viewExpenseDate").value || dateKey(selectedDate);
   const d=parseDate(key);
-  const list=expenses.filter(e=>e.date===key);
+  const list=activeExpenses().filter(e=>e.date===key);
 
   $("#viewExpenseDayTotal").textContent=
     totalsText("Gastos del día",expenseTotalsForDate(d));
@@ -1051,7 +1173,7 @@ $("#taskForm").addEventListener("submit",e=>{
     const data=readForm(); if(!data.title) return;
     const id=$("#taskId").value;
     if(id){const i=tasks.findIndex(t=>t.id===id); tasks[i]={...tasks[i],...data};}
-    else tasks.push({id:uid(),createdAt:new Date().toISOString(),...data});
+    else tasks.push({id:uid(),bookId:activeBookId,createdAt:new Date().toISOString(),...data});
     $("#taskDialog").close(); saveTasks(); toast("Tarea guardada.");
   }catch(err){toast(err.message||"Revisa los datos.");}
 });
@@ -1165,7 +1287,7 @@ $("#expenseForm").addEventListener("submit",e=>{
     const i=expenses.findIndex(x=>x.id===id);
     if(i>=0) expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
   }else{
-    expenses.push({id:uid(),...data,createdAt:new Date().toISOString()});
+    expenses.push({id:uid(),bookId:activeBookId,...data,createdAt:new Date().toISOString()});
   }
 
   selectedDate=parseDate(data.date);
@@ -1187,7 +1309,7 @@ $("#expenseForm").addEventListener("submit",e=>{
 
 
 $("#booksBtn").onclick=openBooksDialog;
-$("#closeBooksDialog").onclick=()=>$("#booksDialog").close();
+$("#closeBooksDialog").onclick=()=>{finalizeBookSelection();$("#booksDialog").close();};
 $("#addBookBtn").onclick=addBook;
 
 $("#bookNameInput").addEventListener("input",e=>{
@@ -1204,7 +1326,15 @@ $("#bookNameInput").addEventListener("keydown",e=>{
 });
 
 $("#booksDialog").addEventListener("click",e=>{
-  if(e.target===$("#booksDialog")) $("#booksDialog").close();
+  if(e.target===$("#booksDialog")){
+    finalizeBookSelection();
+    $("#booksDialog").close();
+  }
+});
+$("#booksDialog").addEventListener("cancel",e=>{
+  e.preventDefault();
+  finalizeBookSelection();
+  $("#booksDialog").close();
 });
 
 $("#bottomAddBtn").onclick=()=>openTask();
@@ -1260,6 +1390,7 @@ setInterval(()=>{normalizeStatuses();renderAll();},60000);
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
 }
+ensureBookMigration();
 populateSettings();
 applySettings();
 if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
