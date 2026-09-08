@@ -2825,3 +2825,92 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
   color:#0f5c43 !important;
   border:1px solid rgba(190,150,37,.42) !important;
 }
+
+
+/* =========================================================
+   VERSION 11.5.4 — MOVER TAREA ENTRE LIBROS DESDE TABLERO
+   ========================================================= */
+
+.board-book-action-row{
+  display:grid !important;
+  grid-template-columns:auto minmax(150px,1fr) auto;
+  align-items:center;
+  gap:10px;
+}
+
+.board-book-move-wrap{
+  position:relative;
+  min-width:0;
+  display:grid;
+  justify-items:center;
+  gap:6px;
+}
+
+.board-book-move-btn{
+  min-height:38px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel-2);
+  color:var(--text);
+  cursor:pointer;
+  white-space:nowrap;
+}
+
+.board-book-move-btn:active{
+  transform:scale(.96);
+}
+
+.board-book-move-select{
+  width:min(100%,260px);
+  min-height:40px;
+  border:1px solid var(--line);
+  border-radius:10px;
+}
+
+.board-book-move-select.hidden{
+  display:none !important;
+}
+
+/* Tema Esmeralda dorado */
+:root[data-theme="emerald_gold"] .board-book-move-btn,
+:root[data-theme="emerald_gold"] .board-book-move-select{
+  background:#fffef8 !important;
+  color:#0f5c43 !important;
+  border-color:rgba(190,150,37,.42) !important;
+  box-shadow:none !important;
+}
+
+/* Mantener Editar a la izquierda y Eliminar a la derecha */
+.board-book-action-row > .task-delete-btn{
+  justify-self:end;
+}
+
+.board-book-action-row > .task-action-left{
+  justify-self:start;
+}
+
+@media(max-width:650px){
+  .board-book-action-row{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .board-book-action-row > .task-action-left{
+    justify-self:start;
+  }
+
+  .board-book-action-row > .task-delete-btn{
+    justify-self:end;
+  }
+
+  .board-book-move-wrap{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+  }
+
+  .board-book-move-btn,
+  .board-book-move-select{
+    width:100%;
+  }
+}

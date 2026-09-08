@@ -1,21 +1,23 @@
-# Mis Tareas — Versión 11.5.3
+# Mis Tareas — Versión 11.5.4
 
-Base: Versión 11.5.2 ESTABLE.
+Base: Versión 11.5.3 ESTABLE.
 
-Correcciones visuales:
-- El área rectangular de Agregar en la barra inferior queda transparente.
-- Solo el círculo + conserva el color correspondiente al tema.
-- La corrección se aplica a Esmeralda dorado, Noche violeta, Azul océano y Grafito.
-- Los emoticonos de las tareas tienen fondo blanco real en tarjetas, Semana y Tablero.
-- Se corrige el botón Editar de Gastos para que no aparezca azul/negro oscuro en el tema Esmeralda dorado.
-- Borrar conserva un fondo rojo muy claro.
-- Los controles de navegación y Bitácora de Gastos quedan claros.
-- El total del día de Gastos queda blanco/crema.
-- Se mantienen intactas las funciones de la 11.5.2.
+Cambio:
+- Exclusivamente en las tarjetas de la pestaña Tablero se agrega el botón “📖 Mover a libro”.
+- El botón aparece entre Editar y Eliminar.
+- Al tocar “Mover a libro” aparece un selector con los demás libros disponibles.
+- El libro actual no aparece como destino.
+- Al seleccionar un libro:
+  - la tarea cambia su bookId al libro elegido,
+  - se guarda inmediatamente,
+  - desaparece del Tablero del libro actual,
+  - aparece en Calendario, Día, Semana, Tablero y demás vistas del libro destino según corresponda.
+- Si solo existe un libro, se muestra “No hay otro libro disponible”.
+- Alta importancia conserva su comportamiento existente: si está activa, la tarea puede seguir mostrándose globalmente aunque pertenezca al nuevo libro.
 
 Validaciones:
-- JavaScript sin errores de sintaxis.
-- CSS sin errores de parser.
+- JavaScript sin errores.
+- CSS sin errores de sintaxis.
 - Sin IDs HTML duplicados.
 - Sin referencias JavaScript a IDs inexistentes.
 - Calendario, Día, Semana, Tablero, Libros, Gastos y Comentarios presentes.

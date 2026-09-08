@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.5.3";
+const APP_VERSION = "11.5.4";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -883,10 +883,28 @@ function renderBoard(){
       <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
         ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
       </button>
-      <div class="task-action-row">
+      <div class="task-action-row board-book-action-row">
         <div class="task-action-left">
           <button data-edit="${t.id}">Editar</button>
         </div>
+
+        <div class="board-book-move-wrap">
+          <button type="button"
+                  class="board-book-move-btn"
+                  data-open-book-move="${t.id}">
+            📖 Mover a libro
+          </button>
+          <select class="board-book-move-select hidden"
+                  data-book-move="${t.id}"
+                  aria-label="Mover tarea a otro libro">
+            <option value="">Selecciona libro</option>
+            ${books
+              .filter(book=>book.id!==t.bookId)
+              .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
+              .join("")}
+          </select>
+        </div>
+
         <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
       </div>
     </div>
@@ -921,6 +939,42 @@ function renderBoard(){
     }
     saveTasks();
     toast(`Movida a ${boardStageLabel(sel.value)}.`);
+  });
+
+  $$("[data-open-book-move]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+
+    const task=tasks.find(t=>t.id===btn.dataset.openBookMove);
+    if(!task) return;
+
+    const available=books.filter(book=>book.id!==task.bookId);
+    if(!available.length){
+      toast("No hay otro libro disponible.");
+      return;
+    }
+
+    const select=$(`[data-book-move="${task.id}"]`);
+    if(!select) return;
+
+    select.classList.toggle("hidden");
+    if(!select.classList.contains("hidden")){
+      select.focus();
+    }
+  });
+
+  $$("[data-book-move]").forEach(select=>select.onchange=()=>{
+    const task=tasks.find(t=>t.id===select.dataset.bookMove);
+    const destination=books.find(book=>book.id===select.value);
+    if(!task || !destination) return;
+
+    const origin=books.find(book=>book.id===task.bookId);
+    task.bookId=destination.id;
+    task.updatedAt=new Date().toISOString();
+
+    saveTasks();
+
+    toast(`Tarea movida de ${origin?.name||"libro"} a ${destination.name}.`);
   });
 
   bindTaskActions();
