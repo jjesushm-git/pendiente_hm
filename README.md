@@ -1,12 +1,13 @@
-# Mis Tareas — Versión 11.0.4.2.1 REPARADA
+# Mis Tareas — Versión 11.0.4.2.2 ESTABLE
 
-Corrección de publicación/caché sobre la 11.0.4.2:
+Esta versión se basa en la 11.0.4.2.1 reparada y conserva todas sus funciones.
 
-- jjhm_reapair
-- Conserva todas las funciones y datos de 11.0.4.2.
-- El tema Esmeralda dorado se declara directamente en HTML para evitar una pantalla con estilos antiguos mientras carga JS.
-- CSS, JS y manifest usan una versión en la URL para evitar archivos viejos de caché.
-- Service Worker actualizado con caché mis-tareas-11-0-4-2-1.
-- Los archivos principales usan red primero y caché solo como respaldo.
-- El botón Actualizar aplicación limpia únicamente cachés antiguas; NO borra localStorage, tareas, libros ni gastos.
-- Manifest actualizado a verde esmeralda / crema.
+Correcciones de estabilidad:
+- Service Worker simplificado.
+- Archivos principales se solicitan primero a la red.
+- Caché solo se usa como respaldo si no hay conexión.
+- Las cachés de versiones anteriores se eliminan al activarse la nueva versión.
+- CSS, JS y manifest llevan identificador 11.0.4.2.2.
+- El botón Actualizar aplicación no borra tareas, libros, gastos ni localStorage.
+- Tema predeterminado Esmeralda dorado declarado desde el HTML.
+- theme-color de la PWA actualizado a verde esmeralda.

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.4.2.1";
+const APP_VERSION = "11.0.4.2.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1666,20 +1666,20 @@ $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll
 $("#settingsBtnTop").onclick=()=>{populateSettings();$("#settingsSavedMessage").classList.add("hidden");$("#settingsDialog").showModal();};
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
-  toast("Buscando actualización...");
+  toast("Actualizando aplicación...");
   try{
     if("caches" in window){
       const keys=await caches.keys();
-      await Promise.all(keys.filter(k=>k!=="mis-tareas-11-0-4-2-1").map(k=>caches.delete(k)));
+      await Promise.all(keys.filter(k=>k!=="mis-tareas-11-0-4-2-2").map(k=>caches.delete(k)));
     }
     if("serviceWorker" in navigator){
       const reg=await navigator.serviceWorker.getRegistration();
       if(reg) await reg.update();
     }
   }catch{}
-  const url=new URL(location.href);
-  url.searchParams.set("v","11.0.4.2.1");
-  setTimeout(()=>location.replace(url.toString()),450);
+  const u=new URL(location.href);
+  u.searchParams.set("appv","11.0.4.2.2");
+  setTimeout(()=>location.replace(u.toString()),450);
 };
 $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
@@ -1698,7 +1698,7 @@ window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNot
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=11.0.4.2.2").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
 updateActiveBookSelect();
