@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.5.4";
+const APP_VERSION = "11.5.5";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -623,9 +623,9 @@ function renderDay(){
     <button class="stat-card stat-link" data-stat-target="completedSection"><strong>${allCompleted.length}</strong><small>Completadas</small></button>
     <button class="stat-card stat-link" data-stat-target="missedSection"><strong>${allMissed.length}</strong><small>Vencidas</small></button>`;
 
-  $("#pendingList").innerHTML=listHtml(filtered);
-  $("#completedList").innerHTML=listHtml(allCompleted);
-  $("#missedList").innerHTML=listHtml(allMissed);
+  $("#pendingList").innerHTML=listHtml(filtered,selectedDate);
+  $("#completedList").innerHTML=listHtml(allCompleted,selectedDate);
+  $("#missedList").innerHTML=listHtml(allMissed,selectedDate);
   $$("[data-stat-target]").forEach(btn=>btn.onclick=()=>{
     const target=document.getElementById(btn.dataset.statTarget);
     if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
@@ -633,6 +633,70 @@ function renderDay(){
   bindTaskActions();
 }
 function expandedTasksForDate(d){ return activeTasks().filter(t=>occursOn(t,d)); }
+
+function ensureTaskCommentMap(t){
+  if(!t.commentsByOccurrence || typeof t.commentsByOccurrence!=="object" || Array.isArray(t.commentsByOccurrence)){
+    t.commentsByOccurrence={};
+  }
+  return t.commentsByOccurrence;
+}
+
+function occurrenceKeyForTask(t,referenceDate=selectedDate){
+  if(!t) return dateKey(referenceDate||new Date());
+
+  if(t.recurrence==="none"){
+    return t.startDate || t.dueDate || dateKey(referenceDate||new Date());
+  }
+
+  let ref=startOfDay(referenceDate||new Date());
+  const start=t.startDate?startOfDay(parseDate(t.startDate)):ref;
+
+  if(ref<start) ref=start;
+
+  if(occursOn(t,ref)) return dateKey(ref);
+
+  let cursor=new Date(ref);
+  for(let i=0;i<740;i++){
+    cursor=addDays(cursor,1);
+    if(occursOn(t,cursor)) return dateKey(cursor);
+  }
+
+  return t.startDate || dateKey(referenceDate||new Date());
+}
+
+function taskCommentForOccurrence(t,occurrenceKey){
+  const map=ensureTaskCommentMap(t);
+  return String(map[occurrenceKey]||"");
+}
+
+function hasTaskCommentForOccurrence(t,occurrenceKey){
+  return !!taskCommentForOccurrence(t,occurrenceKey).trim();
+}
+
+function migrateTaskCommentsV1155(){
+  let changed=false;
+
+  tasks.forEach(t=>{
+    const map=ensureTaskCommentMap(t);
+
+    if(t.comment && String(t.comment).trim()){
+      const oldest=t.startDate || t.dueDate || dateKey(new Date(t.createdAt||Date.now()));
+      if(!map[oldest]) map[oldest]=String(t.comment).trim();
+      t.comment="";
+      changed=true;
+    }
+
+    if(!t.comment && t.comment!==undefined){
+      delete t.comment;
+      changed=true;
+    }
+  });
+
+  if(changed){
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+  }
+}
+
 function occursOn(t,d){
   const target=startOfDay(d);
   const start=startOfDay(parseDate(t.startDate));
@@ -654,12 +718,14 @@ function occursOn(t,d){
     default:return false;
   }
 }
-function listHtml(list){
+function listHtml(list,occurrenceDate=selectedDate){
   if(!list.length) return `<div class="empty">No hay tareas en esta sección.</div>`;
-  return list.map(t=>taskCard(t)).join("");
+  return list.map(t=>taskCard(t,occurrenceDate)).join("");
 }
-function taskCard(t){
+function taskCard(t,occurrenceDate=selectedDate){
   const due=taskDueDate(t);
+  const occurrenceKey=occurrenceKeyForTask(t,occurrenceDate);
+  const occurrenceComment=taskCommentForOccurrence(t,occurrenceKey);
   return `<article class="task-card ${t.status} ${t.highImportance?"high-importance":""}">
     <div class="task-row">
       <input class="task-check" type="checkbox" data-complete="${t.id}" ${t.status==="completed"?"checked":""} ${t.status==="missed"?"disabled":""}/>
@@ -674,17 +740,39 @@ function taskCard(t){
           ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
           ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
-          ${t.comment?`<button type="button" class="comment-icon-btn" data-comment-task="${t.id}" title="Ver comentario">💬</button>`:""}
+          <button type="button"
+                  class="comment-icon-btn ${occurrenceComment?"has-comment":"no-comment"}"
+                  data-comment-task="${t.id}"
+                  data-comment-date="${occurrenceKey}"
+                  title="${occurrenceComment?"Ver / editar comentario":"Agregar comentario"}">${occurrenceComment?"💬":"💬＋"}</button>
         </div>
         <div class="card-actions task-card-actions">
           <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
             ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
           </button>
-          <div class="task-action-row">
+          <div class="task-action-row board-book-action-row">
             <div class="task-action-left">
               <button data-edit="${t.id}">Editar</button>
               ${t.status==="missed"?`<button data-reopen="${t.id}">Reabrir</button>`:""}
             </div>
+
+            <div class="board-book-move-wrap">
+              <button type="button"
+                      class="board-book-move-btn"
+                      data-open-book-move="${t.id}">
+                📖 Mover a libro
+              </button>
+              <select class="board-book-move-select hidden"
+                      data-book-move="${t.id}"
+                      aria-label="Mover tarea a otro libro">
+                <option value="">Selecciona libro</option>
+                ${books
+                  .filter(book=>book.id!==t.bookId)
+                  .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
+                  .join("")}
+              </select>
+            </div>
+
             <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
           </div>
         </div>
@@ -698,7 +786,10 @@ function reopenTask(t){
   const originalMissedDate=t.dueDate || t.startDate || dateKey(new Date());
   const missedDateLabel=shortDate(parseDate(originalMissedDate));
   const reopenNote=`Tarea reabierta por no ser completada el día ${missedDateLabel}.`;
-  t.comment=t.comment ? `${t.comment} | ${reopenNote}` : reopenNote;
+  const commentMap=ensureTaskCommentMap(t);
+  commentMap[originalMissedDate]=commentMap[originalMissedDate]
+    ? `${commentMap[originalMissedDate]} | ${reopenNote}`
+    : reopenNote;
 
   const now=new Date();
   const today=startOfDay(now);
@@ -733,19 +824,60 @@ function openEmojiOnlyEditor(taskId){
 }
 
 
-function openCommentDialog(taskId){
+function openCommentDialog(taskId,occurrenceKey){
   const task=tasks.find(t=>t.id===taskId);
-  if(!task || !task.comment) return;
+  if(!task) return;
+
+  const key=occurrenceKey || occurrenceKeyForTask(task,selectedDate);
+  const comment=taskCommentForOccurrence(task,key);
+
+  $("#commentTaskId").value=task.id;
+  $("#commentOccurrenceKey").value=key;
   $("#commentDialogTitle").textContent=task.title||"Comentario";
-  $("#commentDialogBody").textContent=task.comment;
+  $("#commentDialogDate").textContent=`Ocurrencia: ${shortDate(parseDate(key))}`;
+  $("#commentDialogInput").value=comment;
+
   $("#commentDialog").showModal();
 }
 
 function bindTaskActions(){
+  $$("[data-open-book-move]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+
+    const task=tasks.find(t=>t.id===btn.dataset.openBookMove);
+    if(!task) return;
+
+    const available=books.filter(book=>book.id!==task.bookId);
+    if(!available.length){
+      toast("No hay otro libro disponible.");
+      return;
+    }
+
+    const select=$(`[data-book-move="${task.id}"]`);
+    if(!select) return;
+
+    select.classList.toggle("hidden");
+    if(!select.classList.contains("hidden")) select.focus();
+  });
+
+  $$("[data-book-move]").forEach(select=>select.onchange=()=>{
+    const task=tasks.find(t=>t.id===select.dataset.bookMove);
+    const destination=books.find(book=>book.id===select.value);
+    if(!task || !destination) return;
+
+    const origin=books.find(book=>book.id===task.bookId);
+    task.bookId=destination.id;
+    task.updatedAt=new Date().toISOString();
+
+    saveTasks();
+    toast(`Tarea movida de ${origin?.name||"libro"} a ${destination.name}.`);
+  });
+
   $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
-    openCommentDialog(btn.dataset.commentTask);
+    openCommentDialog(btn.dataset.commentTask,btn.dataset.commentDate);
   });
 
   $$("[data-important]").forEach(btn=>btn.onclick=e=>{
@@ -803,11 +935,11 @@ function renderCalendar(){
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
     selectedDate=parseDate(b.dataset.caldate);
     $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
-    $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate));
+    $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate),selectedDate);
     bindTaskActions(); renderCalendar(); renderExpenseSummary();
   });
   $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
-  $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate));
+  $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate),selectedDate);
   bindTaskActions();
 }
 function renderWeek(){
@@ -825,7 +957,7 @@ function renderWeek(){
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
       ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}">
         <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
-        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} ${t.comment?`· <button type="button" class="mini-comment-btn" data-comment-task="${t.id}">💬</button>`:""}</small></span>
+        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} · <button type="button" class="mini-comment-btn ${hasTaskCommentForOccurrence(t,dateKey(d))?"has-comment":"no-comment"}" data-comment-task="${t.id}" data-comment-date="${dateKey(d)}">${hasTaskCommentForOccurrence(t,dateKey(d))?"💬":"💬＋"}</button></small></span>
       </div>`).join("")}
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
@@ -833,7 +965,7 @@ function renderWeek(){
   $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
-    openCommentDialog(btn.dataset.commentTask);
+    openCommentDialog(btn.dataset.commentTask,btn.dataset.commentDate);
   });
 
   $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
@@ -856,7 +988,10 @@ function renderBoard(){
 
   Object.values(groups).forEach(list=>list.sort(compareTasksByDate));
 
-  const boardCard=t=>`<article class="board-card ${t.status} ${t.highImportance?"high-importance":""}">
+  const boardCard=t=>{
+    const occurrenceKey=occurrenceKeyForTask(t,selectedDate);
+    const occurrenceComment=taskCommentForOccurrence(t,occurrenceKey);
+    return `<article class="board-card ${t.status} ${t.highImportance?"high-importance":""}">
     <div class="board-card-head">
       <div class="board-title-with-emoji"><button type="button" class="board-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button><strong>${esc(t.title)}</strong></div>
       <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
@@ -869,7 +1004,11 @@ function renderBoard(){
       ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
       ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
       ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
-      ${t.comment?`<button type="button" class="comment-icon-btn" data-comment-task="${t.id}" title="Ver comentario">💬</button>`:""}
+      <button type="button"
+              class="comment-icon-btn ${occurrenceComment?"has-comment":"no-comment"}"
+              data-comment-task="${t.id}"
+              data-comment-date="${occurrenceKey}"
+              title="${occurrenceComment?"Ver / editar comentario":"Agregar comentario"}">${occurrenceComment?"💬":"💬＋"}</button>
     </div>
     <label class="board-move-label">Mover a
       <select data-board-move="${t.id}">
@@ -909,6 +1048,7 @@ function renderBoard(){
       </div>
     </div>
   </article>`;
+  };
 
   $("#boardPending").innerHTML=groups.pending.length?groups.pending.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
   $("#boardProgress").innerHTML=groups.in_progress.length?groups.in_progress.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
@@ -1049,7 +1189,6 @@ function openTask(t=null){
   $("#recurrence").value=t?.recurrence||"none";
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
-  $("#comment").value=t?.comment||"";
   $("#highImportance").checked=!!t?.highImportance;
   toggleTimeFields();
   $("#taskDialog").showModal();
@@ -1079,7 +1218,6 @@ function readForm(){
     notify:false,
     notifyAmount:1,
     notifyUnit:"days",
-    comment:$("#comment").value.trim(),
     highImportance:$("#highImportance").checked
   };
 }
@@ -1331,7 +1469,7 @@ function exportData(){
 async function importData(file){
   try{
     const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
-    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); saveTrash(); saveTasks(); toast("Respaldo importado.");
+    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); migrateTaskCommentsV1155(); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 function parseCsvRows(text){
@@ -1956,7 +2094,24 @@ $("#expenseForm").addEventListener("submit",e=>{
 
 
 
-$("#closeCommentDialog").onclick=()=>$("#commentDialog").close();
+$("#closeCommentDialog").onclick=$("#cancelCommentBtn").onclick=()=>$("#commentDialog").close();
+$("#saveCommentBtn").onclick=()=>{
+  const task=tasks.find(t=>t.id===$("#commentTaskId").value);
+  const key=$("#commentOccurrenceKey").value;
+  if(!task || !key) return;
+
+  const text=$("#commentDialogInput").value.trim();
+  const map=ensureTaskCommentMap(task);
+
+  if(text) map[key]=text;
+  else delete map[key];
+
+  task.updatedAt=new Date().toISOString();
+  $("#commentDialog").close();
+  saveTasks();
+
+  toast(text ? "Comentario guardado para esta ocurrencia." : "Comentario eliminado de esta ocurrencia.");
+};
 $("#commentDialog").addEventListener("click",e=>{
   if(e.target===$("#commentDialog")) $("#commentDialog").close();
 });
@@ -2096,6 +2251,7 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
+migrateTaskCommentsV1155();
 updateActiveBookSelect();
 populateSettings();
 applySettings();

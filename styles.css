@@ -2914,3 +2914,52 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     width:100%;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.5.5 — COMENTARIOS POR OCURRENCIA + MOVER LIBRO EN DÍA
+   ========================================================= */
+
+.comment-occurrence-date{
+  display:block;
+  margin-top:4px;
+  color:var(--muted);
+}
+
+.comment-icon-btn.no-comment,
+.mini-comment-btn.no-comment{
+  opacity:.62;
+  filter:saturate(.75);
+}
+
+.comment-icon-btn.has-comment,
+.mini-comment-btn.has-comment{
+  opacity:1;
+}
+
+#commentDialogInput{
+  width:100%;
+  resize:vertical;
+}
+
+/* Día usa el mismo acomodo de Mover a libro que Tablero */
+.task-card .board-book-move-wrap{
+  min-width:150px;
+}
+
+@media(max-width:650px){
+  .task-card .board-book-action-row{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  .task-card .board-book-move-wrap{
+    grid-column:1 / -1;
+    grid-row:2;
+    width:100%;
+  }
+
+  .task-card .board-book-move-btn,
+  .task-card .board-book-move-select{
+    width:100%;
+  }
+}

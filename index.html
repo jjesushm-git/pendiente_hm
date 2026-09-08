@@ -302,12 +302,7 @@
         </div>
         <label class="switch"><input id="highImportance" type="checkbox"><span></span></label>
       </div>
-
-      <label>Comentario
-        <textarea id="comment" rows="3" maxlength="1000" placeholder="Notas, seguimiento o comentario..."></textarea>
-      </label>
-
-      <div class="modal-actions">
+<div class="modal-actions">
         <button type="button" id="deleteTaskBtn" class="danger-btn hidden">Eliminar</button>
         <button type="button" id="cancelTaskBtn" class="ghost-btn">Cancelar</button>
         <button type="submit" class="primary-btn">Guardar tarea</button>
@@ -369,7 +364,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.5.4</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.5.5</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -576,10 +571,23 @@
       <div>
         <p class="eyebrow">Comentario de tarea</p>
         <h2 id="commentDialogTitle">Comentario</h2>
+        <small id="commentDialogDate" class="comment-occurrence-date"></small>
       </div>
       <button type="button" class="icon-btn" id="closeCommentDialog">✕</button>
     </div>
-    <div id="commentDialogBody" class="comment-dialog-body"></div>
+
+    <input type="hidden" id="commentTaskId" />
+    <input type="hidden" id="commentOccurrenceKey" />
+
+    <label>Comentario
+      <textarea id="commentDialogInput" rows="6" maxlength="1000" placeholder="Escribe un comentario para esta ocurrencia..."></textarea>
+      <small>El comentario pertenece únicamente a esta ocurrencia. Si la tarea es recurrente, no se copiará a la siguiente.</small>
+    </label>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelCommentBtn" class="ghost-btn">Cancelar</button>
+      <button type="button" id="saveCommentBtn" class="primary-btn">Guardar comentario</button>
+    </div>
   </dialog>
 
   

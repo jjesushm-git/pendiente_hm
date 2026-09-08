@@ -1,19 +1,23 @@
-# Mis Tareas — Versión 11.5.4
+# Mis Tareas — Versión 11.5.5
 
-Base: Versión 11.5.3 ESTABLE.
+Base: Versión 11.5.4 ESTABLE.
 
-Cambio:
-- Exclusivamente en las tarjetas de la pestaña Tablero se agrega el botón “📖 Mover a libro”.
-- El botón aparece entre Editar y Eliminar.
-- Al tocar “Mover a libro” aparece un selector con los demás libros disponibles.
-- El libro actual no aparece como destino.
-- Al seleccionar un libro:
-  - la tarea cambia su bookId al libro elegido,
-  - se guarda inmediatamente,
-  - desaparece del Tablero del libro actual,
-  - aparece en Calendario, Día, Semana, Tablero y demás vistas del libro destino según corresponda.
-- Si solo existe un libro, se muestra “No hay otro libro disponible”.
-- Alta importancia conserva su comportamiento existente: si está activa, la tarea puede seguir mostrándose globalmente aunque pertenezca al nuevo libro.
+Cambios en comentarios:
+- Los comentarios ya no forman parte del formulario Crear/Editar tarea.
+- Primero se crea la tarea y después se agrega el comentario desde la tarjeta.
+- Los comentarios se guardan por ocurrencia mediante `commentsByOccurrence`.
+- En tareas recurrentes, el comentario de una ocurrencia NO aparece en la siguiente recurrencia.
+- Las tareas antiguas que ya tenían comentario se migran automáticamente:
+  - el comentario se conserva únicamente en la ocurrencia más antigua,
+  - normalmente la fecha de inicio original.
+- El comentario de una tarea reabierta se conserva en la ocurrencia vencida que originó la reapertura.
+- El modal permite agregar, editar o borrar el comentario de una sola ocurrencia dejando el campo vacío.
+
+Mover tarea:
+- En la pestaña Día, las tarjetas ahora también muestran “📖 Mover a libro”.
+- Está colocado entre Editar y Eliminar.
+- Usa la misma funcionalidad que Tablero.
+- Al elegir un libro, la tarea cambia de libro inmediatamente.
 
 Validaciones:
 - JavaScript sin errores.
