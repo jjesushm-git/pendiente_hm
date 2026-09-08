@@ -4,7 +4,8 @@ const TRASH_KEY = "mis_tareas_trash_v1";
 const TRASH_TTL = 24 * 60 * 60 * 1000;
 const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
-const APP_VERSION = "10.0.4.2";
+const BOOKS_KEY = "mis_tareas_books_v1";
+const APP_VERSION = "11.0";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -13,6 +14,7 @@ let tasks = loadTasks();
 let trash = loadTrash();
 let settings = loadSettings();
 let expenses = loadExpenses();
+let books = loadBooks();
 let selectedDate = startOfDay(new Date());
 let calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
 let weekCursor = startOfWeek(selectedDate);
@@ -146,6 +148,12 @@ function saveSettings(){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
 function loadExpenses(){ try{return JSON.parse(localStorage.getItem(EXPENSES_KEY))||[]}catch{return []} }
+function loadBooks(){ try{return JSON.parse(localStorage.getItem(BOOKS_KEY))||[]}catch{return []} }
+function saveBooks(){
+  localStorage.setItem(BOOKS_KEY, JSON.stringify(books));
+  renderBooks();
+}
+
 function saveExpenses(){
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses));
   renderExpenseSummary();
@@ -754,6 +762,57 @@ function comicConfirm(message, options={}){
   });
 }
 
+
+function renderBooks(){
+  if(!$("#booksList")) return;
+
+  $("#booksCount").textContent=`${books.length} ${books.length===1?"libro":"libros"}`;
+
+  $("#booksList").innerHTML=books.length
+    ? books.map(book=>`
+      <article class="book-card">
+        <div class="book-icon">📖</div>
+        <div class="book-info">
+          <strong>${esc(book.name)}</strong>
+          <small>Agregado ${new Date(book.createdAt).toLocaleDateString("es-MX")}</small>
+        </div>
+      </article>
+    `).join("")
+    : `<div class="empty">Todavía no has agregado libros.</div>`;
+}
+
+function openBooksDialog(){
+  $("#bookNameInput").value="";
+  $("#bookNameCounter").textContent="0/20";
+  renderBooks();
+  $("#booksDialog").showModal();
+}
+
+function addBook(){
+  const name=$("#bookNameInput").value.trim();
+
+  if(!name){
+    toast("Escribe el nombre del libro.");
+    return;
+  }
+
+  if(name.length>20){
+    toast("El nombre del libro no puede superar 20 caracteres.");
+    return;
+  }
+
+  books.unshift({
+    id:uid(),
+    name,
+    createdAt:new Date().toISOString()
+  });
+
+  saveBooks();
+  $("#bookNameInput").value="";
+  $("#bookNameCounter").textContent="0/20";
+  toast("Libro agregado.");
+}
+
 function toast(msg){ const el=$("#toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("show"),2600); }
 
 async function requestNotifications(){
@@ -1124,6 +1183,28 @@ $("#expenseForm").addEventListener("submit",e=>{
   }
 
   toast(id ? "Gasto actualizado." : "Gasto guardado.");
+});
+
+
+$("#booksBtn").onclick=openBooksDialog;
+$("#closeBooksDialog").onclick=()=>$("#booksDialog").close();
+$("#addBookBtn").onclick=addBook;
+
+$("#bookNameInput").addEventListener("input",e=>{
+  const value=e.target.value.slice(0,20);
+  if(e.target.value!==value) e.target.value=value;
+  $("#bookNameCounter").textContent=`${value.length}/20`;
+});
+
+$("#bookNameInput").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    addBook();
+  }
+});
+
+$("#booksDialog").addEventListener("click",e=>{
+  if(e.target===$("#booksDialog")) $("#booksDialog").close();
 });
 
 $("#bottomAddBtn").onclick=()=>openTask();
