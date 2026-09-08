@@ -1,14 +1,16 @@
-# Mis Tareas — Versión 11.0.3
+# Mis Tareas — Versión 11.0.3.1
 
-Base: Versión 11.0.2.1 estable.
+Base: Versión 11.0.3 estable.
 
 Cambios:
-- En Libros, el formulario Agregar/editar libro queda oculto por defecto.
-- Solo se muestran los libros hasta tocar la pestaña “Agregar / editar libro” o tocar el nombre de un libro.
-- El botón superior del libro activo ya no abre la administración completa.
-- El botón superior abre únicamente un selector rápido para cambiar de libro.
-- Las tareas ahora tienen opción “Alta importancia”, desactivada por defecto.
-- Al activar Alta importancia, la tarjeta muestra un aura lenta y tintineante.
-- Una tarea marcada como Alta importancia se muestra en todos los libros.
-- La tarea sigue perteneciendo a su libro original, pero es visible globalmente mientras esté marcada como importante.
-- La opción también puede cambiarse desde el formulario de edición de la tarea.
+- Se eliminan de las tarjetas los indicadores de estado Pendiente / En proceso.
+- Los estados Completada y No completada siguen visibles cuando corresponde.
+- El libro activo del encabezado ahora es un selector directo.
+- Al tocarlo se despliega el selector nativo; ya no abre ningún modal.
+- La administración completa de libros sigue disponible desde el botón Libro inferior.
+- Alta importancia aparece como el primer botón de acciones de cada tarea.
+- En Tablero también aparece antes de Editar y Eliminar.
+- En Libros se prioriza la lista completa de libros.
+- El panel Administrar libros continúa oculto por defecto.
+- Dentro del panel, el botón Agregar libro también permanece oculto hasta escribir un nombre.
+- Cuando se edita un libro, el botón Guardar sí se muestra inmediatamente.

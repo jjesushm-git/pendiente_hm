@@ -1445,3 +1445,77 @@ button{cursor:pointer}
     animation:none !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.0.3.1
+   ========================================================= */
+
+/* Selector directo de libro en encabezado */
+.active-book-select-wrap{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-height:44px;
+  max-width:220px;
+  padding:0 8px 0 10px;
+  border:1px solid rgba(126,91,255,.34);
+  border-radius:13px;
+  background:#101d31;
+}
+
+.active-book-select-icon{
+  flex:0 0 auto;
+  font-size:.95rem;
+}
+
+.active-book-select{
+  min-width:0;
+  max-width:170px;
+  height:42px;
+  padding:0 22px 0 3px;
+  border:0 !important;
+  background:transparent !important;
+  color:var(--text);
+  font-size:.78rem;
+  box-shadow:none !important;
+  cursor:pointer;
+}
+
+.active-book-select:focus{
+  outline:none;
+}
+
+/* Alta importancia siempre primero */
+.card-actions .importance-chip{
+  order:-10;
+  flex:0 0 auto;
+}
+
+/* Priorizar la lista de libros */
+.books-select-list{
+  max-height:52vh !important;
+}
+
+.book-form-toggle{
+  margin-top:14px;
+  opacity:.82;
+}
+
+#addBookBtn.hidden{
+  display:none !important;
+}
+
+@media(max-width:700px){
+  .active-book-select-wrap{
+    max-width:160px;
+  }
+
+  .active-book-select{
+    max-width:112px;
+  }
+
+  .card-actions{
+    flex-wrap:wrap;
+  }
+}

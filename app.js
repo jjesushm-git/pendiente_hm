@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.3";
+const APP_VERSION = "11.0.3.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -191,6 +191,7 @@ function resetBookForm(){
   $("#bookColorInput").value="#725cff";
   $("#bookFormLabel").firstChild.textContent="Agregar libro ";
   $("#addBookBtn").textContent="＋ Agregar libro";
+  $("#addBookBtn").classList.add("hidden");
   $("#deleteBookBtn").classList.add("hidden");
   renderBookCustomizePickers();
 }
@@ -219,26 +220,14 @@ function renderBookCustomizePickers(){
 }
 
 
-function renderQuickBookSelect(){
-  if(!$("#quickBookSelect")) return;
-  $("#quickBookSelect").innerHTML=books.map(book=>{
+function updateActiveBookSelect(){
+  const select=$("#activeBookSelect");
+  if(!select) return;
+
+  select.innerHTML=books.map(book=>{
     normalizeBookAppearance(book);
     return `<option value="${book.id}" ${book.id===activeBookId?"selected":""}>${book.icon} ${esc(book.name)}</option>`;
   }).join("");
-}
-
-function openQuickBookDialog(){
-  renderQuickBookSelect();
-  $("#quickBookDialog").showModal();
-}
-
-function updateActiveBookChip(){
-  const book=activeBook();
-  if(!book) return;
-  normalizeBookAppearance(book);
-  if($("#activeBookChipIcon")) $("#activeBookChipIcon").textContent=book.icon;
-  if($("#activeBookChipName")) $("#activeBookChipName").textContent=book.name;
-  if($("#activeBookChip")) $("#activeBookChip").style.setProperty("--active-book-color",book.color);
 }
 
 function ensureBookMigration(){
@@ -307,7 +296,7 @@ function setActiveBook(id,{render=true}={}){
   activeBookId=id||"";
   if(activeBookId) localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
   else localStorage.removeItem(ACTIVE_BOOK_KEY);
-  updateActiveBookChip();
+  updateActiveBookSelect();
   if(render) renderAll();
 }
 function finalizeBookSelection(){
@@ -315,7 +304,7 @@ function finalizeBookSelection(){
     activeBookId=books[0].id;
     localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
   }
-  updateActiveBookChip();
+  updateActiveBookSelect();
   renderAll();
 }
 
@@ -470,7 +459,7 @@ function renderEmojiPicker(){
 
 
 function renderAll(){
-  updateActiveBookChip();
+  updateActiveBookSelect();
   normalizeStatuses();
   purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderExpenseSummary();
 }
@@ -592,19 +581,18 @@ function taskCard(t){
           <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
           <span>🕒 ${formatTimeMeta(t)}</span>
           ${t.recurrence!=="none"?`<span class="recur-pill">↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
-          ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.comment?`<span>💬 ${esc(t.comment)}</span>`:""}
+        </div>
+        <div class="card-actions">
           <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
             ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
           </button>
-        </div>
-        <div class="card-actions">
           <button data-edit="${t.id}">Editar</button>
           ${t.status==="missed"?`<button data-reopen="${t.id}">Reabrir</button>`:""}
           <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
         </div>
       </div>
-      <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
+      ${t.status!=="pending"?`${t.status!=="pending"?`<span class="status-pill ${t.status}">${statusLabel(t.status)}</span>`:""}`:""}
     </div>
   </article>`;
 }
@@ -755,7 +743,6 @@ function renderBoard(){
       <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
       ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
       ${t.recurrence!=="none"?`<span>↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
-      ${t.highImportance?`<span class="important-board-badge">★ Alta importancia</span>`:""}
     </div>
     <label class="board-move-label">Mover a
       <select data-board-move="${t.id}">
@@ -766,6 +753,9 @@ function renderBoard(){
       </select>
     </label>
     <div class="card-actions board-card-actions">
+      <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
+        ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
+      </button>
       <button data-edit="${t.id}">Editar</button>
       <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
     </div>
@@ -993,9 +983,10 @@ async function deleteEditingBook(){
   $("#bookColorInput").value="#725cff";
   $("#bookFormLabel").firstChild.textContent="Agregar libro ";
   $("#addBookBtn").textContent="＋ Agregar libro";
+  $("#addBookBtn").classList.add("hidden");
   $("#deleteBookBtn").classList.add("hidden");
 
-  updateActiveBookChip();
+  updateActiveBookSelect();
   renderBookCustomizePickers();
   renderBooks();
   renderAll();
@@ -1068,6 +1059,7 @@ function renderBooks(){
     $("#bookColorInput").value=book.color;
     $("#bookFormLabel").firstChild.textContent="Editar libro ";
     $("#addBookBtn").textContent="Guardar";
+    $("#addBookBtn").classList.remove("hidden");
     $("#deleteBookBtn").classList.remove("hidden");
     setBookFormOpen(true);
     renderBookCustomizePickers();
@@ -1108,7 +1100,7 @@ function addBook(){
       book.color=color;
       book.updatedAt=new Date().toISOString();
       localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
-      if(book.id===activeBookId) updateActiveBookChip();
+      if(book.id===activeBookId) updateActiveBookSelect();
     }
     editingBookId=null;
     $("#bookNameInput").value="";
@@ -1117,10 +1109,11 @@ function addBook(){
     $("#bookColorInput").value="#725cff";
     $("#bookFormLabel").firstChild.textContent="Agregar libro ";
     $("#addBookBtn").textContent="＋ Agregar libro";
+    $("#addBookBtn").classList.add("hidden");
     $("#deleteBookBtn").classList.add("hidden");
     renderBookCustomizePickers();
     renderBooks();
-    updateActiveBookChip();
+    updateActiveBookSelect();
     setBookFormOpen(false);
     toast("Nombre de libro actualizado.");
     return;
@@ -1543,16 +1536,10 @@ $("#expenseForm").addEventListener("submit",e=>{
 
 
 $("#booksBtn").onclick=openBooksDialog;
-$("#toggleBookFormBtn").onclick=()=>setBookFormOpen($("#bookFormPanel").classList.contains("hidden"));
-$("#closeQuickBookDialog").onclick=()=>$("#quickBookDialog").close();
-$("#quickBookSelect").onchange=e=>{
+$("#activeBookSelect").onchange=e=>{
   setActiveBook(e.target.value);
-  $("#quickBookDialog").close();
 };
-$("#quickBookDialog").addEventListener("click",e=>{
-  if(e.target===$("#quickBookDialog")) $("#quickBookDialog").close();
-});
-$("#activeBookChip").onclick=openQuickBookDialog;
+$("#toggleBookFormBtn").onclick=()=>setBookFormOpen($("#bookFormPanel").classList.contains("hidden"));
 $("#closeBooksDialog").onclick=()=>{finalizeBookSelection();$("#booksDialog").close();};
 $("#addBookBtn").onclick=addBook;
 $("#deleteBookBtn").onclick=deleteEditingBook;
@@ -1561,6 +1548,12 @@ $("#bookNameInput").addEventListener("input",e=>{
   const value=e.target.value.slice(0,20);
   if(e.target.value!==value) e.target.value=value;
   $("#bookNameCounter").textContent=`${value.length}/20`;
+
+  if(editingBookId){
+    $("#addBookBtn").classList.remove("hidden");
+  }else{
+    $("#addBookBtn").classList.toggle("hidden",value.trim().length===0);
+  }
 });
 
 $("#bookNameInput").addEventListener("keydown",e=>{
@@ -1636,7 +1629,7 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
-updateActiveBookChip();
+updateActiveBookSelect();
 populateSettings();
 applySettings();
 if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
