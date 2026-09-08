@@ -3,8 +3,8 @@
   "short_name": "Mis Tareas",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f7f5e8",
-  "theme_color": "#0f5c43",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
   "description": "Gestor móvil de tareas con calendario, semana, Gantt y recurrencias.",
   "icons": [
     {

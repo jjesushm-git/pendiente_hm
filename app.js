@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.1 REPARADA";
+const APP_VERSION = "11.0.4.1 P";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -172,14 +172,7 @@ function saveBooks(){
   renderBooks();
 }
 
-const BOOK_ICON_SECTIONS=[
-  {key:"work",label:"Trabajo y oficina",icons:TASK_EMOJIS.work},
-  {key:"tasks",label:"Tareas y organización",icons:TASK_EMOJIS.tasks},
-  {key:"money",label:"Dinero y compras",icons:TASK_EMOJIS.money},
-  {key:"food",label:"Comida",icons:TASK_EMOJIS.food},
-  {key:"social",label:"Sociales y otros",icons:TASK_EMOJIS.social},
-  {key:"zelda",label:"Aventura",icons:TASK_EMOJIS.zelda,themeOnly:"emerald_gold"}
-];
+const BOOK_ICONS=["📖","📘","📗","📕","📙","📓","📔","📌","✅","☑️","📝","📋","📁","📂","🗂️","🗃️","🗄️","💼","🏢","🏭","👷","🧑‍💼","👨‍💻","👩‍💻","💻","🖥️","🖨️","⌨️","📊","📈","📉","🧾","📦","🚚","📞","📧","📅","🗓️","⏰","⚙️","🔧","🛠️","🔩","📐","📏","✏️","🖊️","📎","🔍","🎯","💰","💵","💴","💶","💷","🪙","💳","🏦","🏧","💹","🧮","🛒","🏠","🚗","⛽","🍽️","☕","🍳","🍕","🌮","🥗","🗡️","🛡️","🧝","🧚","💎","🔺","🟩","🟨","🏹","🪄","🗝️","📜","🧭","🏺","🔥","🌿"];
 const BOOK_COLORS=["#725cff","#3d8bfd","#22b573","#d7a928","#f06a6a","#b56cff","#5aa7a7","#8d98a8"];
 
 function normalizeBookAppearance(book){
@@ -212,33 +205,13 @@ function resetBookForm(){
 
 function renderBookCustomizePickers(){
   if($("#bookIconPicker")){
-    const current=$("#bookIconInput").value;
-    const theme=settings.theme||"emerald_gold";
-
-    $("#bookIconPicker").innerHTML=BOOK_ICON_SECTIONS
-      .filter(section=>!section.themeOnly || section.themeOnly===theme)
-      .map(section=>`
-        <section class="book-emoji-section ${section.themeOnly?"book-adventure-section":""}">
-          <h4>${section.label}</h4>
-          <div class="book-emoji-grid">
-            ${section.icons.map(icon=>`
-              <button type="button"
-                      class="book-icon-option ${current===icon?"selected":""}"
-                      data-book-icon="${icon}"
-                      title="${section.label}">${icon}</button>
-            `).join("")}
-          </div>
-        </section>
-      `).join("");
+    $("#bookIconPicker").innerHTML=BOOK_ICONS.map(icon=>`
+      <button type="button" class="book-icon-option ${$("#bookIconInput").value===icon?"selected":""}" data-book-icon="${icon}">${icon}</button>
+    `).join("");
   }
-
   if($("#bookColorPicker")){
     $("#bookColorPicker").innerHTML=BOOK_COLORS.map(color=>`
-      <button type="button"
-              class="book-color-option ${$("#bookColorInput").value===color?"selected":""}"
-              data-book-color="${color}"
-              style="--book-color:${color}"
-              title="${color}"></button>
+      <button type="button" class="book-color-option ${$("#bookColorInput").value===color?"selected":""}" data-book-color="${color}" style="--book-color:${color}" title="${color}"></button>
     `).join("");
   }
 
@@ -459,17 +432,7 @@ const TASK_EMOJIS={
   money:["💰","💵","💴","💶","💷","🪙","💳","🏦","🏧","💹","🧮","🧾","🛍️","🛒","🏷️","📦","💸","💲","🤑","💱","📉","📈","🏪","🧺","⛽","🚕","🍽️","☕","🏠","🔑"],
   food:["🍽️","🍳","🥘","🍲","🍜","🍝","🍕","🌮","🌯","🥪","🍔","🍟","🥗","🍣","🍱","🥩","🍗","🥚","🍞","🥐","🧀","🍎","🍌","🍇","🍓","🥦","🥕","☕","🧃","🥤","🍰","🎂"],
   social:["👥","🤝","🎂","🎉","🎁","❤️","😊","👍","🙏","☕","🍽️","🎬","🎵","📷","🎮","⚽","🏀","🌟","🌙","☀️","💬","📱","☎️","🥳","🎈","🎊","🫶","🤗","👏","🙌","💐"],
-  zelda:[
-    "🗡️","⚔️","🛡️","🏹","🪄","🧝","🧝‍♂️","🧝‍♀️","🧚","🧚‍♂️","🧚‍♀️",
-    "🔺","🟩","🟨","🟦","🟪","💎","💠","🔮","🪬","🧿","👑","🏆","⭐","🌟","✨","💫",
-    "🗝️","🔑","📜","🗺️","🧭","🏺","🏰","⛺","🕯️","🔥","🌿","🍃","🌱","🌲","🌳","🌾","🍄",
-    "🪙","💰","💵","💳","🏦","🧾","💲","💸","📦","🎒","🧺",
-    "🧰","🔨","⚒️","🛠️","🔧","⚙️","🪓","⛏️","🪚","🪛","🧱",
-    "🧪","⚗️","🧴","🔔","🎵","🎶","📯","🪕",
-    "🐎","🦅","🐺","🦊","🐉","🐲","🦋","🐝","🪶","🪽","🐟",
-    "🌊","💧","❄️","⚡","☀️","🌙",
-    "📌","✅","☑️","📋","📝","📚","💼","🎯","📈","📉","🧮","🗂️","📁","📂","🔍","⏰","📅"
-  ]
+  zelda:["🗡️","🛡️","🧝","🧚","💎","🔺","🟩","🟨","🏹","🪄","🗝️","💰","🪙","📜","🧭","🏺","🔥","🌿","⭐","🌙"]
 };
 function renderEmojiPicker(){
   const fill=(id,list)=>{

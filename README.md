@@ -1,21 +1,10 @@
-# Mis Tareas — Versión 11.1 REPARADA
+# Mis Tareas — Versión 11.0.4.1 P
 
-Base exacta: Versión 11.0.4.1 P ESTABLE.
-
-No se modificó la estrategia de caché ni el Service Worker respecto a esa base.
-
-Cambios:
-- Solo se modifica el tema predeterminado Esmeralda dorado.
-- Los demás temas permanecen como estaban en 11.0.4.1 P.
-- Tema Esmeralda dorado:
-  - fondo blanco/crema,
-  - encabezado verde esmeralda,
-  - tarjetas claras,
-  - bordes dorados,
-  - botones verdes y dorados,
-  - navegación inferior clara.
-- Se amplía mucho la categoría Aventura.
-- Los emoticonos de Aventura pueden usarse en tareas y libros.
-- El selector de emoticonos de Libros se divide por secciones igual que Tareas:
-  Trabajo y oficina, Tareas y organización, Dinero y compras, Comida, Sociales y otros, Aventura.
-- Aventura solo aparece con el tema Esmeralda dorado.
+- Se elimina la campana superior.
+- Se elimina el switch de notificación en tareas.
+- Se corrige el doble emoticono del libro activo.
+- Todos los Cancelar de modales cierran el modal.
+- Ajustes incorpora temas: Esmeralda dorado (predeterminado), Noche violeta, Azul océano y Grafito.
+- Ajustes se agrupa en secciones desplegables: Visual, Gastos, Exportar/importar y Acerca de.
+- Se amplían los emoticonos de tareas y libros para trabajo, tareas, dinero, oficios, comida y sociales.
+- En tema Esmeralda dorado aparece una categoría extra de aventura/fantasía inspirada en la estética del proyecto católico/Zelda, sin usar arte protegido.
