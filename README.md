@@ -1,17 +1,10 @@
-# Mis Tareas — Versión 11.0.4
+# Mis Tareas — Versión 11.0.4.1 P
 
-Base: Versión 11.0.3.1 corregida estable.
-
-Cambios:
-- El día de inicio para sumar gastos del mes ahora se guarda por libro.
-- Cada libro nuevo inicia con día 1 por defecto.
-- Ejemplo:
-  - Libro 1 puede usar día 11.
-  - Libro 2 puede usar día 14.
-  - Al volver a Libro 1, seguirá mostrando día 11.
-- En Ajustes se aclara que este valor pertenece al libro activo.
-- Si una tarea tiene comentario, ya no se muestra todo el texto dentro de la tarjeta.
-- En su lugar aparece únicamente el icono 💬.
-- Al tocar 💬 se abre un modal con el comentario completo.
-- El modal puede cerrarse con X o tocando fuera.
-- El icono de comentario también aparece en Semana y Tablero cuando corresponde.
+- Se elimina la campana superior.
+- Se elimina el switch de notificación en tareas.
+- Se corrige el doble emoticono del libro activo.
+- Todos los Cancelar de modales cierran el modal.
+- Ajustes incorpora temas: Esmeralda dorado (predeterminado), Noche violeta, Azul océano y Grafito.
+- Ajustes se agrupa en secciones desplegables: Visual, Gastos, Exportar/importar y Acerca de.
+- Se amplían los emoticonos de tareas y libros para trabajo, tareas, dinero, oficios, comida y sociales.
+- En tema Esmeralda dorado aparece una categoría extra de aventura/fantasía inspirada en la estética del proyecto católico/Zelda, sin usar arte protegido.

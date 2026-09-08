@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.4";
+const APP_VERSION = "11.0.4.1 P";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -155,10 +155,11 @@ function loadSettings(){
       lastExportTxt:"",
       lastExportCsv:"",
       lastExportBackup:"",
+      theme:"emerald_gold",
       ...(JSON.parse(localStorage.getItem(SETTINGS_KEY))||{})
     };
   }catch{
-    return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:""};
+    return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:"",theme:"emerald_gold"};
   }
 }
 function saveSettings(){
@@ -171,15 +172,7 @@ function saveBooks(){
   renderBooks();
 }
 
-const BOOK_ICONS=[
-  "📖","📘","📗","📕","📙","📓","📔",
-  "📌","✅","☑️","📝","📋","📁","📂","🗂️","🗃️","🗄️",
-  "💼","🏢","🏭","👷","🧑‍💼","👨‍💻","👩‍💻","💻","🖥️","🖨️","⌨️",
-  "📊","📈","📉","🧾","📦","🚚","📞","📧","📅","🗓️","⏰","🔔",
-  "⚙️","🔧","🛠️","🔩","📐","📏","✏️","🖊️","📎","🔍","🎯",
-  "💰","💵","💴","💶","💷","🪙","💳","🏦","🏧","💹","🧮","🧾",
-  "🛒","🏠","🚗","⛽","✈️","🎓","📚","⭐","⚡","🔑"
-];
+const BOOK_ICONS=["📖","📘","📗","📕","📙","📓","📔","📌","✅","☑️","📝","📋","📁","📂","🗂️","🗃️","🗄️","💼","🏢","🏭","👷","🧑‍💼","👨‍💻","👩‍💻","💻","🖥️","🖨️","⌨️","📊","📈","📉","🧾","📦","🚚","📞","📧","📅","🗓️","⏰","⚙️","🔧","🛠️","🔩","📐","📏","✏️","🖊️","📎","🔍","🎯","💰","💵","💴","💶","💷","🪙","💳","🏦","🏧","💹","🧮","🛒","🏠","🚗","⛽","🍽️","☕","🍳","🍕","🌮","🥗","🗡️","🛡️","🧝","🧚","💎","🔺","🟩","🟨","🏹","🪄","🗝️","📜","🧭","🏺","🔥","🌿"];
 const BOOK_COLORS=["#725cff","#3d8bfd","#22b573","#d7a928","#f06a6a","#b56cff","#5aa7a7","#8d98a8"];
 
 function normalizeBookAppearance(book){
@@ -434,9 +427,12 @@ function statusLabel(s){ return ({pending:"Pendiente",completed:"Completada",mis
 let emojiEditTaskId=null;
 
 const TASK_EMOJIS={
-  work:["📌","✅","☑️","📝","📋","📁","📂","📊","📈","📉","💼","🗂️","🗓️","⏰","⌛","🔔","📞","📧","💻","🖥️","🖨️","🔧","🛠️","⚙️","🔍","✏️","📐","📎","🧾","💰","🏦","🚚","📦","🏢","👷"],
-  tasks:["🏠","🧹","🧺","🛒","🍳","🚗","⛽","💡","🔑","🔒","📚","🎓","🏃","🏋️","🚶","💊","🩺","🧴","🪴","🐶","🐱","✈️","🚌","📍","⭐","⚡","🎯","🔄","🧠","💧"],
-  social:["👥","🤝","🎂","🎉","🎁","❤️","😊","👍","🙏","☕","🍽️","🎬","🎵","📷","🎮","⚽","🏀","🌟","🌙","☀️"]
+  work:["📌","✅","☑️","📝","📋","📁","📂","🗂️","🗃️","🗄️","💼","🏢","🏭","👷","🧑‍💼","👨‍💻","👩‍💻","💻","🖥️","🖨️","⌨️","🖱️","📊","📈","📉","📞","📧","📅","🗓️","⏰","🔔","⚙️","🔧","🛠️","🔩","📐","📏","✏️","🖊️","📎","🔍","🎯","🚚","📦","🧾","🏷️","🪜","🧰","🪛","🪚","🔨"],
+  tasks:["🏠","🧹","🧺","🛒","🍳","🚗","⛽","💡","🔑","🔒","📚","🎓","🏃","🏋️","🚶","💊","🩺","🧴","🪴","🐶","🐱","✈️","🚌","📍","⭐","⚡","🔄","🧠","💧","🚿","🛏️","🪥","🧽","🧼","🧯","🪣","📬","📮","🗑️","🧊","🔌","🧑‍🍳","🧑‍🔧","🧑‍🏫","🧑‍⚕️","🧑‍🌾","🧑‍🎨"],
+  money:["💰","💵","💴","💶","💷","🪙","💳","🏦","🏧","💹","🧮","🧾","🛍️","🛒","🏷️","📦","💸","💲","🤑","💱","📉","📈","🏪","🧺","⛽","🚕","🍽️","☕","🏠","🔑"],
+  food:["🍽️","🍳","🥘","🍲","🍜","🍝","🍕","🌮","🌯","🥪","🍔","🍟","🥗","🍣","🍱","🥩","🍗","🥚","🍞","🥐","🧀","🍎","🍌","🍇","🍓","🥦","🥕","☕","🧃","🥤","🍰","🎂"],
+  social:["👥","🤝","🎂","🎉","🎁","❤️","😊","👍","🙏","☕","🍽️","🎬","🎵","📷","🎮","⚽","🏀","🌟","🌙","☀️","💬","📱","☎️","🥳","🎈","🎊","🫶","🤗","👏","🙌","💐"],
+  zelda:["🗡️","🛡️","🧝","🧚","💎","🔺","🟩","🟨","🏹","🪄","🗝️","💰","🪙","📜","🧭","🏺","🔥","🌿","⭐","🌙"]
 };
 function renderEmojiPicker(){
   const fill=(id,list)=>{
@@ -447,7 +443,10 @@ function renderEmojiPicker(){
 
   fill("emojiWorkGrid",TASK_EMOJIS.work);
   fill("emojiTaskGrid",TASK_EMOJIS.tasks);
+  fill("emojiMoneyGrid",TASK_EMOJIS.money);
+  fill("emojiFoodGrid",TASK_EMOJIS.food);
   fill("emojiSocialGrid",TASK_EMOJIS.social);
+  fill("emojiZeldaGrid",TASK_EMOJIS.zelda);
 
   $$("[data-task-emoji]").forEach(b=>b.onclick=()=>{
     const newEmoji=b.dataset.taskEmoji;
@@ -921,12 +920,9 @@ function openTask(t=null){
   $("#recurrence").value=t?.recurrence||"none";
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
-  $("#notify").checked=t?!!t.notify:true;
-  $("#notifyAmount").value=t?.notifyAmount||1;
-  $("#notifyUnit").value=t?.notifyUnit||"days";
   $("#comment").value=t?.comment||"";
   $("#highImportance").checked=!!t?.highImportance;
-  toggleTimeFields(); syncDueDependentFields();
+  toggleTimeFields();
   $("#taskDialog").showModal();
 }
 function readForm(){
@@ -951,48 +947,14 @@ function readForm(){
     recurrence:$("#recurrence").value,
     status,
     boardStage,
-    notify:!!due && $("#notify").checked,
-    notifyAmount:Number($("#notifyAmount").value||1),
-    notifyUnit:$("#notifyUnit").value,
+    notify:false,
+    notifyAmount:1,
+    notifyUnit:"days",
     comment:$("#comment").value.trim(),
     highImportance:$("#highImportance").checked
   };
 }
 function toggleTimeFields(){ $("#timeFields").classList.toggle("hidden",$("#allDay").checked); }
-function toggleNotifyFields(){ $("#notifyFields").classList.toggle("hidden",!$("#notify").checked); }
-
-
-function comicConfirm(message, options={}){
-  return new Promise(resolve=>{
-    const dialog=$("#comicConfirmDialog");
-    const title=$("#comicConfirmTitle");
-    const text=$("#comicConfirmMessage");
-    const ok=$("#comicConfirmOk");
-    const cancel=$("#comicConfirmCancel");
-
-    title.textContent=options.title||"Confirmar";
-    text.textContent=message;
-    ok.textContent=options.okText||"Sí, continuar";
-    cancel.textContent=options.cancelText||"Cancelar";
-
-    const finish=value=>{
-      ok.onclick=null;
-      cancel.onclick=null;
-      dialog.oncancel=null;
-      if(dialog.open) dialog.close();
-      resolve(value);
-    };
-
-    ok.onclick=()=>finish(true);
-    cancel.onclick=()=>finish(false);
-    dialog.oncancel=e=>{
-      e.preventDefault();
-      finish(false);
-    };
-
-    dialog.showModal();
-  });
-}
 
 
 
@@ -1249,9 +1211,16 @@ function populateSettings(){
   $("#expenseCycleDay").innerHTML=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
   $("#expenseCycleDay").value=String(getActiveBookExpenseCycleDay());
   $("#customAppTitle").value=settings.appTitle||"Mis Tareas";
+  if($("#themeSelect")) $("#themeSelect").value=settings.theme||"emerald_gold";
   renderExportMarks();
 }
+function applyTheme(theme){
+  const valid=["emerald_gold","midnight_violet","ocean_blue","graphite"];
+  document.documentElement.dataset.theme=valid.includes(theme)?theme:"emerald_gold";
+}
+
 function applySettings(){
+  applyTheme(settings.theme||"emerald_gold");
   if($("#pendingFilter")) $("#pendingFilter").value=settings.defaultPendingFilter||"upcoming";
   if($("#appTitle")) $("#appTitle").textContent=settings.appTitle||"Mis Tareas";
 }
@@ -1264,6 +1233,7 @@ function saveSettingsFromDialog(){
   settings.defaultPendingFilter=$("#defaultPendingFilter").value;
   setActiveBookExpenseCycleDay($("#expenseCycleDay").value);
   settings.appTitle=title;
+  settings.theme=$("#themeSelect")?.value||"emerald_gold";
   saveSettings();
   applySettings();
   renderAll();
@@ -1494,14 +1464,8 @@ $("#emojiSavedDialog").addEventListener("cancel",e=>{
 });
 
 
-$("#allDay").onchange=toggleTimeFields; $("#notify").onchange=toggleNotifyFields;
+$("#allDay").onchange=toggleTimeFields; function syncDueDependentFields(){}
 
-function syncDueDependentFields(){
-  const hasDue=!!$("#dueDate").value;
-  $("#notify").disabled=!hasDue;
-  if(!hasDue) $("#notify").checked=false;
-  toggleNotifyFields();
-}
 $("#dueDate").addEventListener("change",syncDueDependentFields);
 
 
@@ -1643,6 +1607,14 @@ $("#booksDialog").addEventListener("cancel",e=>{
   $("#booksDialog").close();
 });
 
+
+$$("dialog [id*='cancel'], dialog [id*='Cancel'], dialog .cancel-btn").forEach(btn=>{
+  btn.addEventListener("click",e=>{
+    e.preventDefault();
+    const dialog=btn.closest("dialog");
+    if(dialog && dialog.open) dialog.close();
+  });
+});
 $("#bottomAddBtn").onclick=()=>openTask();
 function setSelectedDay(d){
   selectedDate=startOfDay(d);
@@ -1656,7 +1628,6 @@ $("#dayDatePicker").onchange=e=>{
   if(e.target.value) setSelectedDay(parseDate(e.target.value));
 };
 $("#todayBtn").onclick=()=>setSelectedDay(new Date());
-$("#notifyBtn").onclick=requestNotifications;
 $("#pendingFilter").onchange=renderDay;
 $("#prevMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();};
 $("#nextMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar();};

@@ -1635,3 +1635,19 @@ button{cursor:pointer}
   vertical-align:middle;
   font-size:.92rem;
 }
+
+
+/* ===== 11.0.4.1 P themes ===== */
+:root,:root[data-theme="emerald_gold"]{--bg:#071710;--panel:#0c2218;--panel-2:#10291d;--text:#f6f4df;--muted:#a9b8aa;--line:rgba(212,175,55,.20);--accent:#17a46b;--accent-2:#d4af37;--danger:#ff6678;--success:#39d98a}
+:root[data-theme="midnight_violet"]{--bg:#071321;--panel:#0d2036;--panel-2:#132944;--text:#f5f7fb;--muted:#9eacc0;--line:rgba(130,145,165,.20);--accent:#725cff;--accent-2:#9a91ff;--danger:#ff6678;--success:#39d98a}
+:root[data-theme="ocean_blue"]{--bg:#061923;--panel:#0b2633;--panel-2:#103341;--text:#f3fbff;--muted:#9eb8c4;--line:rgba(71,172,214,.22);--accent:#259ac7;--accent-2:#72cbe8;--danger:#ff6678;--success:#39d98a}
+:root[data-theme="graphite"]{--bg:#111418;--panel:#191e24;--panel-2:#20262d;--text:#f4f5f6;--muted:#a4acb5;--line:rgba(170,180,190,.18);--accent:#687586;--accent-2:#9aa6b5;--danger:#ff6678;--success:#39d98a}
+body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accent) 9%,transparent),transparent 28%),var(--bg)!important;color:var(--text)}
+.primary-btn,.expense-add-btn,.bottom-add,.view-tab.active,.bottom-tab.active{background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 70%,var(--accent-2)))!important}
+.settings-group{border:1px solid var(--line);border-radius:15px;background:color-mix(in srgb,var(--panel) 90%,transparent);overflow:hidden}
+.settings-group summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;cursor:pointer;list-style:none}
+.settings-group summary::-webkit-details-marker{display:none}.settings-group summary span{font-weight:800}.settings-group summary small{color:var(--muted)}.settings-group[open] summary{border-bottom:1px solid var(--line)}.settings-group-body{display:grid;gap:14px;padding:14px}.settings-actions-list{padding:10px}.settings-actions-list .settings-item{margin:0}
+:root[data-theme="emerald_gold"] .calendar-expense-mark,:root[data-theme="emerald_gold"] .week-expense-mark,:root[data-theme="emerald_gold"] .money-symbol{color:#d4af37!important}
+:root[data-theme="emerald_gold"] .task-card,:root[data-theme="emerald_gold"] .board-card,:root[data-theme="emerald_gold"] .book-card,:root[data-theme="emerald_gold"] .expense-card{background:linear-gradient(180deg,#10291d,#0b2117)!important}
+:root[data-theme="emerald_gold"] .active-book-select-wrap,:root[data-theme="emerald_gold"] .book-form-toggle,:root[data-theme="emerald_gold"] .comic-bubble{border-color:rgba(212,175,55,.28)!important}
+.theme-zelda-only{display:none}:root[data-theme="emerald_gold"] .theme-zelda-only{display:block}

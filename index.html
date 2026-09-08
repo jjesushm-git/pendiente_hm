@@ -17,10 +17,8 @@
       </div>
       <div class="top-actions">
         <label class="active-book-select-wrap" title="Cambiar libro">
-          <span class="active-book-select-icon">📖</span>
           <select id="activeBookSelect" class="active-book-select" aria-label="Libro activo"></select>
         </label>
-        <button id="notifyBtn" class="icon-btn" title="Activar notificaciones">🔔</button>
         <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
       </div>
     </header>
@@ -305,27 +303,6 @@
         <label class="switch"><input id="highImportance" type="checkbox"><span></span></label>
       </div>
 
-      <div class="switch-row">
-        <div>
-          <strong>Notificación</strong>
-          <small>Por defecto se activa un día antes. Requiere fecha de vencimiento.</small>
-        </div>
-        <label class="switch"><input id="notify" type="checkbox" checked><span></span></label>
-      </div>
-
-      <div class="two-cols" id="notifyFields">
-        <label>Avisar
-          <input id="notifyAmount" type="number" min="1" max="365" value="1" />
-        </label>
-        <label>Unidad
-          <select id="notifyUnit">
-            <option value="days">Día(s) antes</option>
-            <option value="hours">Hora(s) antes</option>
-            <option value="minutes">Minuto(s) antes</option>
-          </select>
-        </label>
-      </div>
-
       <label>Comentario
         <textarea id="comment" rows="3" maxlength="1000" placeholder="Notas, seguimiento o comentario..."></textarea>
       </label>
@@ -340,82 +317,64 @@
 
   <dialog id="settingsDialog" class="modal">
     <div class="modal-head">
-      <div>
-        <p class="eyebrow">Preferencias y respaldo</p>
-        <h2>Ajustes</h2>
-      </div>
+      <div><p class="eyebrow">Preferencias y respaldo</p><h2>Ajustes</h2></div>
       <button class="icon-btn" id="closeSettings">✕</button>
     </div>
-
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.4</small></div></div>
-
-      <div class="settings-form-card">
-        <label>Vista predeterminada de tareas
-          <select id="defaultPendingFilter">
-            <option value="all">Todas</option>
-            <option value="today">Hoy</option>
-            <option value="upcoming">Próximas</option>
-            <option value="recurring">Recurrentes</option>
-          </select>
-        </label>
-
-        <label>Día de inicio para sumar gastos del mes
-          <select id="expenseCycleDay"></select>
-          <small>Este valor se guarda de forma independiente para el libro activo.</small>
-        </label>
-
-        <label>Título de la aplicación
-          <input id="customAppTitle" type="text" maxlength="18" placeholder="Mis Tareas" autocomplete="off" />
-          <small>Máximo 18 caracteres.</small>
-        </label>
-
-        <button id="saveSettingsBtn" class="primary-btn" type="button">Guardar cambios</button>
-        <div id="settingsSavedMessage" class="saved-message hidden">Los cambios han sido guardados.</div>
-      </div>
-
-      <button id="updateAppBtn" class="settings-item">
-        <span>🔄</span>
-        <div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div>
-      </button>
-
-      <button id="exportExpensesTxtBtn" class="settings-item">
-        <span>📄</span>
-        <div>
-          <strong>Exportar gastos TXT</strong>
-          <small>Descarga todos los gastos registrados en formato de texto.</small>
-          <small id="lastExportTxt" class="last-export-mark">Nunca descargado</small>
+      <details class="settings-group" id="settingsVisualGroup">
+        <summary><span>🎨 Visual</span><small>Tema, título y vista</small></summary>
+        <div class="settings-group-body">
+          <label>Tema de color
+            <select id="themeSelect">
+              <option value="emerald_gold">Esmeralda dorado</option>
+              <option value="midnight_violet">Noche violeta</option>
+              <option value="ocean_blue">Azul océano</option>
+              <option value="graphite">Grafito</option>
+            </select>
+          </label>
+          <label>Vista predeterminada de tareas
+            <select id="defaultPendingFilter">
+              <option value="all">Todas</option><option value="today">Hoy</option><option value="upcoming">Próximas</option><option value="recurring">Recurrentes</option>
+            </select>
+          </label>
+          <label>Título de la aplicación
+            <input id="customAppTitle" type="text" maxlength="18" placeholder="Mis Tareas" autocomplete="off" />
+            <small>Máximo 18 caracteres.</small>
+          </label>
         </div>
-      </button>
+      </details>
 
-      <button id="exportExpensesCsvBtn" class="settings-item">
-        <span>📊</span>
-        <div>
-          <strong>Exportar gastos CSV</strong>
-          <small>Descarga los gastos para abrirlos en Excel u otra hoja de cálculo.</small>
-          <small id="lastExportCsv" class="last-export-mark">Nunca descargado</small>
+      <details class="settings-group" id="settingsExpenseGroup">
+        <summary><span>💰 Gastos</span><small>Configuración del libro activo</small></summary>
+        <div class="settings-group-body">
+          <label>Día de inicio para sumar gastos del mes
+            <select id="expenseCycleDay"></select>
+            <small>Este valor se guarda de forma independiente para el libro activo.</small>
+          </label>
         </div>
-      </button>
+      </details>
 
-      <button id="exportBtn" class="settings-item">
-        <span>⬇️</span>
-        <div>
-          <strong>Exportar respaldo de tareas</strong>
-          <small>Descarga tus tareas en formato JSON.</small>
-          <small id="lastExportBackup" class="last-export-mark">Nunca descargado</small>
+      <details class="settings-group" id="settingsTransferGroup">
+        <summary><span>⇅ Exportar / importar</span><small>Respaldos y archivos</small></summary>
+        <div class="settings-group-body settings-actions-list">
+          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar gastos TXT</strong><small>Descarga todos los gastos registrados en formato de texto.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar gastos CSV</strong><small>Descarga los gastos para abrirlos en Excel u otra hoja de cálculo.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportBtn" class="settings-item"><span>⬇️</span><div><strong>Exportar respaldo de tareas</strong><small>Descarga tus tareas en formato JSON.</small><small id="lastExportBackup" class="last-export-mark">Nunca descargado</small></div></button>
+          <label class="settings-item file-item"><span>⬆️</span><div><strong>Importar respaldo de tareas</strong><small>Restaura tareas desde un archivo JSON.</small></div><input id="importInput" type="file" accept=".json,application/json" hidden /></label>
         </div>
-      </button>
+      </details>
 
-      <label class="settings-item file-item">
-        <span>⬆️</span>
-        <div><strong>Importar respaldo de tareas</strong><small>Restaura tareas desde un archivo JSON.</small></div>
-        <input id="importInput" type="file" accept=".json,application/json" hidden />
-      </label>
+      <details class="settings-group" id="settingsAboutGroup">
+        <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
+        <div class="settings-group-body settings-actions-list">
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.4.1 P</small></div></div>
+          <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
+        </div>
+      </details>
 
-      <button id="clearBtn" class="settings-item danger-outline">
-        <span>🗑️</span>
-        <div><strong>Borrar todos los datos</strong><small>Elimina tareas, papelera y gastos guardados en este dispositivo.</small></div>
-      </button>
+      <button id="saveSettingsBtn" class="primary-btn" type="button">Guardar cambios</button>
+      <div id="settingsSavedMessage" class="saved-message hidden">Los cambios han sido guardados.</div>
+      <button id="clearBtn" class="settings-item danger-outline"><span>🗑️</span><div><strong>Borrar todos los datos</strong><small>Elimina tareas, papelera y gastos guardados en este dispositivo.</small></div></button>
     </div>
   </dialog>
 
@@ -527,10 +486,10 @@
       <h3>Organización y actividades</h3>
       <div id="emojiTaskGrid" class="emoji-grid"></div>
     </div>
-    <div class="emoji-section">
-      <h3>Sociales y otros</h3>
-      <div id="emojiSocialGrid" class="emoji-grid"></div>
-    </div>
+    <div class="emoji-section"><h3>Dinero y compras</h3><div id="emojiMoneyGrid" class="emoji-grid"></div></div>
+    <div class="emoji-section"><h3>Comida</h3><div id="emojiFoodGrid" class="emoji-grid"></div></div>
+    <div class="emoji-section"><h3>Sociales y otros</h3><div id="emojiSocialGrid" class="emoji-grid"></div></div>
+    <div class="emoji-section theme-zelda-only"><h3>Estilo aventura</h3><div id="emojiZeldaGrid" class="emoji-grid"></div></div>
   </dialog>
 
   
