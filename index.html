@@ -14,6 +14,10 @@
       <div>
         <p class="eyebrow">Organizador personal</p>
         <h1 id="appTitle">Mis Tareas</h1>
+        <button id="activeBookChip" class="active-book-chip" type="button" title="Cambiar libro">
+          <span id="activeBookChipIcon">📖</span>
+          <span id="activeBookChipName">Libro 1</span>
+        </button>
       </div>
       <div class="top-actions">
         <button id="notifyBtn" class="icon-btn" title="Activar notificaciones">🔔</button>
@@ -336,7 +340,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.1</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.2</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -546,6 +550,21 @@
       <label id="bookFormLabel">Agregar libro
         <input id="bookNameInput" type="text" maxlength="20" placeholder="Máximo 20 caracteres" autocomplete="off" />
       </label>
+
+      <div class="book-customize-grid">
+        <div>
+          <small class="book-customize-label">Icono</small>
+          <div id="bookIconPicker" class="book-icon-picker"></div>
+        </div>
+        <div>
+          <small class="book-customize-label">Color</small>
+          <div id="bookColorPicker" class="book-color-picker"></div>
+        </div>
+      </div>
+
+      <input id="bookIconInput" type="hidden" value="📖" />
+      <input id="bookColorInput" type="hidden" value="#725cff" />
+
       <button id="addBookBtn" type="button" class="primary-btn">＋ Agregar libro</button>
       <small id="bookNameCounter" class="book-counter">0/20</small>
     </div>

@@ -1098,3 +1098,154 @@ button{cursor:pointer}
   color:var(--text);
   font-weight:700;
 }
+
+
+/* =========================================================
+   VERSION 11.0.2 - mejoras de Libros
+   ========================================================= */
+
+.active-book-chip{
+  --active-book-color:#725cff;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:7px;
+  padding:5px 9px;
+  border:1px solid color-mix(in srgb,var(--active-book-color) 42%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--active-book-color) 10%,transparent);
+  color:var(--muted);
+  font-size:.76rem;
+  cursor:pointer;
+  max-width:200px;
+}
+
+#activeBookChipName{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.active-book-chip:hover{
+  color:var(--text);
+}
+
+.book-customize-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.book-customize-label{
+  display:block;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:.75rem;
+}
+
+.book-icon-picker,
+.book-color-picker{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+
+.book-icon-option,
+.book-color-option{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:#101d31;
+  color:var(--text);
+  cursor:pointer;
+}
+
+.book-icon-option{
+  font-size:1.15rem;
+}
+
+.book-icon-option.selected{
+  border-color:#8176ff;
+  box-shadow:0 0 0 2px rgba(126,91,255,.14);
+}
+
+.book-color-option{
+  position:relative;
+}
+
+.book-color-option::before{
+  content:"";
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:var(--book-color);
+}
+
+.book-color-option.selected{
+  border-color:var(--book-color);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--book-color) 22%,transparent);
+}
+
+.book-select-card{
+  grid-template-columns:auto minmax(0,1fr) auto !important;
+  border-left:3px solid transparent;
+}
+
+.book-select-card.selected{
+  border-left-color:var(--book-accent) !important;
+  box-shadow:inset 3px 0 0 var(--book-accent) !important;
+}
+
+.book-card-icon{
+  background:color-mix(in srgb,var(--book-accent) 12%,transparent) !important;
+  border:1px solid color-mix(in srgb,var(--book-accent) 28%,transparent);
+}
+
+.book-row-actions{
+  display:flex;
+  align-items:center;
+  gap:4px;
+}
+
+.book-row-actions button{
+  width:31px;
+  height:31px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#101d31;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+.book-row-actions button:disabled{
+  opacity:.28;
+  cursor:default;
+}
+
+.book-row-actions button:not(:disabled):active{
+  transform:scale(.94);
+}
+
+@media(max-width:560px){
+  .book-customize-grid{
+    grid-template-columns:1fr;
+  }
+
+  .book-select-card{
+    grid-template-columns:auto minmax(0,1fr) !important;
+  }
+
+  .book-row-actions{
+    grid-column:2;
+    justify-content:flex-end;
+  }
+
+  .active-book-chip{
+    max-width:165px;
+  }
+}

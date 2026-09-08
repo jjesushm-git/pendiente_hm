@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.1";
+const APP_VERSION = "11.0.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -156,21 +156,70 @@ function saveBooks(){
   localStorage.setItem(BOOKS_KEY, JSON.stringify(books));
   renderBooks();
 }
+
+const BOOK_ICONS=["📖","📘","📗","📕","📙","📓","📔","🗂️","💼","🏠","⭐","🎯"];
+const BOOK_COLORS=["#725cff","#3d8bfd","#22b573","#d7a928","#f06a6a","#b56cff","#5aa7a7","#8d98a8"];
+
+function normalizeBookAppearance(book){
+  if(!book.icon) book.icon="📖";
+  if(!book.color) book.color="#725cff";
+  return book;
+}
+
+function renderBookCustomizePickers(){
+  if($("#bookIconPicker")){
+    $("#bookIconPicker").innerHTML=BOOK_ICONS.map(icon=>`
+      <button type="button" class="book-icon-option ${$("#bookIconInput").value===icon?"selected":""}" data-book-icon="${icon}">${icon}</button>
+    `).join("");
+  }
+  if($("#bookColorPicker")){
+    $("#bookColorPicker").innerHTML=BOOK_COLORS.map(color=>`
+      <button type="button" class="book-color-option ${$("#bookColorInput").value===color?"selected":""}" data-book-color="${color}" style="--book-color:${color}" title="${color}"></button>
+    `).join("");
+  }
+
+  $$("[data-book-icon]").forEach(btn=>btn.onclick=()=>{
+    $("#bookIconInput").value=btn.dataset.bookIcon;
+    renderBookCustomizePickers();
+  });
+
+  $$("[data-book-color]").forEach(btn=>btn.onclick=()=>{
+    $("#bookColorInput").value=btn.dataset.bookColor;
+    renderBookCustomizePickers();
+  });
+}
+
+function updateActiveBookChip(){
+  const book=activeBook();
+  if(!book) return;
+  normalizeBookAppearance(book);
+  if($("#activeBookChipIcon")) $("#activeBookChipIcon").textContent=book.icon;
+  if($("#activeBookChipName")) $("#activeBookChipName").textContent=book.name;
+  if($("#activeBookChip")) $("#activeBookChip").style.setProperty("--active-book-color",book.color);
+}
+
 function ensureBookMigration(){
   let changedBooks=false;
   let defaultBook=books.find(b=>b && (b.isDefault || b.name==="Libro 1"));
 
   if(!defaultBook){
-    defaultBook={id:uid(),name:"Libro 1",createdAt:new Date().toISOString(),isDefault:true};
+    defaultBook={
+      id:uid(),
+      name:"Libro 1",
+      icon:"📖",
+      color:"#725cff",
+      createdAt:new Date().toISOString(),
+      isDefault:true
+    };
     books.unshift(defaultBook);
-    changedBooks=true;
-  }else if(!defaultBook.isDefault){
-    defaultBook.isDefault=true;
     changedBooks=true;
   }
 
-  // Libro 1 siempre queda hasta arriba.
-  books=[defaultBook,...books.filter(b=>b.id!==defaultBook.id)];
+  books.forEach(book=>{
+    const beforeIcon=book.icon, beforeColor=book.color;
+    normalizeBookAppearance(book);
+    if(beforeIcon!==book.icon || beforeColor!==book.color) changedBooks=true;
+  });
 
   let changedTasks=false;
   tasks.forEach(t=>{
@@ -214,6 +263,7 @@ function setActiveBook(id,{render=true}={}){
   activeBookId=id||"";
   if(activeBookId) localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
   else localStorage.removeItem(ACTIVE_BOOK_KEY);
+  updateActiveBookChip();
   if(render) renderAll();
 }
 function finalizeBookSelection(){
@@ -221,6 +271,7 @@ function finalizeBookSelection(){
     activeBookId=books[0].id;
     localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
   }
+  updateActiveBookChip();
   renderAll();
 }
 
@@ -836,26 +887,47 @@ function comicConfirm(message, options={}){
 }
 
 
+
+function moveBook(bookId,direction){
+  const index=books.findIndex(b=>b.id===bookId);
+  if(index<0) return;
+  const target=index+direction;
+  if(target<0 || target>=books.length) return;
+
+  [books[index],books[target]]=[books[target],books[index]];
+  localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+  renderBooks();
+}
+
 function renderBooks(){
   if(!$("#booksList")) return;
 
   $("#booksList").innerHTML=books.length ? books.map((book,index)=>{
+    normalizeBookAppearance(book);
     const selected=book.id===activeBookId;
     const taskCount=tasks.filter(t=>t.bookId===book.id).length;
     const expenseCount=expenses.filter(e=>e.bookId===book.id).length;
+
     return `
-      <article class="book-select-card ${selected?"selected":""}">
+      <article class="book-select-card ${selected?"selected":""}" style="--book-accent:${book.color}">
         <label class="book-check-wrap" title="${selected?"Quitar selección":"Seleccionar libro"}">
           <input type="checkbox" data-book-select="${book.id}" ${selected?"checked":""}>
           <span class="book-custom-check">✓</span>
         </label>
-        <button type="button" class="book-name-btn" data-book-edit="${book.id}" title="Editar nombre">
-          <span class="book-card-icon">📖</span>
+
+        <button type="button" class="book-name-btn" data-book-edit="${book.id}" title="Editar nombre, icono o color">
+          <span class="book-card-icon" style="--book-accent:${book.color}">${book.icon}</span>
           <span class="book-card-copy">
             <strong>${esc(book.name)}</strong>
             <small>${taskCount} ${taskCount===1?"tarea":"tareas"} · ${expenseCount} ${expenseCount===1?"gasto":"gastos"}</small>
           </span>
         </button>
+
+        <div class="book-row-actions">
+          <button type="button" data-book-up="${book.id}" ${index===0?"disabled":""} title="Subir">↑</button>
+          <button type="button" data-book-down="${book.id}" ${index===books.length-1?"disabled":""} title="Bajar">↓</button>
+          <button type="button" data-book-export="${book.id}" title="Exportar libro">⇩</button>
+        </div>
       </article>`;
   }).join("") : `<div class="empty">No hay libros.</div>`;
 
@@ -863,7 +935,6 @@ function renderBooks(){
     const id=ch.dataset.bookSelect;
     if(ch.checked){
       setActiveBook(id,{render:false});
-      // selección única
       $$("[data-book-select]").forEach(other=>{if(other!==ch) other.checked=false;});
     }else if(activeBookId===id){
       setActiveBook("",{render:false});
@@ -874,27 +945,40 @@ function renderBooks(){
   $$("[data-book-edit]").forEach(btn=>btn.onclick=()=>{
     const book=books.find(b=>b.id===btn.dataset.bookEdit);
     if(!book) return;
+    normalizeBookAppearance(book);
     editingBookId=book.id;
     $("#bookNameInput").value=book.name;
     $("#bookNameCounter").textContent=`${book.name.length}/20`;
-    $("#bookFormLabel").firstChild.textContent="Editar nombre ";
+    $("#bookIconInput").value=book.icon;
+    $("#bookColorInput").value=book.color;
+    $("#bookFormLabel").firstChild.textContent="Editar libro ";
     $("#addBookBtn").textContent="Guardar";
+    renderBookCustomizePickers();
     $("#bookNameInput").focus();
   });
+
+  $$("[data-book-up]").forEach(btn=>btn.onclick=()=>moveBook(btn.dataset.bookUp,-1));
+  $$("[data-book-down]").forEach(btn=>btn.onclick=()=>moveBook(btn.dataset.bookDown,1));
+  $$("[data-book-export]").forEach(btn=>btn.onclick=()=>exportBook(btn.dataset.bookExport));
 }
 
 function openBooksDialog(){
   editingBookId=null;
   $("#bookNameInput").value="";
   $("#bookNameCounter").textContent="0/20";
+  $("#bookIconInput").value="📖";
+  $("#bookColorInput").value="#725cff";
   $("#bookFormLabel").firstChild.textContent="Agregar libro ";
   $("#addBookBtn").textContent="＋ Agregar libro";
+  renderBookCustomizePickers();
   renderBooks();
   $("#booksDialog").showModal();
 }
 
 function addBook(){
   const name=$("#bookNameInput").value.trim();
+  const icon=$("#bookIconInput").value||"📖";
+  const color=$("#bookColorInput").value||"#725cff";
 
   if(!name){
     toast(editingBookId?"Escribe el nuevo nombre del libro.":"Escribe el nombre del libro.");
@@ -909,14 +993,20 @@ function addBook(){
     const book=books.find(b=>b.id===editingBookId);
     if(book){
       book.name=name;
+      book.icon=icon;
+      book.color=color;
       book.updatedAt=new Date().toISOString();
       localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+      if(book.id===activeBookId) updateActiveBookChip();
     }
     editingBookId=null;
     $("#bookNameInput").value="";
     $("#bookNameCounter").textContent="0/20";
+    $("#bookIconInput").value="📖";
+    $("#bookColorInput").value="#725cff";
     $("#bookFormLabel").firstChild.textContent="Agregar libro ";
     $("#addBookBtn").textContent="＋ Agregar libro";
+    renderBookCustomizePickers();
     renderBooks();
     toast("Nombre de libro actualizado.");
     return;
@@ -925,12 +1015,17 @@ function addBook(){
   books.push({
     id:uid(),
     name,
+    icon,
+    color,
     createdAt:new Date().toISOString()
   });
 
   localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
   $("#bookNameInput").value="";
   $("#bookNameCounter").textContent="0/20";
+  $("#bookIconInput").value="📖";
+  $("#bookColorInput").value="#725cff";
+  renderBookCustomizePickers();
   renderBooks();
   toast("Libro agregado.");
 }
@@ -1137,6 +1232,29 @@ function renderViewExpenses(){
   });
 }
 
+
+function exportBook(bookId){
+  const book=books.find(b=>b.id===bookId);
+  if(!book) return;
+
+  const payload={
+    version:"11.0.2",
+    exportedAt:new Date().toISOString(),
+    book:{...book},
+    tasks:tasks.filter(t=>t.bookId===bookId),
+    expenses:expenses.filter(e=>e.bookId===bookId),
+    trash:trash.filter(t=>t.bookId===bookId)
+  };
+
+  const safeName=(book.name||"libro").replace(/[^\w\-áéíóúÁÉÍÓÚñÑ ]+/g,"").trim().replace(/\s+/g,"_") || "libro";
+  downloadText(
+    `libro_${safeName}_${dateKey(new Date())}.json`,
+    JSON.stringify(payload,null,2),
+    "application/json;charset=utf-8"
+  );
+  toast(`Libro "${book.name}" exportado.`);
+}
+
 function downloadText(filename,text,type="text/plain;charset=utf-8"){
   const blob=new Blob([text],{type});
   const a=document.createElement("a");
@@ -1309,6 +1427,7 @@ $("#expenseForm").addEventListener("submit",e=>{
 
 
 $("#booksBtn").onclick=openBooksDialog;
+$("#activeBookChip").onclick=openBooksDialog;
 $("#closeBooksDialog").onclick=()=>{finalizeBookSelection();$("#booksDialog").close();};
 $("#addBookBtn").onclick=addBook;
 
@@ -1391,6 +1510,7 @@ if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
+updateActiveBookChip();
 populateSettings();
 applySettings();
 if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
