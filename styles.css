@@ -2672,3 +2672,156 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 @media(max-width:520px){
   .import-choice-grid{grid-template-columns:1fr}
 }
+
+
+/* =========================================================
+   VERSION 11.5.3 — CORRECCIONES VISUALES
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   1) BARRA INFERIOR:
+   Nunca pintar el rectángulo de Agregar.
+   Solo el círculo + conserva el color del tema.
+   --------------------------------------------------------- */
+:root[data-theme="emerald_gold"] .bottom-add,
+:root[data-theme="midnight_violet"] .bottom-add,
+:root[data-theme="ocean_blue"] .bottom-add,
+:root[data-theme="graphite"] .bottom-add{
+  background:transparent !important;
+  background-image:none !important;
+  box-shadow:none !important;
+  border:0 !important;
+}
+
+:root[data-theme="emerald_gold"] .bottom-add::before,
+:root[data-theme="emerald_gold"] .bottom-add::after,
+:root[data-theme="midnight_violet"] .bottom-add::before,
+:root[data-theme="midnight_violet"] .bottom-add::after,
+:root[data-theme="ocean_blue"] .bottom-add::before,
+:root[data-theme="ocean_blue"] .bottom-add::after,
+:root[data-theme="graphite"] .bottom-add::before,
+:root[data-theme="graphite"] .bottom-add::after{
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* Solo el círculo conserva el color correspondiente */
+:root[data-theme="emerald_gold"] .bottom-add span{
+  background:linear-gradient(135deg,#0d593e,#168158) !important;
+  color:#fffdf4 !important;
+  border:2px solid #caa32b !important;
+}
+:root[data-theme="midnight_violet"] .bottom-add span{
+  background:linear-gradient(135deg,#6255f4,#8b57ff) !important;
+  color:#fff !important;
+  border:2px solid #9288ff !important;
+}
+:root[data-theme="ocean_blue"] .bottom-add span{
+  background:linear-gradient(135deg,#197fa9,#31add5) !important;
+  color:#fff !important;
+  border:2px solid #76d3ef !important;
+}
+:root[data-theme="graphite"] .bottom-add span{
+  background:linear-gradient(135deg,#5e6977,#7e8b9a) !important;
+  color:#fff !important;
+  border:2px solid #aeb8c3 !important;
+}
+
+/* ---------------------------------------------------------
+   2) EMOTICONO DE TAREA:
+   Fondo blanco real en tarjetas, semana y tablero.
+   --------------------------------------------------------- */
+:root[data-theme="emerald_gold"] .task-emoji-edit,
+:root[data-theme="emerald_gold"] .mini-task-emoji.task-emoji-edit,
+:root[data-theme="emerald_gold"] .board-task-emoji.task-emoji-edit,
+:root[data-theme="midnight_violet"] .task-emoji-edit,
+:root[data-theme="midnight_violet"] .mini-task-emoji.task-emoji-edit,
+:root[data-theme="midnight_violet"] .board-task-emoji.task-emoji-edit,
+:root[data-theme="ocean_blue"] .task-emoji-edit,
+:root[data-theme="ocean_blue"] .mini-task-emoji.task-emoji-edit,
+:root[data-theme="ocean_blue"] .board-task-emoji.task-emoji-edit,
+:root[data-theme="graphite"] .task-emoji-edit,
+:root[data-theme="graphite"] .mini-task-emoji.task-emoji-edit,
+:root[data-theme="graphite"] .board-task-emoji.task-emoji-edit{
+  background:#ffffff !important;
+  background-image:none !important;
+  color:#17202a !important;
+  border:1px solid rgba(116,127,140,.36) !important;
+  box-shadow:0 3px 9px rgba(0,0,0,.08) !important;
+}
+
+/* En el tema claro, borde dorado muy sutil */
+:root[data-theme="emerald_gold"] .task-emoji-edit,
+:root[data-theme="emerald_gold"] .mini-task-emoji.task-emoji-edit,
+:root[data-theme="emerald_gold"] .board-task-emoji.task-emoji-edit{
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+/* ---------------------------------------------------------
+   3) GASTOS:
+   Quitar controles oscuros del tema Esmeralda dorado.
+   --------------------------------------------------------- */
+:root[data-theme="emerald_gold"] .expense-edit-btn{
+  background:#fffef8 !important;
+  background-image:none !important;
+  color:#0f5c43 !important;
+  border:1px solid rgba(190,150,37,.42) !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] .expense-edit-btn:hover,
+:root[data-theme="emerald_gold"] .expense-edit-btn:focus{
+  background:#eef4dc !important;
+  color:#0b4d38 !important;
+  border-color:#caa32b !important;
+}
+
+:root[data-theme="emerald_gold"] .expense-delete-btn{
+  background:#fff1f1 !important;
+  background-image:none !important;
+  color:#c45260 !important;
+  border:1px solid rgba(196,82,96,.28) !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] .expense-card-actions button{
+  min-height:42px;
+}
+
+/* Barras/controles de consulta de gastos siempre claros */
+:root[data-theme="emerald_gold"] #viewExpensesDialog .expense-date-nav button,
+:root[data-theme="emerald_gold"] #expenseDialog .expense-date-nav button,
+:root[data-theme="emerald_gold"] .expense-log-btn{
+  background:#fffef8 !important;
+  background-image:none !important;
+  color:#0f5c43 !important;
+  border:1px solid rgba(190,150,37,.42) !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] #viewExpenseDayTotal,
+:root[data-theme="emerald_gold"] .expense-view-total{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border:1px solid rgba(190,150,37,.38) !important;
+  box-shadow:none !important;
+}
+
+/* ---------------------------------------------------------
+   Protección: ningún botón normal dentro de gastos o libros
+   debe heredar el azul oscuro del tema base en Esmeralda.
+   Se excluyen botones primarios y cerrar.
+   --------------------------------------------------------- */
+:root[data-theme="emerald_gold"] #viewExpensesDialog button:not(.icon-btn):not(.expense-delete-btn),
+:root[data-theme="emerald_gold"] #expenseDialog button:not(.icon-btn):not(.primary-btn):not(.currency-btn),
+:root[data-theme="emerald_gold"] #booksDialog button:not(.icon-btn):not(.primary-btn):not(.danger-btn){
+  color:#0f5c43;
+}
+
+/* Mantener Cancelar claro */
+:root[data-theme="emerald_gold"] #expenseDialog .ghost-btn,
+:root[data-theme="emerald_gold"] #expenseLogDialog .ghost-btn{
+  background:#fffef8 !important;
+  color:#0f5c43 !important;
+  border:1px solid rgba(190,150,37,.42) !important;
+}

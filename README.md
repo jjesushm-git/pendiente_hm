@@ -1,20 +1,21 @@
-# Mis Tareas — Versión 11.5.2
+# Mis Tareas — Versión 11.5.3
 
-Base: Versión 11.5.1.1 CORREGIDA ESTABLE.
+Base: Versión 11.5.2 ESTABLE.
 
-Cambios:
-- En la barra inferior, Agregar ya no tiene un bloque de color; solamente el círculo + conserva el color del tema.
-- La barra inferior usa la misma lógica en todos los temas: sin bloques de fondo para la opción activa y con una pulsación breve al tocar.
-- La pulsación usa el color correspondiente a cada tema.
-- El emoticono de las tareas siempre tiene fondo blanco en todos los temas.
-- Los emoticonos de Tareas y Libros usan las mismas categorías y colecciones.
-- Se amplió aún más la categoría Aventura.
-- Importar ahora pregunta si deseas importar Tareas o Gastos.
-- Los gastos pueden importarse desde CSV, TXT o JSON al libro activo.
-- Se agregó Bitácora dentro de Agregar gasto.
-- Bitácora muestra únicamente periodos anteriores que contienen gastos; el periodo actual no aparece.
-- Se pueden seleccionar uno o varios periodos anteriores y exportarlos a CSV.
-- Si se exporta un periodo: gastos_Sep26.csv
-- Si se exportan varios: gastos_Jul26-Sep26.csv, usando el periodo más antiguo y el más reciente seleccionados.
-- Exportar gastos desde Ajustes ahora exporta únicamente el periodo actual del libro activo.
-- La configuración del día de inicio de gastos queda registrada históricamente por libro para respetar cambios futuros.
+Correcciones visuales:
+- El área rectangular de Agregar en la barra inferior queda transparente.
+- Solo el círculo + conserva el color correspondiente al tema.
+- La corrección se aplica a Esmeralda dorado, Noche violeta, Azul océano y Grafito.
+- Los emoticonos de las tareas tienen fondo blanco real en tarjetas, Semana y Tablero.
+- Se corrige el botón Editar de Gastos para que no aparezca azul/negro oscuro en el tema Esmeralda dorado.
+- Borrar conserva un fondo rojo muy claro.
+- Los controles de navegación y Bitácora de Gastos quedan claros.
+- El total del día de Gastos queda blanco/crema.
+- Se mantienen intactas las funciones de la 11.5.2.
+
+Validaciones:
+- JavaScript sin errores de sintaxis.
+- CSS sin errores de parser.
+- Sin IDs HTML duplicados.
+- Sin referencias JavaScript a IDs inexistentes.
+- Calendario, Día, Semana, Tablero, Libros, Gastos y Comentarios presentes.
