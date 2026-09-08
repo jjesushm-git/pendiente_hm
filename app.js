@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.3.1";
+const APP_VERSION = "11.0.3.1 corregida";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -581,23 +581,35 @@ function taskCard(t){
           <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
           <span>🕒 ${formatTimeMeta(t)}</span>
           ${t.recurrence!=="none"?`<span class="recur-pill">↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+          ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
+          ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
+          ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
           ${t.comment?`<span>💬 ${esc(t.comment)}</span>`:""}
         </div>
-        <div class="card-actions">
+        <div class="card-actions task-card-actions">
           <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
             ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
           </button>
-          <button data-edit="${t.id}">Editar</button>
-          ${t.status==="missed"?`<button data-reopen="${t.id}">Reabrir</button>`:""}
-          <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
+          <div class="task-action-row">
+            <div class="task-action-left">
+              <button data-edit="${t.id}">Editar</button>
+              ${t.status==="missed"?`<button data-reopen="${t.id}">Reabrir</button>`:""}
+            </div>
+            <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
+          </div>
         </div>
       </div>
-      ${t.status!=="pending"?`${t.status!=="pending"?`<span class="status-pill ${t.status}">${statusLabel(t.status)}</span>`:""}`:""}
+      ${t.status!=="pending"?``:""}
     </div>
   </article>`;
 }
 
 function reopenTask(t){
+  const originalMissedDate=t.dueDate || t.startDate || dateKey(new Date());
+  const missedDateLabel=shortDate(parseDate(originalMissedDate));
+  const reopenNote=`Tarea reabierta por no ser completada el día ${missedDateLabel}.`;
+  t.comment=t.comment ? `${t.comment} | ${reopenNote}` : reopenNote;
+
   const now=new Date();
   const today=startOfDay(now);
 
@@ -743,6 +755,9 @@ function renderBoard(){
       <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
       ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
       ${t.recurrence!=="none"?`<span>↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+      ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
+      ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
+      ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
     </div>
     <label class="board-move-label">Mover a
       <select data-board-move="${t.id}">
@@ -756,8 +771,12 @@ function renderBoard(){
       <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
         ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
       </button>
-      <button data-edit="${t.id}">Editar</button>
-      <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
+      <div class="task-action-row">
+        <div class="task-action-left">
+          <button data-edit="${t.id}">Editar</button>
+        </div>
+        <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
+      </div>
     </div>
   </article>`;
 

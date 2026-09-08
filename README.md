@@ -1,16 +1,14 @@
-# Mis Tareas — Versión 11.0.3.1
+# Mis Tareas — Versión 11.0.3.1 corregida
 
-Base: Versión 11.0.3 estable.
+Base: Versión 11.0.3.1 estable.
 
-Cambios:
-- Se eliminan de las tarjetas los indicadores de estado Pendiente / En proceso.
-- Los estados Completada y No completada siguen visibles cuando corresponde.
-- El libro activo del encabezado ahora es un selector directo.
-- Al tocarlo se despliega el selector nativo; ya no abre ningún modal.
-- La administración completa de libros sigue disponible desde el botón Libro inferior.
-- Alta importancia aparece como el primer botón de acciones de cada tarea.
-- En Tablero también aparece antes de Editar y Eliminar.
-- En Libros se prioriza la lista completa de libros.
-- El panel Administrar libros continúa oculto por defecto.
-- Dentro del panel, el botón Agregar libro también permanece oculto hasta escribir un nombre.
-- Cuando se edita un libro, el botón Guardar sí se muestra inmediatamente.
+Correcciones:
+- Regresan los indicadores Pendiente / En proceso.
+- Completada y No completada se muestran como chips dentro de la tarjeta.
+- Se elimina el indicador grande de estado del extremo derecho.
+- Alta importancia permanece como primer botón.
+- Editar queda a la izquierda y Eliminar al mismo nivel a la derecha.
+- Reabrir queda junto a Editar cuando corresponde.
+- Al reabrir una tarea se agrega automáticamente al comentario:
+  “Tarea reabierta por no ser completada el día DD/MM/AAAA.”
+- Se conserva el comentario anterior y se añade la nota de reapertura.

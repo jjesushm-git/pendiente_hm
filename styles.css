@@ -1519,3 +1519,69 @@ button{cursor:pointer}
     flex-wrap:wrap;
   }
 }
+
+
+/* =========================================================
+   11.0.3.1 CORREGIDA
+   ========================================================= */
+
+.state-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:.75rem;
+  font-weight:700;
+}
+
+.state-chip.completed{
+  color:#58dc8f;
+  background:rgba(48,180,105,.12);
+  border:1px solid rgba(48,180,105,.22);
+}
+
+.state-chip.missed{
+  color:#ff6d7f;
+  background:rgba(255,74,94,.10);
+  border:1px solid rgba(255,74,94,.24);
+}
+
+.task-card-actions,
+.board-card-actions{
+  display:grid !important;
+  gap:10px;
+}
+
+.task-card-actions > .importance-chip,
+.board-card-actions > .importance-chip{
+  justify-self:start;
+}
+
+.task-action-row{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.task-action-left{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.task-action-row .task-delete-btn{
+  margin-left:auto;
+}
+
+@media(max-width:600px){
+  .task-action-row{
+    align-items:flex-end;
+  }
+
+  .task-action-left{
+    flex-wrap:wrap;
+  }
+}
