@@ -2,6 +2,7 @@
 
 Corrección de publicación/caché sobre la 11.0.4.2:
 
+- jjhm_reapair
 - Conserva todas las funciones y datos de 11.0.4.2.
 - El tema Esmeralda dorado se declara directamente en HTML para evitar una pantalla con estilos antiguos mientras carga JS.
 - CSS, JS y manifest usan una versión en la URL para evitar archivos viejos de caché.
