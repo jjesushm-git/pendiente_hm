@@ -1,4 +1,4 @@
-const CACHE="mis-tareas-11-0-4-2-2";
+const CACHE="mis-tareas-11-0-4-2-3";
 
 self.addEventListener("install", event => {
   self.skipWaiting();
@@ -14,17 +14,16 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   if(event.request.method !== "GET") return;
-
-  const url = new URL(event.request.url);
+  const url=new URL(event.request.url);
   if(url.origin !== self.location.origin) return;
 
   event.respondWith(
     fetch(event.request, {cache:"no-store"})
       .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE).then(cache => cache.put(event.request, copy));
+        const copy=response.clone();
+        caches.open(CACHE).then(cache=>cache.put(event.request,copy));
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(()=>caches.match(event.request))
   );
 });

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.4.2.2";
+const APP_VERSION = "11.0.4.2.3";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -162,6 +162,15 @@ function loadSettings(){
     return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:"",theme:"emerald_gold"};
   }
 }
+function migrateDefaultThemeOnce(){
+  const key="mis_tareas_theme_migrated_11_0_4_2_3";
+  if(localStorage.getItem(key)) return;
+
+  settings.theme="emerald_gold";
+  localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
+  localStorage.setItem(key,"1");
+}
+
 function saveSettings(){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
@@ -1230,6 +1239,7 @@ async function importData(file){
   try{
     const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
     if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration();
+migrateDefaultThemeOnce();
 applyTheme(settings.theme||"emerald_gold"); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
@@ -1670,7 +1680,7 @@ $("#updateAppBtn").onclick=async()=>{
   try{
     if("caches" in window){
       const keys=await caches.keys();
-      await Promise.all(keys.filter(k=>k!=="mis-tareas-11-0-4-2-2").map(k=>caches.delete(k)));
+      await Promise.all(keys.filter(k=>k!=="mis-tareas-11-0-4-2-3").map(k=>caches.delete(k)));
     }
     if("serviceWorker" in navigator){
       const reg=await navigator.serviceWorker.getRegistration();
@@ -1678,7 +1688,7 @@ $("#updateAppBtn").onclick=async()=>{
     }
   }catch{}
   const u=new URL(location.href);
-  u.searchParams.set("appv","11.0.4.2.2");
+  u.searchParams.set("appv","11.0.4.2.3");
   setTimeout(()=>location.replace(u.toString()),450);
 };
 $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
@@ -1698,7 +1708,7 @@ window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNot
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=11.0.4.2.2").then(reg=>reg.update()).catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=11.0.4.2.3").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
 updateActiveBookSelect();

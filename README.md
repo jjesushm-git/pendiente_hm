@@ -1,13 +1,9 @@
-# Mis Tareas — Versión 11.0.4.2.2 ESTABLE
+# Mis Tareas — Versión 11.0.4.2.3 ESTABLE
 
-Esta versión se basa en la 11.0.4.2.1 reparada y conserva todas sus funciones.
-
-Correcciones de estabilidad:
-- Service Worker simplificado.
-- Archivos principales se solicitan primero a la red.
-- Caché solo se usa como respaldo si no hay conexión.
-- Las cachés de versiones anteriores se eliminan al activarse la nueva versión.
-- CSS, JS y manifest llevan identificador 11.0.4.2.2.
-- El botón Actualizar aplicación no borra tareas, libros, gastos ni localStorage.
-- Tema predeterminado Esmeralda dorado declarado desde el HTML.
-- theme-color de la PWA actualizado a verde esmeralda.
+Corrección:
+- GitHub Pages ya publica la versión nueva correctamente.
+- Se agrega una migración de tema de una sola vez para instalaciones antiguas.
+- La primera vez que se abre esta versión se fuerza Esmeralda dorado.
+- Después de esa migración, el usuario puede elegir cualquier otro tema y su selección queda guardada normalmente.
+- No se borran tareas, libros, gastos, papelera ni configuraciones distintas al tema.
+- Se conserva el Service Worker simplificado con red primero y caché como respaldo.
