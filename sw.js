@@ -1,4 +1,4 @@
-const CACHE="mis-tareas-11-0-4-2-3";
+const CACHE="mis-tareas-11-1";
 
 self.addEventListener("install", event => {
   self.skipWaiting();

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.4.2.3";
+const APP_VERSION = "11.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -162,10 +162,9 @@ function loadSettings(){
     return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:"",theme:"emerald_gold"};
   }
 }
-function migrateDefaultThemeOnce(){
-  const key="mis_tareas_theme_migrated_11_0_4_2_3";
+function migrateThemeForV11_1(){
+  const key="mis_tareas_theme_migrated_11_1";
   if(localStorage.getItem(key)) return;
-
   settings.theme="emerald_gold";
   localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
   localStorage.setItem(key,"1");
@@ -182,7 +181,7 @@ function saveBooks(){
 }
 
 const BOOK_ICON_SECTIONS=[
-  {key:"work",label:"Trabajo",icons:TASK_EMOJIS.work},
+  {key:"work",label:"Trabajo y oficina",icons:TASK_EMOJIS.work},
   {key:"tasks",label:"Tareas y organización",icons:TASK_EMOJIS.tasks},
   {key:"money",label:"Dinero y compras",icons:TASK_EMOJIS.money},
   {key:"food",label:"Comida",icons:TASK_EMOJIS.food},
@@ -227,14 +226,14 @@ function renderBookCustomizePickers(){
     $("#bookIconPicker").innerHTML=BOOK_ICON_SECTIONS
       .filter(section=>!section.themeOnly || section.themeOnly===theme)
       .map(section=>`
-        <div class="book-icon-section ${section.themeOnly?"theme-adventure-book":""}">
-          <small class="book-icon-section-title">${section.label}</small>
-          <div class="book-icon-section-grid">
+        <section class="book-emoji-section ${section.themeOnly?"book-adventure-section":""}">
+          <h4>${section.label}</h4>
+          <div class="book-emoji-grid">
             ${section.icons.map(icon=>`
               <button type="button" class="book-icon-option ${current===icon?"selected":""}" data-book-icon="${icon}" title="${section.label}">${icon}</button>
             `).join("")}
           </div>
-        </div>
+        </section>
       `).join("");
   }
 
@@ -463,12 +462,12 @@ const TASK_EMOJIS={
   social:["👥","🤝","🎂","🎉","🎁","❤️","😊","👍","🙏","☕","🍽️","🎬","🎵","📷","🎮","⚽","🏀","🌟","🌙","☀️","💬","📱","☎️","🥳","🎈","🎊","🫶","🤗","👏","🙌","💐"],
   zelda:[
     "🗡️","⚔️","🛡️","🏹","🪄","🧝","🧝‍♂️","🧝‍♀️","🧚","🧚‍♂️","🧚‍♀️",
-    "💎","🔺","🟩","🟨","🟦","🟪","⭐","🌟","✨","💫","🌙","☀️",
-    "🗝️","🔑","📜","🧭","🗺️","🏺","🏰","⛺","🔥","🌿","🍃","🌱","🌲","🌳",
-    "🪙","💰","💎","🏆","👑","🎯","🧰","🔨","⚒️","🛠️","🔧","⚙️","🪓","⛏️",
-    "🧱","📦","🎒","🧺","🧪","⚗️","🧴","🕯️","🔔","🎵","🎶","🪕","📯",
-    "🐎","🦅","🐺","🦊","🐉","🐲","🦋","🐝","🪶","🪽","🌊","💧","❄️","⚡",
-    "🔮","🪬","🧿","💠","♻️","✅","📌","📋","📚","📝","💼","🧾","💳","🏦"
+    "🔺","🟩","🟨","🟦","🟪","💎","💠","🔮","🪬","🧿","👑","🏆","⭐","🌟","✨","💫",
+    "🗝️","🔑","📜","🗺️","🧭","🏺","🏰","⛺","🕯️","🔥","🌿","🍃","🌱","🌲","🌳","🌾","🍄",
+    "🪙","💰","💵","💳","🏦","🧾","💲","💸","📦","🎒","🧺","🧰","🔨","⚒️","🛠️","🔧","⚙️",
+    "🪓","⛏️","🪚","🪛","🧱","🧪","⚗️","🧴","🔔","🎵","🎶","📯","🪕",
+    "🐎","🦅","🐺","🦊","🐉","🐲","🦋","🐝","🪶","🪽","🐟","🌊","💧","❄️","⚡","☀️","🌙",
+    "📌","✅","☑️","📋","📝","📚","💼","🎯","📈","📉","🧮","🗂️","📁","📂","🔍","⏰","📅"
   ]
 };
 function renderEmojiPicker(){
@@ -1239,8 +1238,7 @@ async function importData(file){
   try{
     const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
     if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration();
-migrateDefaultThemeOnce();
-applyTheme(settings.theme||"emerald_gold"); saveTrash(); saveTasks(); toast("Respaldo importado.");
+migrateThemeForV11_1(); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 
@@ -1676,20 +1674,16 @@ $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll
 $("#settingsBtnTop").onclick=()=>{populateSettings();$("#settingsSavedMessage").classList.add("hidden");$("#settingsDialog").showModal();};
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
-  toast("Actualizando aplicación...");
   try{
-    if("caches" in window){
-      const keys=await caches.keys();
-      await Promise.all(keys.filter(k=>k!=="mis-tareas-11-0-4-2-3").map(k=>caches.delete(k)));
-    }
     if("serviceWorker" in navigator){
       const reg=await navigator.serviceWorker.getRegistration();
       if(reg) await reg.update();
     }
-  }catch{}
-  const u=new URL(location.href);
-  u.searchParams.set("appv","11.0.4.2.3");
-  setTimeout(()=>location.replace(u.toString()),450);
+    toast("Buscando actualización...");
+    setTimeout(()=>location.reload(),700);
+  }catch{
+    location.reload();
+  }
 };
 $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
@@ -1708,7 +1702,7 @@ window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNot
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=11.0.4.2.3").then(reg=>reg.update()).catch(()=>{});
+  navigator.serviceWorker.register("sw.js?v=11.1").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
 updateActiveBookSelect();

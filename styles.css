@@ -1654,269 +1654,293 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 
 
 /* =========================================================
-   VERSION 11.0.4.2
-   Tema predeterminado claro: esmeralda + crema + dorado
+   VERSION 11.1 — TEMA ESMERALDA DORADO CLARO (DEFAULT)
+   Solo afecta data-theme="emerald_gold".
    ========================================================= */
 
 :root[data-theme="emerald_gold"]{
-  --bg:#f7f6ec;
-  --panel:#fffdf4;
-  --panel-2:#f3f6df;
+  --bg:#f7f6eb;
+  --panel:#fffdf5;
+  --panel-2:#f3f5df;
   --text:#17382b;
-  --muted:#5f7268;
-  --line:rgba(194,154,42,.45);
-  --accent:#0f5c43;
-  --accent-2:#d1a935;
-  --danger:#b84e59;
-  --success:#1d8e5a;
+  --muted:#65766c;
+  --line:rgba(190,150,37,.46);
+  --primary:#0f6043;
+  --primary-2:#17835a;
+  --green:#2ba66b;
+  --red:#be5964;
+  --orange:#c48231;
+  --yellow:#d4ad32;
+  --shadow:0 14px 34px rgba(70,79,52,.11);
+  --accent:#0f6043;
+  --accent-2:#d4ad32;
+  color-scheme:light;
 }
 
-/* Fondo general claro */
+:root[data-theme="emerald_gold"] html{
+  background:#f7f6eb !important;
+}
+
 :root[data-theme="emerald_gold"] body{
   background:
-    radial-gradient(circle at top right,rgba(209,169,53,.10),transparent 28%),
-    linear-gradient(180deg,#fbfaf1 0%,#f4f5e8 100%) !important;
-  color:var(--text) !important;
-}
-
-/* Encabezado inspirado en la referencia */
-:root[data-theme="emerald_gold"] .topbar{
-  background:
-    linear-gradient(135deg,#0b4a36,#116847) !important;
-  border:1px solid rgba(209,169,53,.48) !important;
-  border-bottom:3px solid #cda833 !important;
-  box-shadow:0 8px 24px rgba(18,70,51,.12);
-}
-
-:root[data-theme="emerald_gold"] .topbar .eyebrow,
-:root[data-theme="emerald_gold"] .topbar h1,
-:root[data-theme="emerald_gold"] .topbar .active-book-select-wrap,
-:root[data-theme="emerald_gold"] .topbar .icon-btn{
-  color:#fffdf3 !important;
-}
-
-:root[data-theme="emerald_gold"] .topbar .icon-btn,
-:root[data-theme="emerald_gold"] .topbar .active-book-select-wrap{
-  background:rgba(255,255,255,.05) !important;
-  border-color:rgba(209,169,53,.45) !important;
-}
-
-:root[data-theme="emerald_gold"] .topbar .active-book-select{
-  color:#fffdf3 !important;
-}
-
-:root[data-theme="emerald_gold"] .topbar .active-book-select option{
+    radial-gradient(circle at 92% 6%,rgba(208,173,50,.11),transparent 23%),
+    linear-gradient(180deg,#fbfaf1 0%,#f4f5e9 100%) !important;
   color:#17382b !important;
-  background:#fffdf4 !important;
 }
 
-/* Barras y tarjetas claras */
+/* Encabezado verde intenso con línea dorada */
+:root[data-theme="emerald_gold"] .topbar{
+  background:linear-gradient(135deg,#084831 0%,#126b49 100%) !important;
+  border:1px solid rgba(204,165,47,.64) !important;
+  border-bottom:3px solid #cda62f !important;
+  border-radius:0 0 16px 16px !important;
+  box-shadow:0 9px 24px rgba(28,70,48,.12) !important;
+  backdrop-filter:none !important;
+}
+
+:root[data-theme="emerald_gold"] .topbar h1,
+:root[data-theme="emerald_gold"] .topbar .eyebrow{
+  color:#fffdf4 !important;
+}
+
+:root[data-theme="emerald_gold"] .topbar .eyebrow{
+  color:#d9bd5a !important;
+}
+
+:root[data-theme="emerald_gold"] .active-book-select-wrap,
+:root[data-theme="emerald_gold"] .topbar .icon-btn{
+  background:rgba(255,255,255,.055) !important;
+  border-color:rgba(218,185,75,.46) !important;
+  color:#fffdf4 !important;
+}
+
+:root[data-theme="emerald_gold"] .active-book-select{
+  color:#fffdf4 !important;
+}
+:root[data-theme="emerald_gold"] .active-book-select option{
+  color:#17382b !important;
+  background:#fffdf5 !important;
+}
+
+/* Contenedores principales */
 :root[data-theme="emerald_gold"] .view-tabs,
 :root[data-theme="emerald_gold"] .expense-summary-bar,
 :root[data-theme="emerald_gold"] .panel,
+:root[data-theme="emerald_gold"] .calendar,
 :root[data-theme="emerald_gold"] .calendar-shell,
-:root[data-theme="emerald_gold"] .calendar-grid,
-:root[data-theme="emerald_gold"] .week-board,
+:root[data-theme="emerald_gold"] .week-column,
 :root[data-theme="emerald_gold"] .board-column,
 :root[data-theme="emerald_gold"] .settings-group,
-:root[data-theme="emerald_gold"] .settings-form-card,
 :root[data-theme="emerald_gold"] .books-add-panel,
 :root[data-theme="emerald_gold"] .books-footer-note,
 :root[data-theme="emerald_gold"] .expense-view-total,
 :root[data-theme="emerald_gold"] .comment-dialog-body{
-  background:#fffdf4 !important;
-  border-color:rgba(194,154,42,.42) !important;
+  background:#fffdf5 !important;
+  border-color:rgba(190,150,37,.42) !important;
   color:#17382b !important;
-  box-shadow:0 10px 28px rgba(79,83,47,.06);
+  box-shadow:0 10px 24px rgba(70,79,52,.055) !important;
 }
 
-/* Task / expense / book cards */
+/* Tarjetas */
 :root[data-theme="emerald_gold"] .task-card,
 :root[data-theme="emerald_gold"] .board-card,
 :root[data-theme="emerald_gold"] .book-select-card,
-:root[data-theme="emerald_gold"] .expense-card,
 :root[data-theme="emerald_gold"] .book-card,
-:root[data-theme="emerald_gold"] .mini-task{
-  background:
-    linear-gradient(180deg,#fffef7,#f8f8e9) !important;
-  border-color:rgba(194,154,42,.42) !important;
+:root[data-theme="emerald_gold"] .expense-card,
+:root[data-theme="emerald_gold"] .mini-task,
+:root[data-theme="emerald_gold"] .stat-card{
+  background:linear-gradient(180deg,#fffef8,#f6f8e7) !important;
+  border-color:rgba(190,150,37,.40) !important;
   color:#17382b !important;
-  box-shadow:0 8px 20px rgba(57,75,52,.05);
+  box-shadow:0 7px 18px rgba(58,72,49,.055) !important;
 }
 
-/* Tipografía */
+:root[data-theme="emerald_gold"] .task-card::before{
+  background:#0f6043 !important;
+}
+:root[data-theme="emerald_gold"] .task-card.completed::before{background:#27a866 !important}
+:root[data-theme="emerald_gold"] .task-card.missed::before{background:#bd5965 !important}
+
+/* Textos claros */
 :root[data-theme="emerald_gold"] .task-title,
-:root[data-theme="emerald_gold"] .panel h3,
 :root[data-theme="emerald_gold"] .section-heading h2,
-:root[data-theme="emerald_gold"] .calendar-title,
-:root[data-theme="emerald_gold"] .book-card-copy strong,
-:root[data-theme="emerald_gold"] .expense-card strong{
+:root[data-theme="emerald_gold"] .panel-head h3,
+:root[data-theme="emerald_gold"] .modal h2,
+:root[data-theme="emerald_gold"] .book-card-copy strong{
   color:#17382b !important;
 }
 
 :root[data-theme="emerald_gold"] .task-desc,
 :root[data-theme="emerald_gold"] .task-meta,
+:root[data-theme="emerald_gold"] .panel-head p,
 :root[data-theme="emerald_gold"] .book-card-copy small,
 :root[data-theme="emerald_gold"] .expense-card p,
-:root[data-theme="emerald_gold"] small{
-  color:#65766d !important;
+:root[data-theme="emerald_gold"] .empty{
+  color:#65766c !important;
 }
 
-/* Inputs y select claros */
+/* Campos, modales y controles */
+:root[data-theme="emerald_gold"] .modal{
+  background:#fffdf5 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.52) !important;
+  box-shadow:0 20px 50px rgba(38,68,47,.18) !important;
+}
+:root[data-theme="emerald_gold"] .modal::backdrop{
+  background:rgba(29,57,42,.40) !important;
+}
+
 :root[data-theme="emerald_gold"] input,
 :root[data-theme="emerald_gold"] textarea,
 :root[data-theme="emerald_gold"] select,
+:root[data-theme="emerald_gold"] .select,
+:root[data-theme="emerald_gold"] .settings-item,
 :root[data-theme="emerald_gold"] .emoji-picker-trigger,
 :root[data-theme="emerald_gold"] .book-form-toggle,
-:root[data-theme="emerald_gold"] .settings-item,
-:root[data-theme="emerald_gold"] .icon-btn,
 :root[data-theme="emerald_gold"] .ghost-btn{
   background:#fffef8 !important;
   color:#17382b !important;
-  border-color:rgba(194,154,42,.40) !important;
+  border-color:rgba(190,150,37,.38) !important;
 }
 
-/* Botones principales verde/dorado */
+:root[data-theme="emerald_gold"] .settings-item strong,
+:root[data-theme="emerald_gold"] .settings-group summary span{
+  color:#17382b !important;
+}
+
+/* Navegación */
+:root[data-theme="emerald_gold"] .view-tabs{
+  background:#fffdf5 !important;
+}
+:root[data-theme="emerald_gold"] .view-tab{
+  color:#5d7065 !important;
+}
+:root[data-theme="emerald_gold"] .view-tab.active,
 :root[data-theme="emerald_gold"] .primary-btn,
 :root[data-theme="emerald_gold"] .expense-add-btn,
-:root[data-theme="emerald_gold"] .bottom-add,
-:root[data-theme="emerald_gold"] .view-tab.active,
-:root[data-theme="emerald_gold"] .bottom-tab.active{
-  background:linear-gradient(135deg,#0e6246,#16865a) !important;
-  color:#fffdf4 !important;
-  border-color:#cda833 !important;
-  box-shadow:0 6px 18px rgba(15,92,67,.16),inset 0 -2px 0 rgba(209,169,53,.16);
+:root[data-theme="emerald_gold"] .bottom-add span{
+  background:linear-gradient(135deg,#0d5a3f,#16835a) !important;
+  color:#fffdf3 !important;
+  border-color:#cba42c !important;
+  box-shadow:0 6px 16px rgba(15,96,67,.15) !important;
 }
 
-/* Dorados */
+:root[data-theme="emerald_gold"] .bottom-nav{
+  background:rgba(255,253,245,.97) !important;
+  border-color:rgba(190,150,37,.35) !important;
+  box-shadow:0 -7px 18px rgba(70,79,52,.06) !important;
+}
+:root[data-theme="emerald_gold"] .bottom-tab{
+  color:#65766c !important;
+}
+:root[data-theme="emerald_gold"] .bottom-tab.active{
+  color:#0f6043 !important;
+  background:transparent !important;
+}
+
+/* Franja semanal y calendario */
+:root[data-theme="emerald_gold"] .week-day{
+  color:#64766b !important;
+}
+:root[data-theme="emerald_gold"] .week-day .num{
+  color:#17382b !important;
+}
+:root[data-theme="emerald_gold"] .week-day.active{
+  background:linear-gradient(135deg,#0d5a3f,#17835a) !important;
+  color:#fffdf3 !important;
+  border-color:#cba42c !important;
+}
+:root[data-theme="emerald_gold"] .week-day.active .num{
+  color:#fffdf3 !important;
+}
+
+:root[data-theme="emerald_gold"] .calendar-weekdays span{
+  color:#65766c !important;
+}
+:root[data-theme="emerald_gold"] .calendar-day{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.32) !important;
+}
+:root[data-theme="emerald_gold"] .calendar-day.selected,
+:root[data-theme="emerald_gold"] .calendar-day.today{
+  background:#eaf3d7 !important;
+  outline-color:#0f6043 !important;
+}
+
+/* Dorado */
 :root[data-theme="emerald_gold"] .calendar-expense-mark,
 :root[data-theme="emerald_gold"] .week-expense-mark,
 :root[data-theme="emerald_gold"] .money-symbol,
 :root[data-theme="emerald_gold"] .importance-chip.active,
 :root[data-theme="emerald_gold"] .recur-pill{
-  color:#b58a16 !important;
+  color:#aa7f0a !important;
 }
 
-:root[data-theme="emerald_gold"] .view-tabs,
-:root[data-theme="emerald_gold"] .bottom-nav{
-  border-color:rgba(194,154,42,.34) !important;
-}
-
-/* Bottom nav claro */
-:root[data-theme="emerald_gold"] .bottom-nav{
-  background:rgba(255,253,244,.96) !important;
-  color:#52675c !important;
-  box-shadow:0 -6px 18px rgba(64,78,58,.06);
-}
-
-:root[data-theme="emerald_gold"] .bottom-tab{
-  color:#65766d !important;
-}
-
-:root[data-theme="emerald_gold"] .bottom-tab.active{
-  color:#fffdf4 !important;
-}
-
-/* Modales claros con borde dorado */
-:root[data-theme="emerald_gold"] dialog.modal,
-:root[data-theme="emerald_gold"] .emoji-saved-bubble,
-:root[data-theme="emerald_gold"] .comic-bubble,
-:root[data-theme="emerald_gold"] .quick-book-panel{
-  background:#fffdf4 !important;
-  color:#17382b !important;
-  border-color:rgba(194,154,42,.48) !important;
-}
-
-:root[data-theme="emerald_gold"] dialog::backdrop{
-  background:rgba(18,46,34,.42) !important;
-}
-
-/* Selector emoji estilo claro */
+/* Emojis */
 :root[data-theme="emerald_gold"] .emoji-choice,
 :root[data-theme="emerald_gold"] .book-icon-option,
 :root[data-theme="emerald_gold"] .book-color-option{
   background:#fffef8 !important;
-  border-color:rgba(194,154,42,.34) !important;
+  border-color:rgba(190,150,37,.34) !important;
   color:#17382b !important;
 }
-
 :root[data-theme="emerald_gold"] .emoji-choice:hover,
 :root[data-theme="emerald_gold"] .book-icon-option:hover{
-  background:#f4f7df !important;
-  border-color:#cda833 !important;
+  background:#eef3d9 !important;
+  border-color:#cba42c !important;
 }
 
-/* Secciones de iconos de libro */
+/* Selector de emoticonos de LIBRO por secciones */
 .book-icon-picker{
-  display:grid;
-  gap:14px;
-  max-height:300px !important;
-  overflow:auto;
+  display:grid !important;
+  gap:14px !important;
+  max-height:330px !important;
+  overflow:auto !important;
   padding-right:4px;
 }
-
-.book-icon-section{
+.book-emoji-section{
   display:grid;
   gap:7px;
 }
-
-.book-icon-section-title{
-  font-weight:800;
+.book-emoji-section h4{
+  margin:0;
+  font-size:.82rem;
   color:var(--muted);
 }
-
-.book-icon-section-grid{
+.book-emoji-grid{
   display:grid;
   grid-template-columns:repeat(7,minmax(34px,1fr));
   gap:6px;
 }
-
-.book-icon-section-grid .book-icon-option{
+.book-emoji-grid .book-icon-option{
   width:100% !important;
   min-width:34px;
+  min-height:38px;
 }
-
-/* Aventura más marcada solo en tema predeterminado */
-:root[data-theme="emerald_gold"] .theme-adventure-book{
+:root[data-theme="emerald_gold"] .book-adventure-section{
   padding:10px;
-  border:1px solid rgba(194,154,42,.30);
+  border:1px solid rgba(190,150,37,.30);
   border-radius:12px;
-  background:linear-gradient(180deg,rgba(15,92,67,.04),rgba(209,169,53,.05));
+  background:linear-gradient(180deg,rgba(15,96,67,.045),rgba(212,173,50,.055));
+}
+:root[data-theme="emerald_gold"] .book-adventure-section h4{
+  color:#9b7410 !important;
 }
 
-:root[data-theme="emerald_gold"] .theme-adventure-book .book-icon-section-title{
-  color:#9a7414 !important;
-}
+/* Aventura solo en tema predeterminado */
+.theme-zelda-only{display:none}
+:root[data-theme="emerald_gold"] .theme-zelda-only{display:block}
 
-/* Calendario y week strip más luminosos */
-:root[data-theme="emerald_gold"] .week-day,
-:root[data-theme="emerald_gold"] .calendar-day{
-  color:#294a3a !important;
-}
-
-:root[data-theme="emerald_gold"] .week-day.active,
-:root[data-theme="emerald_gold"] .calendar-day.selected{
-  background:linear-gradient(135deg,#0d6045,#197b55) !important;
-  color:#fffdf4 !important;
-  border-color:#cda833 !important;
-}
-
-/* Tarjeta de alta importancia con brillo verde/dorado */
+/* Aura importante verde/dorado */
 :root[data-theme="emerald_gold"] .high-importance{
-  animation:importantAuraEmeraldLight 4s ease-in-out infinite !important;
+  animation:importantAura11 4s ease-in-out infinite !important;
 }
-
-@keyframes importantAuraEmeraldLight{
-  0%,100%{
-    box-shadow:0 8px 20px rgba(57,75,52,.05),0 0 0 rgba(209,169,53,0);
-  }
-  50%{
-    box-shadow:0 10px 24px rgba(15,92,67,.10),0 0 18px rgba(209,169,53,.18);
-  }
+@keyframes importantAura11{
+  0%,100%{box-shadow:0 7px 18px rgba(58,72,49,.055),0 0 0 rgba(212,173,50,0)}
+  50%{box-shadow:0 9px 22px rgba(15,96,67,.10),0 0 18px rgba(212,173,50,.18)}
 }
 
 @media(max-width:600px){
-  .book-icon-section-grid{
-    grid-template-columns:repeat(6,minmax(32px,1fr));
-  }
+  .book-emoji-grid{grid-template-columns:repeat(6,minmax(32px,1fr))}
 }
