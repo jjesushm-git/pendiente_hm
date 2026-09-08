@@ -1,15 +1,14 @@
-# Mis Tareas — Versión 11.0.2.1
+# Mis Tareas — Versión 11.0.3
 
-Base: Versión 11.0.2 estable.
+Base: Versión 11.0.2.1 estable.
 
 Cambios:
-- El botón del libro activo ahora aparece entre el título y la campana.
-- El botón siempre muestra el nombre actual del libro, incluso si fue renombrado.
-- Al editar un libro aparece el botón “Borrar libro”.
-- El botón de borrar solo se muestra durante la edición.
-- No se puede borrar el último libro existente.
-- Al borrar un libro también se eliminan sus tareas, gastos y papelera.
-- Si se borra el libro activo, se selecciona automáticamente el primer libro restante.
-- Se amplió considerablemente la lista de emoticonos para libros.
-- Se priorizaron emoticonos de trabajo, tareas, organización y dinero.
-- Se conserva la personalización de color e icono.
+- En Libros, el formulario Agregar/editar libro queda oculto por defecto.
+- Solo se muestran los libros hasta tocar la pestaña “Agregar / editar libro” o tocar el nombre de un libro.
+- El botón superior del libro activo ya no abre la administración completa.
+- El botón superior abre únicamente un selector rápido para cambiar de libro.
+- Las tareas ahora tienen opción “Alta importancia”, desactivada por defecto.
+- Al activar Alta importancia, la tarjeta muestra un aura lenta y tintineante.
+- Una tarea marcada como Alta importancia se muestra en todos los libros.
+- La tarea sigue perteneciendo a su libro original, pero es visible globalmente mientras esté marcada como importante.
+- La opción también puede cambiarse desde el formulario de edición de la tarea.

@@ -297,6 +297,14 @@
         </label>
       </div>
 
+      <div class="switch-row importance-switch-row">
+        <div>
+          <strong>Alta importancia</strong>
+          <small>Al activarla, esta tarea se mostrará en todos los libros.</small>
+        </div>
+        <label class="switch"><input id="highImportance" type="checkbox"><span></span></label>
+      </div>
+
       <div class="switch-row">
         <div>
           <strong>Notificación</strong>
@@ -340,7 +348,7 @@
     </div>
 
     <div class="settings-stack">
-      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.2.1</small></div></div>
+      <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.0.3</small></div></div>
 
       <div class="settings-form-card">
         <label>Vista predeterminada de tareas
@@ -546,7 +554,12 @@
 
     <div id="booksList" class="books-list books-select-list"></div>
 
-    <div class="books-add-panel">
+    <button id="toggleBookFormBtn" type="button" class="book-form-toggle">
+      <span>＋ Agregar / editar libro</span>
+      <span id="bookFormChevron">⌄</span>
+    </button>
+
+    <div id="bookFormPanel" class="books-add-panel hidden">
       <label id="bookFormLabel">Agregar libro
         <input id="bookNameInput" type="text" maxlength="20" placeholder="Máximo 20 caracteres" autocomplete="off" />
       </label>
@@ -571,10 +584,37 @@
       </div>
       <small id="bookNameCounter" class="book-counter">0/20</small>
     </div>
+        </div>
+        <div>
+          <small class="book-customize-label">Color</small>
+          <div id="bookColorPicker" class="book-color-picker"></div>
+        </div>
+      </div>
+
+      <input id="bookIconInput" type="hidden" value="📖" />
+      <input id="bookColorInput" type="hidden" value="#725cff" />
+
+      <div class="book-form-actions">
+        <button id="deleteBookBtn" type="button" class="danger-btn hidden">🗑 Borrar libro</button>
+        <button id="addBookBtn" type="button" class="primary-btn">＋ Agregar libro</button>
+      </div>
+      <small id="bookNameCounter" class="book-counter">0/20</small>
+    </div>
 
     <div class="books-footer-note">
       <span>Solo puede haber un libro seleccionado.</span>
       <small>Si cierras sin seleccionar uno, se usará automáticamente el primero de la lista.</small>
+    </div>
+  </dialog>
+
+  
+  <dialog id="quickBookDialog" class="quick-book-dialog">
+    <div class="quick-book-panel">
+      <div class="quick-book-head">
+        <strong>Cambiar libro</strong>
+        <button type="button" id="closeQuickBookDialog" class="icon-btn">✕</button>
+      </div>
+      <select id="quickBookSelect"></select>
     </div>
   </dialog>
 

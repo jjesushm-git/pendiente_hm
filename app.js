@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.0.2.1";
+const APP_VERSION = "11.0.3";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -174,6 +174,27 @@ function normalizeBookAppearance(book){
   return book;
 }
 
+
+function setBookFormOpen(open){
+  const panel=$("#bookFormPanel");
+  const chevron=$("#bookFormChevron");
+  if(!panel) return;
+  panel.classList.toggle("hidden",!open);
+  if(chevron) chevron.textContent=open?"⌃":"⌄";
+}
+
+function resetBookForm(){
+  editingBookId=null;
+  $("#bookNameInput").value="";
+  $("#bookNameCounter").textContent="0/20";
+  $("#bookIconInput").value="📖";
+  $("#bookColorInput").value="#725cff";
+  $("#bookFormLabel").firstChild.textContent="Agregar libro ";
+  $("#addBookBtn").textContent="＋ Agregar libro";
+  $("#deleteBookBtn").classList.add("hidden");
+  renderBookCustomizePickers();
+}
+
 function renderBookCustomizePickers(){
   if($("#bookIconPicker")){
     $("#bookIconPicker").innerHTML=BOOK_ICONS.map(icon=>`
@@ -195,6 +216,20 @@ function renderBookCustomizePickers(){
     $("#bookColorInput").value=btn.dataset.bookColor;
     renderBookCustomizePickers();
   });
+}
+
+
+function renderQuickBookSelect(){
+  if(!$("#quickBookSelect")) return;
+  $("#quickBookSelect").innerHTML=books.map(book=>{
+    normalizeBookAppearance(book);
+    return `<option value="${book.id}" ${book.id===activeBookId?"selected":""}>${book.icon} ${esc(book.name)}</option>`;
+  }).join("");
+}
+
+function openQuickBookDialog(){
+  renderQuickBookSelect();
+  $("#quickBookDialog").showModal();
 }
 
 function updateActiveBookChip(){
@@ -259,7 +294,8 @@ function activeBook(){
   return books.find(b=>b.id===activeBookId) || books[0] || null;
 }
 function activeTasks(){
-  return activeBookId ? tasks.filter(t=>t.bookId===activeBookId) : [];
+  if(!activeBookId) return tasks.filter(t=>t.highImportance);
+  return tasks.filter(t=>t.bookId===activeBookId || t.highImportance===true);
 }
 function activeExpenses(){
   return activeBookId ? expenses.filter(e=>e.bookId===activeBookId) : [];
@@ -545,7 +581,7 @@ function listHtml(list){
 }
 function taskCard(t){
   const due=taskDueDate(t);
-  return `<article class="task-card ${t.status}">
+  return `<article class="task-card ${t.status} ${t.highImportance?"high-importance":""}">
     <div class="task-row">
       <input class="task-check" type="checkbox" data-complete="${t.id}" ${t.status==="completed"?"checked":""} ${t.status==="missed"?"disabled":""}/>
       <button type="button" class="task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
@@ -558,6 +594,9 @@ function taskCard(t){
           ${t.recurrence!=="none"?`<span class="recur-pill">↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
           ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.comment?`<span>💬 ${esc(t.comment)}</span>`:""}
+          <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
+            ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
+          </button>
         </div>
         <div class="card-actions">
           <button data-edit="${t.id}">Editar</button>
@@ -604,6 +643,16 @@ function openEmojiOnlyEditor(taskId){
 }
 
 function bindTaskActions(){
+  $$("[data-important]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    const task=tasks.find(t=>t.id===btn.dataset.important);
+    if(!task) return;
+    task.highImportance=!task.highImportance;
+    saveTasks();
+    toast(task.highImportance?"Alta importancia activada.":"Alta importancia desactivada.");
+  });
+
   $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
@@ -669,7 +718,7 @@ function renderWeek(){
   $("#weekBoard").innerHTML=days.length ? days.map(({d,list})=>`
     <section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
-      ${list.map(t=>`<div class="mini-task" data-edit="${t.id}">
+      ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}">
         <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
         <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)}</small></span>
       </div>`).join("")}
@@ -696,7 +745,7 @@ function renderBoard(){
 
   Object.values(groups).forEach(list=>list.sort(compareTasksByDate));
 
-  const boardCard=t=>`<article class="board-card ${t.status}">
+  const boardCard=t=>`<article class="board-card ${t.status} ${t.highImportance?"high-importance":""}">
     <div class="board-card-head">
       <div class="board-title-with-emoji"><button type="button" class="board-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button><strong>${esc(t.title)}</strong></div>
       <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
@@ -706,6 +755,7 @@ function renderBoard(){
       <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
       ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
       ${t.recurrence!=="none"?`<span>↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+      ${t.highImportance?`<span class="important-board-badge">★ Alta importancia</span>`:""}
     </div>
     <label class="board-move-label">Mover a
       <select data-board-move="${t.id}">
@@ -828,6 +878,7 @@ function openTask(t=null){
   $("#notifyAmount").value=t?.notifyAmount||1;
   $("#notifyUnit").value=t?.notifyUnit||"days";
   $("#comment").value=t?.comment||"";
+  $("#highImportance").checked=!!t?.highImportance;
   toggleTimeFields(); syncDueDependentFields();
   $("#taskDialog").showModal();
 }
@@ -856,7 +907,8 @@ function readForm(){
     notify:!!due && $("#notify").checked,
     notifyAmount:Number($("#notifyAmount").value||1),
     notifyUnit:$("#notifyUnit").value,
-    comment:$("#comment").value.trim()
+    comment:$("#comment").value.trim(),
+    highImportance:$("#highImportance").checked
   };
 }
 function toggleTimeFields(){ $("#timeFields").classList.toggle("hidden",$("#allDay").checked); }
@@ -947,6 +999,7 @@ async function deleteEditingBook(){
   renderBookCustomizePickers();
   renderBooks();
   renderAll();
+  setBookFormOpen(false);
   toast("Libro borrado.");
 }
 
@@ -1016,6 +1069,7 @@ function renderBooks(){
     $("#bookFormLabel").firstChild.textContent="Editar libro ";
     $("#addBookBtn").textContent="Guardar";
     $("#deleteBookBtn").classList.remove("hidden");
+    setBookFormOpen(true);
     renderBookCustomizePickers();
     $("#bookNameInput").focus();
   });
@@ -1026,15 +1080,8 @@ function renderBooks(){
 }
 
 function openBooksDialog(){
-  editingBookId=null;
-  $("#bookNameInput").value="";
-  $("#bookNameCounter").textContent="0/20";
-  $("#bookIconInput").value="📖";
-  $("#bookColorInput").value="#725cff";
-  $("#bookFormLabel").firstChild.textContent="Agregar libro ";
-  $("#addBookBtn").textContent="＋ Agregar libro";
-  $("#deleteBookBtn").classList.add("hidden");
-  renderBookCustomizePickers();
+  resetBookForm();
+  setBookFormOpen(false);
   renderBooks();
   $("#booksDialog").showModal();
 }
@@ -1074,6 +1121,7 @@ function addBook(){
     renderBookCustomizePickers();
     renderBooks();
     updateActiveBookChip();
+    setBookFormOpen(false);
     toast("Nombre de libro actualizado.");
     return;
   }
@@ -1094,6 +1142,7 @@ function addBook(){
   renderBookCustomizePickers();
   $("#deleteBookBtn").classList.add("hidden");
   renderBooks();
+  setBookFormOpen(false);
   toast("Libro agregado.");
 }
 
@@ -1494,7 +1543,16 @@ $("#expenseForm").addEventListener("submit",e=>{
 
 
 $("#booksBtn").onclick=openBooksDialog;
-$("#activeBookChip").onclick=openBooksDialog;
+$("#toggleBookFormBtn").onclick=()=>setBookFormOpen($("#bookFormPanel").classList.contains("hidden"));
+$("#closeQuickBookDialog").onclick=()=>$("#quickBookDialog").close();
+$("#quickBookSelect").onchange=e=>{
+  setActiveBook(e.target.value);
+  $("#quickBookDialog").close();
+};
+$("#quickBookDialog").addEventListener("click",e=>{
+  if(e.target===$("#quickBookDialog")) $("#quickBookDialog").close();
+});
+$("#activeBookChip").onclick=openQuickBookDialog;
 $("#closeBooksDialog").onclick=()=>{finalizeBookSelection();$("#booksDialog").close();};
 $("#addBookBtn").onclick=addBook;
 $("#deleteBookBtn").onclick=deleteEditingBook;

@@ -1,4 +1,4 @@
-const CACHE="mis-tareas-11-0-2-1";
+const CACHE="mis-tareas-11-0-3";
 const FILES=["./","./index.html","./styles.css","./app.js","./manifest.webmanifest","./icon.svg"];
 
 self.addEventListener("install", event => {
