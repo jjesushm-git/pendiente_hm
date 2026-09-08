@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.1";
+const APP_VERSION = "11.1 REPARADA";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -162,14 +162,6 @@ function loadSettings(){
     return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:"",theme:"emerald_gold"};
   }
 }
-function migrateThemeForV11_1(){
-  const key="mis_tareas_theme_migrated_11_1";
-  if(localStorage.getItem(key)) return;
-  settings.theme="emerald_gold";
-  localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));
-  localStorage.setItem(key,"1");
-}
-
 function saveSettings(){
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 }
@@ -230,7 +222,10 @@ function renderBookCustomizePickers(){
           <h4>${section.label}</h4>
           <div class="book-emoji-grid">
             ${section.icons.map(icon=>`
-              <button type="button" class="book-icon-option ${current===icon?"selected":""}" data-book-icon="${icon}" title="${section.label}">${icon}</button>
+              <button type="button"
+                      class="book-icon-option ${current===icon?"selected":""}"
+                      data-book-icon="${icon}"
+                      title="${section.label}">${icon}</button>
             `).join("")}
           </div>
         </section>
@@ -239,7 +234,11 @@ function renderBookCustomizePickers(){
 
   if($("#bookColorPicker")){
     $("#bookColorPicker").innerHTML=BOOK_COLORS.map(color=>`
-      <button type="button" class="book-color-option ${$("#bookColorInput").value===color?"selected":""}" data-book-color="${color}" style="--book-color:${color}" title="${color}"></button>
+      <button type="button"
+              class="book-color-option ${$("#bookColorInput").value===color?"selected":""}"
+              data-book-color="${color}"
+              style="--book-color:${color}"
+              title="${color}"></button>
     `).join("");
   }
 
@@ -464,9 +463,11 @@ const TASK_EMOJIS={
     "🗡️","⚔️","🛡️","🏹","🪄","🧝","🧝‍♂️","🧝‍♀️","🧚","🧚‍♂️","🧚‍♀️",
     "🔺","🟩","🟨","🟦","🟪","💎","💠","🔮","🪬","🧿","👑","🏆","⭐","🌟","✨","💫",
     "🗝️","🔑","📜","🗺️","🧭","🏺","🏰","⛺","🕯️","🔥","🌿","🍃","🌱","🌲","🌳","🌾","🍄",
-    "🪙","💰","💵","💳","🏦","🧾","💲","💸","📦","🎒","🧺","🧰","🔨","⚒️","🛠️","🔧","⚙️",
-    "🪓","⛏️","🪚","🪛","🧱","🧪","⚗️","🧴","🔔","🎵","🎶","📯","🪕",
-    "🐎","🦅","🐺","🦊","🐉","🐲","🦋","🐝","🪶","🪽","🐟","🌊","💧","❄️","⚡","☀️","🌙",
+    "🪙","💰","💵","💳","🏦","🧾","💲","💸","📦","🎒","🧺",
+    "🧰","🔨","⚒️","🛠️","🔧","⚙️","🪓","⛏️","🪚","🪛","🧱",
+    "🧪","⚗️","🧴","🔔","🎵","🎶","📯","🪕",
+    "🐎","🦅","🐺","🦊","🐉","🐲","🦋","🐝","🪶","🪽","🐟",
+    "🌊","💧","❄️","⚡","☀️","🌙",
     "📌","✅","☑️","📋","📝","📚","💼","🎯","📈","📉","🧮","🗂️","📁","📂","🔍","⏰","📅"
   ]
 };
@@ -1237,8 +1238,7 @@ function exportData(){
 async function importData(file){
   try{
     const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
-    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration();
-migrateThemeForV11_1(); saveTrash(); saveTasks(); toast("Respaldo importado.");
+    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); saveTrash(); saveTasks(); toast("Respaldo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 
@@ -1702,7 +1702,7 @@ window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNot
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
-  navigator.serviceWorker.register("sw.js?v=11.1").then(reg=>reg.update()).catch(()=>{});
+  navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
 }
 ensureBookMigration();
 updateActiveBookSelect();

@@ -1654,80 +1654,75 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 
 
 /* =========================================================
-   VERSION 11.1 — TEMA ESMERALDA DORADO CLARO (DEFAULT)
-   Solo afecta data-theme="emerald_gold".
+   11.1 REPARADA — SOLO TEMA DEFAULT ESMERALDA + DORADO
+   Inspirado visualmente en la referencia compartida:
+   crema/blanco, verde esmeralda profundo y detalles dorados.
    ========================================================= */
 
 :root[data-theme="emerald_gold"]{
-  --bg:#f7f6eb;
-  --panel:#fffdf5;
-  --panel-2:#f3f5df;
+  --bg:#f7f5e8;
+  --panel:#fffdf4;
+  --panel-2:#f4f6df;
   --text:#17382b;
-  --muted:#65766c;
+  --muted:#65766b;
   --line:rgba(190,150,37,.46);
-  --primary:#0f6043;
-  --primary-2:#17835a;
-  --green:#2ba66b;
-  --red:#be5964;
-  --orange:#c48231;
-  --yellow:#d4ad32;
-  --shadow:0 14px 34px rgba(70,79,52,.11);
-  --accent:#0f6043;
-  --accent-2:#d4ad32;
+  --accent:#0f5c43;
+  --accent-2:#d2aa34;
+  --primary:#0f5c43;
+  --primary-2:#168259;
+  --green:#2aa567;
+  --red:#b85460;
+  --orange:#bd7c2d;
+  --yellow:#d2aa34;
   color-scheme:light;
-}
-
-:root[data-theme="emerald_gold"] html{
-  background:#f7f6eb !important;
 }
 
 :root[data-theme="emerald_gold"] body{
   background:
-    radial-gradient(circle at 92% 6%,rgba(208,173,50,.11),transparent 23%),
-    linear-gradient(180deg,#fbfaf1 0%,#f4f5e9 100%) !important;
+    radial-gradient(circle at 88% 8%,rgba(210,170,52,.10),transparent 24%),
+    linear-gradient(180deg,#fbfaf1 0%,#f5f4e8 100%) !important;
   color:#17382b !important;
 }
 
-/* Encabezado verde intenso con línea dorada */
+/* HEADER VERDE CON BORDE DORADO */
 :root[data-theme="emerald_gold"] .topbar{
-  background:linear-gradient(135deg,#084831 0%,#126b49 100%) !important;
-  border:1px solid rgba(204,165,47,.64) !important;
-  border-bottom:3px solid #cda62f !important;
-  border-radius:0 0 16px 16px !important;
-  box-shadow:0 9px 24px rgba(28,70,48,.12) !important;
-  backdrop-filter:none !important;
+  background:linear-gradient(135deg,#084831 0%,#126948 100%) !important;
+  color:#fffdf4 !important;
+  border:1px solid rgba(205,165,46,.62) !important;
+  border-bottom:3px solid #cda62e !important;
+  box-shadow:0 8px 24px rgba(31,70,50,.12) !important;
 }
 
-:root[data-theme="emerald_gold"] .topbar h1,
-:root[data-theme="emerald_gold"] .topbar .eyebrow{
+:root[data-theme="emerald_gold"] .topbar h1{
   color:#fffdf4 !important;
 }
 
 :root[data-theme="emerald_gold"] .topbar .eyebrow{
-  color:#d9bd5a !important;
+  color:#dfc263 !important;
 }
 
 :root[data-theme="emerald_gold"] .active-book-select-wrap,
 :root[data-theme="emerald_gold"] .topbar .icon-btn{
   background:rgba(255,255,255,.055) !important;
-  border-color:rgba(218,185,75,.46) !important;
+  border-color:rgba(215,181,70,.46) !important;
   color:#fffdf4 !important;
 }
 
 :root[data-theme="emerald_gold"] .active-book-select{
   color:#fffdf4 !important;
 }
+
 :root[data-theme="emerald_gold"] .active-book-select option{
   color:#17382b !important;
-  background:#fffdf5 !important;
+  background:#fffdf4 !important;
 }
 
-/* Contenedores principales */
+/* CONTENEDORES CLAROS */
 :root[data-theme="emerald_gold"] .view-tabs,
 :root[data-theme="emerald_gold"] .expense-summary-bar,
 :root[data-theme="emerald_gold"] .panel,
-:root[data-theme="emerald_gold"] .calendar,
 :root[data-theme="emerald_gold"] .calendar-shell,
+:root[data-theme="emerald_gold"] .calendar-grid,
 :root[data-theme="emerald_gold"] .week-column,
 :root[data-theme="emerald_gold"] .board-column,
 :root[data-theme="emerald_gold"] .settings-group,
@@ -1735,13 +1730,13 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 :root[data-theme="emerald_gold"] .books-footer-note,
 :root[data-theme="emerald_gold"] .expense-view-total,
 :root[data-theme="emerald_gold"] .comment-dialog-body{
-  background:#fffdf5 !important;
-  border-color:rgba(190,150,37,.42) !important;
+  background:#fffdf4 !important;
   color:#17382b !important;
-  box-shadow:0 10px 24px rgba(70,79,52,.055) !important;
+  border-color:rgba(190,150,37,.42) !important;
+  box-shadow:0 9px 24px rgba(67,77,50,.06) !important;
 }
 
-/* Tarjetas */
+/* TARJETAS CLARAS CON DETALLE DORADO */
 :root[data-theme="emerald_gold"] .task-card,
 :root[data-theme="emerald_gold"] .board-card,
 :root[data-theme="emerald_gold"] .book-select-card,
@@ -1749,19 +1744,25 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 :root[data-theme="emerald_gold"] .expense-card,
 :root[data-theme="emerald_gold"] .mini-task,
 :root[data-theme="emerald_gold"] .stat-card{
-  background:linear-gradient(180deg,#fffef8,#f6f8e7) !important;
-  border-color:rgba(190,150,37,.40) !important;
+  background:linear-gradient(180deg,#fffef8,#f7f8e8) !important;
   color:#17382b !important;
-  box-shadow:0 7px 18px rgba(58,72,49,.055) !important;
+  border-color:rgba(190,150,37,.40) !important;
+  box-shadow:0 7px 18px rgba(58,70,48,.055) !important;
 }
 
 :root[data-theme="emerald_gold"] .task-card::before{
-  background:#0f6043 !important;
+  background:#0f5c43 !important;
 }
-:root[data-theme="emerald_gold"] .task-card.completed::before{background:#27a866 !important}
-:root[data-theme="emerald_gold"] .task-card.missed::before{background:#bd5965 !important}
 
-/* Textos claros */
+:root[data-theme="emerald_gold"] .task-card.completed::before{
+  background:#25a466 !important;
+}
+
+:root[data-theme="emerald_gold"] .task-card.missed::before{
+  background:#b85460 !important;
+}
+
+/* TEXTOS */
 :root[data-theme="emerald_gold"] .task-title,
 :root[data-theme="emerald_gold"] .section-heading h2,
 :root[data-theme="emerald_gold"] .panel-head h3,
@@ -1776,24 +1777,13 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
 :root[data-theme="emerald_gold"] .book-card-copy small,
 :root[data-theme="emerald_gold"] .expense-card p,
 :root[data-theme="emerald_gold"] .empty{
-  color:#65766c !important;
+  color:#65766b !important;
 }
 
-/* Campos, modales y controles */
-:root[data-theme="emerald_gold"] .modal{
-  background:#fffdf5 !important;
-  color:#17382b !important;
-  border-color:rgba(190,150,37,.52) !important;
-  box-shadow:0 20px 50px rgba(38,68,47,.18) !important;
-}
-:root[data-theme="emerald_gold"] .modal::backdrop{
-  background:rgba(29,57,42,.40) !important;
-}
-
+/* CAMPOS Y AJUSTES */
 :root[data-theme="emerald_gold"] input,
 :root[data-theme="emerald_gold"] textarea,
 :root[data-theme="emerald_gold"] select,
-:root[data-theme="emerald_gold"] .select,
 :root[data-theme="emerald_gold"] .settings-item,
 :root[data-theme="emerald_gold"] .emoji-picker-trigger,
 :root[data-theme="emerald_gold"] .book-form-toggle,
@@ -1808,76 +1798,89 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
   color:#17382b !important;
 }
 
-/* Navegación */
-:root[data-theme="emerald_gold"] .view-tabs{
-  background:#fffdf5 !important;
-}
-:root[data-theme="emerald_gold"] .view-tab{
-  color:#5d7065 !important;
-}
-:root[data-theme="emerald_gold"] .view-tab.active,
+/* BOTONES PRINCIPALES */
 :root[data-theme="emerald_gold"] .primary-btn,
 :root[data-theme="emerald_gold"] .expense-add-btn,
-:root[data-theme="emerald_gold"] .bottom-add span{
-  background:linear-gradient(135deg,#0d5a3f,#16835a) !important;
-  color:#fffdf3 !important;
-  border-color:#cba42c !important;
-  box-shadow:0 6px 16px rgba(15,96,67,.15) !important;
+:root[data-theme="emerald_gold"] .view-tab.active{
+  background:linear-gradient(135deg,#0d593e,#168158) !important;
+  color:#fffdf4 !important;
+  border-color:#caa32b !important;
+  box-shadow:0 6px 16px rgba(15,92,67,.15) !important;
+}
+
+/* PESTAÑAS */
+:root[data-theme="emerald_gold"] .view-tab{
+  color:#5f7166 !important;
 }
 
 :root[data-theme="emerald_gold"] .bottom-nav{
-  background:rgba(255,253,245,.97) !important;
+  background:rgba(255,253,244,.97) !important;
+  color:#65766b !important;
   border-color:rgba(190,150,37,.35) !important;
-  box-shadow:0 -7px 18px rgba(70,79,52,.06) !important;
-}
-:root[data-theme="emerald_gold"] .bottom-tab{
-  color:#65766c !important;
-}
-:root[data-theme="emerald_gold"] .bottom-tab.active{
-  color:#0f6043 !important;
-  background:transparent !important;
+  box-shadow:0 -7px 18px rgba(67,77,50,.06) !important;
 }
 
-/* Franja semanal y calendario */
-:root[data-theme="emerald_gold"] .week-day{
-  color:#64766b !important;
+:root[data-theme="emerald_gold"] .bottom-tab{
+  color:#65766b !important;
 }
+
+:root[data-theme="emerald_gold"] .bottom-tab.active{
+  color:#0f5c43 !important;
+}
+
+/* SEMANA Y CALENDARIO */
+:root[data-theme="emerald_gold"] .week-day{
+  color:#63756a !important;
+}
+
 :root[data-theme="emerald_gold"] .week-day .num{
   color:#17382b !important;
 }
+
 :root[data-theme="emerald_gold"] .week-day.active{
-  background:linear-gradient(135deg,#0d5a3f,#17835a) !important;
-  color:#fffdf3 !important;
-  border-color:#cba42c !important;
-}
-:root[data-theme="emerald_gold"] .week-day.active .num{
-  color:#fffdf3 !important;
+  background:linear-gradient(135deg,#0d593e,#168158) !important;
+  color:#fffdf4 !important;
+  border-color:#caa32b !important;
 }
 
-:root[data-theme="emerald_gold"] .calendar-weekdays span{
-  color:#65766c !important;
+:root[data-theme="emerald_gold"] .week-day.active .num{
+  color:#fffdf4 !important;
 }
+
 :root[data-theme="emerald_gold"] .calendar-day{
   background:#fffef8 !important;
   color:#17382b !important;
-  border-color:rgba(190,150,37,.32) !important;
-}
-:root[data-theme="emerald_gold"] .calendar-day.selected,
-:root[data-theme="emerald_gold"] .calendar-day.today{
-  background:#eaf3d7 !important;
-  outline-color:#0f6043 !important;
+  border-color:rgba(190,150,37,.31) !important;
 }
 
-/* Dorado */
+:root[data-theme="emerald_gold"] .calendar-day.selected,
+:root[data-theme="emerald_gold"] .calendar-day.today{
+  background:#eaf2d7 !important;
+  outline-color:#0f5c43 !important;
+}
+
+/* DORADOS */
 :root[data-theme="emerald_gold"] .calendar-expense-mark,
 :root[data-theme="emerald_gold"] .week-expense-mark,
 :root[data-theme="emerald_gold"] .money-symbol,
 :root[data-theme="emerald_gold"] .importance-chip.active,
 :root[data-theme="emerald_gold"] .recur-pill{
-  color:#aa7f0a !important;
+  color:#a97e09 !important;
 }
 
-/* Emojis */
+/* MODALES */
+:root[data-theme="emerald_gold"] .modal{
+  background:#fffdf4 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.50) !important;
+  box-shadow:0 18px 48px rgba(36,66,45,.18) !important;
+}
+
+:root[data-theme="emerald_gold"] .modal::backdrop{
+  background:rgba(28,55,40,.40) !important;
+}
+
+/* EMOTICONOS */
 :root[data-theme="emerald_gold"] .emoji-choice,
 :root[data-theme="emerald_gold"] .book-icon-option,
 :root[data-theme="emerald_gold"] .book-color-option{
@@ -1885,13 +1888,14 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
   border-color:rgba(190,150,37,.34) !important;
   color:#17382b !important;
 }
+
 :root[data-theme="emerald_gold"] .emoji-choice:hover,
 :root[data-theme="emerald_gold"] .book-icon-option:hover{
-  background:#eef3d9 !important;
-  border-color:#cba42c !important;
+  background:#edf3d9 !important;
+  border-color:#caa32b !important;
 }
 
-/* Selector de emoticonos de LIBRO por secciones */
+/* LIBROS: ICONOS POR SECCIONES */
 .book-icon-picker{
   display:grid !important;
   gap:14px !important;
@@ -1899,48 +1903,66 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
   overflow:auto !important;
   padding-right:4px;
 }
+
 .book-emoji-section{
   display:grid;
   gap:7px;
 }
+
 .book-emoji-section h4{
   margin:0;
   font-size:.82rem;
   color:var(--muted);
 }
+
 .book-emoji-grid{
   display:grid;
   grid-template-columns:repeat(7,minmax(34px,1fr));
   gap:6px;
 }
+
 .book-emoji-grid .book-icon-option{
   width:100% !important;
   min-width:34px;
   min-height:38px;
 }
+
 :root[data-theme="emerald_gold"] .book-adventure-section{
   padding:10px;
   border:1px solid rgba(190,150,37,.30);
   border-radius:12px;
-  background:linear-gradient(180deg,rgba(15,96,67,.045),rgba(212,173,50,.055));
+  background:linear-gradient(180deg,rgba(15,92,67,.045),rgba(210,170,52,.055));
 }
+
 :root[data-theme="emerald_gold"] .book-adventure-section h4{
-  color:#9b7410 !important;
+  color:#96700d !important;
 }
 
-/* Aventura solo en tema predeterminado */
-.theme-zelda-only{display:none}
-:root[data-theme="emerald_gold"] .theme-zelda-only{display:block}
+/* Aventura solo en tema default */
+.theme-zelda-only{
+  display:none;
+}
 
-/* Aura importante verde/dorado */
+:root[data-theme="emerald_gold"] .theme-zelda-only{
+  display:block;
+}
+
+/* Aura alta importancia */
 :root[data-theme="emerald_gold"] .high-importance{
-  animation:importantAura11 4s ease-in-out infinite !important;
+  animation:importantAuraRepair 4s ease-in-out infinite !important;
 }
-@keyframes importantAura11{
-  0%,100%{box-shadow:0 7px 18px rgba(58,72,49,.055),0 0 0 rgba(212,173,50,0)}
-  50%{box-shadow:0 9px 22px rgba(15,96,67,.10),0 0 18px rgba(212,173,50,.18)}
+
+@keyframes importantAuraRepair{
+  0%,100%{
+    box-shadow:0 7px 18px rgba(58,70,48,.055),0 0 0 rgba(210,170,52,0)
+  }
+  50%{
+    box-shadow:0 9px 22px rgba(15,92,67,.10),0 0 18px rgba(210,170,52,.18)
+  }
 }
 
 @media(max-width:600px){
-  .book-emoji-grid{grid-template-columns:repeat(6,minmax(32px,1fr))}
+  .book-emoji-grid{
+    grid-template-columns:repeat(6,minmax(32px,1fr));
+  }
 }
