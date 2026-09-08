@@ -1,15 +1,25 @@
-# Mis Tareas — Versión 11.5.1
+# Mis Tareas — Versión 11.5.1.1 CORREGIDA
 
-Base: Versión 11.5 ESTABLE.
+Base: Versión 11.5.1 ESTABLE.
 
-Cambios:
-- En el tema predeterminado Esmeralda dorado la barra inferior queda blanca/crema.
-- Solo el botón + conserva el diseño verde/dorado.
-- Los modales de Gastos quedan blancos/crema con encabezado verde y borde dorado.
-- El modal de Libros queda blanco/crema con encabezado verde y borde dorado.
-- El modal de Comentarios queda blanco/crema con encabezado verde y borde dorado.
-- Se amplía todavía más la sección Aventura.
-- Los mismos emoticonos de Aventura se pueden usar en Tareas y Libros.
-- El selector de emoticonos de Libros se organiza por secciones igual que Tareas:
-  Trabajo y oficina, Tareas y organización, Dinero y compras, Comida, Sociales y otros, Aventura.
-- Los demás temas se conservan sin cambios.
+Corrección crítica:
+- Se corrigió el orden de inicialización de los emoticonos.
+- TASK_EMOJIS ahora se declara antes de BOOK_ICON_SECTIONS.
+- Esto evita el error JavaScript:
+  Cannot access 'TASK_EMOJIS' before initialization
+
+No se modificó:
+- estilos visuales,
+- datos,
+- Calendario,
+- Día,
+- Semana,
+- Tablero,
+- Libros,
+- Gastos,
+- Comentarios,
+- Papelera,
+- temas,
+- Service Worker.
+
+La corrección solo evita que JavaScript se detenga al iniciar.

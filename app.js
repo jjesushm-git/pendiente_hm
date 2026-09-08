@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.5.1";
+const APP_VERSION = "11.5.1.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -172,14 +172,6 @@ function saveBooks(){
   renderBooks();
 }
 
-const BOOK_ICON_SECTIONS=[
-  {key:"work",label:"Trabajo y oficina",icons:TASK_EMOJIS.work},
-  {key:"tasks",label:"Tareas y organización",icons:TASK_EMOJIS.tasks},
-  {key:"money",label:"Dinero y compras",icons:TASK_EMOJIS.money},
-  {key:"food",label:"Comida",icons:TASK_EMOJIS.food},
-  {key:"social",label:"Sociales y otros",icons:TASK_EMOJIS.social},
-  {key:"zelda",label:"Aventura",icons:TASK_EMOJIS.zelda,themeOnly:"emerald_gold"}
-];
 const BOOK_COLORS=["#725cff","#3d8bfd","#22b573","#d7a928","#f06a6a","#b56cff","#5aa7a7","#8d98a8"];
 
 function normalizeBookAppearance(book){
@@ -474,6 +466,16 @@ const TASK_EMOJIS={
     "🚚","🛒","🏪","🏠","🏕️","🚪","🧳","📬","📮","🪧","🛎️","🎒","🎣","⛏️"
   ]
 };
+
+const BOOK_ICON_SECTIONS=[
+  {key:"work",label:"Trabajo y oficina",icons:TASK_EMOJIS.work},
+  {key:"tasks",label:"Tareas y organización",icons:TASK_EMOJIS.tasks},
+  {key:"money",label:"Dinero y compras",icons:TASK_EMOJIS.money},
+  {key:"food",label:"Comida",icons:TASK_EMOJIS.food},
+  {key:"social",label:"Sociales y otros",icons:TASK_EMOJIS.social},
+  {key:"zelda",label:"Aventura",icons:TASK_EMOJIS.zelda,themeOnly:"emerald_gold"}
+];
+
 function renderEmojiPicker(){
   const fill=(id,list)=>{
     const el=$("#"+id);
