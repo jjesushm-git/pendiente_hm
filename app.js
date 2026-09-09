@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.5.5";
+const APP_VERSION = "11.5.6";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1435,6 +1435,69 @@ async function requestNotifications(){
   toast(p==="granted"?"Notificaciones activadas.":"Permiso de notificaciones no concedido.");
   scheduleNotifications();
 }
+function comicConfirm(message,{title="Confirmar",okText="Sí, continuar"}={}){
+  return new Promise(resolve=>{
+    const dialog=$("#comicConfirmDialog");
+    const titleEl=$("#comicConfirmTitle");
+    const messageEl=$("#comicConfirmMessage");
+    const ok=$("#comicConfirmOk");
+    const cancel=$("#comicConfirmCancel");
+
+    if(!dialog || !titleEl || !messageEl || !ok || !cancel){
+      resolve(window.confirm(message));
+      return;
+    }
+
+    titleEl.textContent=title;
+    messageEl.textContent=message;
+    ok.textContent=okText;
+
+    let finished=false;
+
+    const cleanup=()=>{
+      ok.removeEventListener("click",onOk);
+      cancel.removeEventListener("click",onCancel);
+      dialog.removeEventListener("cancel",onCancel);
+      dialog.removeEventListener("click",onBackdrop);
+      dialog.removeEventListener("close",onClose);
+    };
+
+    const finish=value=>{
+      if(finished) return;
+      finished=true;
+      cleanup();
+      if(dialog.open) dialog.close();
+      resolve(value);
+    };
+
+    const onOk=()=>finish(true);
+    const onCancel=e=>{
+      if(e) e.preventDefault();
+      finish(false);
+    };
+    const onBackdrop=e=>{
+      if(e.target===dialog) finish(false);
+    };
+    const onClose=()=>{
+      if(!finished){
+        finished=true;
+        cleanup();
+        resolve(false);
+      }
+    };
+
+    ok.addEventListener("click",onOk);
+    cancel.addEventListener("click",onCancel);
+    dialog.addEventListener("cancel",onCancel);
+    dialog.addEventListener("click",onBackdrop);
+    dialog.addEventListener("close",onClose);
+
+    if(dialog.open) dialog.close();
+    dialog.showModal();
+  });
+}
+
+
 function notificationTime(t){
   const due=taskDueDate(t);
   if(!due) return null;
@@ -1795,6 +1858,47 @@ function exportSelectedExpensePeriods(){
   $("#expenseLogDialog").close();
 }
 
+
+async function deleteExpenseById(expenseId){
+  const index=expenses.findIndex(e=>e.id===expenseId);
+  if(index<0){
+    toast("No se encontró el gasto seleccionado.");
+    return false;
+  }
+
+  const expense=expenses[index];
+  const ok=await comicConfirm(
+    `¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`,
+    {title:"Borrar gasto",okText:"🗑 Borrar"}
+  );
+
+  if(!ok) return false;
+
+  expenses.splice(index,1);
+  saveExpenses();
+  renderViewExpenses();
+  renderAll();
+  toast("Gasto borrado.");
+  return true;
+}
+
+function moveExpenseToBook(expenseId,destinationBookId){
+  const expense=expenses.find(e=>e.id===expenseId);
+  const destination=books.find(book=>book.id===destinationBookId);
+  if(!expense || !destination) return false;
+
+  const origin=books.find(book=>book.id===expense.bookId);
+  expense.bookId=destination.id;
+  expense.updatedAt=new Date().toISOString();
+
+  saveExpenses();
+  renderViewExpenses();
+  renderAll();
+
+  toast(`Gasto movido de ${origin?.name||"libro"} a ${destination.name}.`);
+  return true;
+}
+
 function renderViewExpenses(){
   if(!$("#viewExpensesList")) return;
 
@@ -1812,9 +1916,27 @@ function renderViewExpenses(){
         <span class="expense-card-amount">$${money(e.amount)} ${e.currency}</span>
       </div>
       ${e.description ? `<p>${esc(e.description)}</p>` : ""}
-      <div class="expense-card-actions">
-        <button class="expense-edit-btn" data-expense-edit="${e.id}">✏ Editar</button>
-        <button class="expense-delete-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
+      <div class="expense-card-actions expense-card-actions-three">
+        <button type="button" class="expense-edit-btn" data-expense-edit="${e.id}">✏ Editar</button>
+
+        <div class="expense-book-move-wrap">
+          <button type="button"
+                  class="expense-book-move-btn"
+                  data-open-expense-book-move="${e.id}">
+            📖 Mover
+          </button>
+          <select class="expense-book-move-select hidden"
+                  data-expense-book-move="${e.id}"
+                  aria-label="Mover gasto a otro libro">
+            <option value="">Selecciona libro</option>
+            ${books
+              .filter(book=>book.id!==e.bookId)
+              .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
+              .join("")}
+          </select>
+        </div>
+
+        <button type="button" class="expense-delete-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
       </div>
     </article>
   `).join("") : `<div class="empty">No hay gastos registrados en este día.</div>`;
@@ -1829,20 +1951,46 @@ function renderViewExpenses(){
   });
 
   $$("[data-expense-delete]").forEach(btn=>{
-    btn.onclick=async()=>{
-      const expense=expenses.find(e=>e.id===btn.dataset.expenseDelete);
+    btn.onclick=async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const expenseId=btn.dataset.expenseDelete;
+      await deleteExpenseById(expenseId);
+    };
+  });
+
+  $$("[data-open-expense-book-move]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const expense=expenses.find(x=>x.id===btn.dataset.openExpenseBookMove);
       if(!expense) return;
 
-      if(await comicConfirm(`¿Borrar "${expense.title}" por $${money(expense.amount)} ${expense.currency}?`,{
-        title:"Borrar gasto",
-        okText:"🗑 Borrar"
-      })){
-        expenses=expenses.filter(e=>e.id!==expense.id);
-        saveExpenses();
-        renderViewExpenses();
-        renderAll();
-        toast("Gasto borrado.");
+      const available=books.filter(book=>book.id!==expense.bookId);
+      if(!available.length){
+        toast("No hay otro libro disponible.");
+        return;
       }
+
+      const select=$(`[data-expense-book-move="${expense.id}"]`);
+      if(!select) return;
+
+      select.classList.toggle("hidden");
+      if(!select.classList.contains("hidden")) select.focus();
+    };
+  });
+
+  $$("[data-expense-book-move]").forEach(select=>{
+    select.onchange=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const expenseId=select.dataset.expenseBookMove;
+      const destinationBookId=select.value;
+      if(!destinationBookId) return;
+
+      moveExpenseToBook(expenseId,destinationBookId);
     };
   });
 }
