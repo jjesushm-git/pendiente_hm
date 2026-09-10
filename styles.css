@@ -3034,3 +3034,188 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     grid-row:2;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.6 — GASTOS + INGRESOS
+   ========================================================= */
+
+.task-finance-section{
+  display:grid;
+  gap:12px;
+  margin:14px 0;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:var(--panel-2);
+}
+
+.task-finance-head,
+.movement-type-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.task-finance-head>div{
+  display:grid;
+  gap:3px;
+}
+
+.movement-type-btn{
+  min-width:96px;
+  min-height:40px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  font-weight:800;
+  cursor:pointer;
+}
+
+.movement-type-btn.expense{
+  background:rgba(205,74,88,.09);
+  color:#c74f5e;
+}
+
+.movement-type-btn.income{
+  background:rgba(39,158,91,.10);
+  color:#218653;
+}
+
+:root[data-theme="emerald_gold"] .task-finance-section{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+.task-money-indicator{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:30px;
+  min-height:26px;
+  padding:2px 7px;
+  border:1px solid rgba(190,150,37,.42);
+  border-radius:999px;
+  background:rgba(212,170,52,.09);
+  color:#b1840d !important;
+  font-weight:900;
+  font-size:.84rem;
+  line-height:1;
+  cursor:pointer;
+}
+
+.task-money-indicator:active{
+  transform:scale(.92);
+}
+
+.movement-gold-symbol{
+  display:inline-flex;
+  min-width:32px;
+  justify-content:center;
+  color:#b1840d;
+  font-weight:900;
+  font-size:1.08rem;
+}
+
+.movement-card-title{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+
+.movement-card-title>span:last-child{
+  display:grid;
+  gap:2px;
+}
+
+.movement-type-label{
+  font-size:.72rem;
+  font-weight:800;
+}
+
+.movement-type-label.expense,
+.expense-card-amount.expense,
+.task-movement-detail-amount.expense{
+  color:#c64f5d !important;
+}
+
+.movement-type-label.income,
+.expense-card-amount.income,
+.task-movement-detail-amount.income{
+  color:#218a54 !important;
+}
+
+.balance-positive{
+  color:#218a54 !important;
+}
+
+.balance-negative{
+  color:#c64f5d !important;
+}
+
+.balance-mixed,
+.balance-neutral{
+  color:inherit;
+}
+
+.task-movement-dialog{
+  max-width:min(92vw,520px);
+}
+
+.task-movement-detail-body{
+  display:grid;
+  gap:12px;
+}
+
+.task-movement-detail-card{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel-2);
+}
+
+.task-movement-detail-card>div:nth-child(2){
+  display:grid;
+  gap:3px;
+}
+
+.task-movement-detail-symbol{
+  color:#b1840d;
+  font-size:1.35rem;
+  font-weight:900;
+}
+
+.task-movement-detail-amount{
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.task-movement-detail-description,
+.task-movement-detail-date{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-2);
+}
+
+:root[data-theme="emerald_gold"] .task-movement-detail-card,
+:root[data-theme="emerald_gold"] .task-movement-detail-description,
+:root[data-theme="emerald_gold"] .task-movement-detail-date{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.38) !important;
+  color:#17382b !important;
+}
+
+@media(max-width:540px){
+  .task-movement-detail-card{
+    grid-template-columns:auto 1fr;
+  }
+  .task-movement-detail-amount{
+    grid-column:1 / -1;
+    justify-self:end;
+  }
+}
