@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7";
+const APP_VERSION = "11.7.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -135,6 +135,85 @@ function taskCountIndicatorHTML(dayTasks,scope="calendar"){
   return `<span class="${scope}-task-count ${level}" title="${count} tareas">${count}</span>`;
 }
 
+
+function compactTaskCardHTML(t,occurrenceDate=selectedDate,scope="compact"){
+  const occurrenceKey=occurrenceKeyForTask(t,occurrenceDate);
+  const comment=taskCommentForOccurrence(t,occurrenceKey);
+  return `
+    <div class="compact-task-shell" data-compact-shell="${t.id}" data-compact-date="${occurrenceKey}">
+      <div class="mini-task compact-task-card ${t.highImportance?"high-importance":""}"
+           data-expand-task="${t.id}"
+           data-expand-date="${occurrenceKey}"
+           data-expand-scope="${scope}">
+        <button type="button"
+                class="mini-task-emoji task-emoji-edit"
+                data-emoji-task="${t.id}"
+                title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
+        <span class="compact-task-copy">
+          <strong>${esc(t.title)}</strong>
+          <small>
+            ${formatTimeMeta(t)} · ${statusLabel(t.status)} ·
+            ${recurrenceButtonHTML(t,true,occurrenceDate)}
+            ${taskMovementIndicatorHTML(t)} ·
+            <button type="button"
+                    class="mini-comment-btn ${comment?"has-comment":"no-comment"}"
+                    data-comment-task="${t.id}"
+                    data-comment-date="${occurrenceKey}">${comment?"💬":"💬＋"}</button>
+          </small>
+        </span>
+      </div>
+    </div>`;
+}
+
+function compactTaskListHTML(list,occurrenceDate=selectedDate,scope="compact"){
+  if(!list.length) return `<div class="empty">No hay tareas en esta sección.</div>`;
+  return list.map(t=>compactTaskCardHTML(t,occurrenceDate,scope)).join("");
+}
+
+function bindCompactTaskExpansion(root=document){
+  root.querySelectorAll("[data-expand-task]").forEach(card=>{
+    card.onclick=e=>{
+      if(e.target.closest("button,select,input,a,label")) return;
+
+      const task=tasks.find(t=>t.id===card.dataset.expandTask);
+      if(!task) return;
+
+      const occurrenceDate=parseDate(card.dataset.expandDate||dateKey(selectedDate));
+      const shell=card.closest("[data-compact-shell]");
+      if(!shell) return;
+
+      shell.innerHTML=taskCard(task,occurrenceDate);
+      bindTaskActions();
+    };
+  });
+}
+
+function statusCountsForCurrentContext(){
+  let list=[];
+
+  if(currentView==="week"){
+    list=[...Array(7)].flatMap((_,i)=>expandedTasksForDate(addDays(weekCursor,i)));
+  }else if(currentView==="board"){
+    list=activeTasks();
+  }else{
+    list=expandedTasksForDate(selectedDate);
+  }
+
+  return {
+    pending:list.filter(t=>t.status==="pending").length,
+    completed:list.filter(t=>t.status==="completed").length,
+    missed:list.filter(t=>t.status==="missed").length
+  };
+}
+
+function renderGlobalStatusStrip(){
+  if(!$("#globalStatusStrip")) return;
+  const c=statusCountsForCurrentContext();
+  $("#globalPendingCount").textContent=c.pending;
+  $("#globalCompletedCount").textContent=c.completed;
+  $("#globalMissedCount").textContent=c.missed;
+}
+
 function scopedStatusStatsHTML(counts,targetPrefix){
   return `
     <button class="stat-card stat-link" data-status-target="${targetPrefix}PendingSection">
@@ -172,8 +251,8 @@ function weekOccurrenceListHTML(items){
     .map(group=>`
       <div class="week-status-day">
         <h4>${group.d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h4>
-        <div class="task-list">
-          ${group.items.map(t=>taskCard(t,group.d)).join("")}
+        <div class="task-list compact-task-list">
+          ${compactTaskListHTML(group.items,group.d,"week-status")}
         </div>
       </div>
     `).join("");
@@ -253,7 +332,10 @@ function renderFinanceLedger(){
   $("#financeLedgerTotals").innerHTML=`
     <h3>Totales hasta ${shortDate(through)}</h3>
     ${totalBlock("MN","Moneda nacional")}
-    ${totalBlock("DLS","Dólares")}
+    <details class="ledger-dls-details">
+      <summary>💵 Dólares (DLS) · tocar para ver</summary>
+      ${totalBlock("DLS","Dólares")}
+    </details>
   `;
 }
 
@@ -779,7 +861,7 @@ function renderEmojiPicker(){
 function renderAll(){
   updateActiveBookSelect();
   normalizeStatuses();
-  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderExpenseSummary();
+  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderGlobalStatusStrip(); renderExpenseSummary();
 }
 function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
@@ -848,18 +930,9 @@ function renderDay(){
       .sort(compareTasksByDate);
   }
 
-  $("#statsGrid").innerHTML = `
-    <button class="stat-card stat-link" data-stat-target="pendingSection"><strong>${allPending.length}</strong><small>Pendientes</small></button>
-    <button class="stat-card stat-link" data-stat-target="completedSection"><strong>${allCompleted.length}</strong><small>Completadas</small></button>
-    <button class="stat-card stat-link" data-stat-target="missedSection"><strong>${allMissed.length}</strong><small>Vencidas</small></button>`;
-
   $("#pendingList").innerHTML=listHtml(filtered,selectedDate);
   $("#completedList").innerHTML=listHtml(allCompleted,selectedDate);
   $("#missedList").innerHTML=listHtml(allMissed,selectedDate);
-  $$("[data-stat-target]").forEach(btn=>btn.onclick=()=>{
-    const target=document.getElementById(btn.dataset.statTarget);
-    if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
-  });
   bindTaskActions();
 }
 function expandedTasksForDate(d){ return activeTasks().filter(t=>occursOn(t,d)); }
@@ -1321,13 +1394,18 @@ function bindTaskActions(){
 }
 function renderCalendar(){
   $("#calendarTitle").textContent=monthName(calendarCursor);
-  const first=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth(),1);
-  const start=addDays(first,-((first.getDay()+6)%7));
+  const year=calendarCursor.getFullYear();
+  const month=calendarCursor.getMonth();
+  const first=new Date(year,month,1);
+  const leading=(first.getDay()+6)%7;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const cellCount=Math.ceil((leading+daysInMonth)/7)*7;
+  const start=addDays(first,-leading);
 
-  $("#calendarGrid").innerHTML=[...Array(42)].map((_,i)=>{
-    const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===calendarCursor.getMonth();
+  $("#calendarGrid").innerHTML=[...Array(cellCount)].map((_,i)=>{
+    const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===month;
     const dayTasks=expandedTasksForDate(d).sort(compareTasksByDate);
-    const taskIndicator=taskCountIndicatorHTML(dayTasks,"calendar");
+    const taskIndicator=taskCountIndicatorHTML(dayTasks,"week");
     const movementMark=movementMarkerForDateKey(key);
 
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
@@ -1344,18 +1422,13 @@ function renderCalendar(){
     const missed=list.filter(t=>t.status==="missed");
 
     $("#calendarDayHeading").textContent=`Pendientes · ${shortDate(selectedDate)}`;
-    $("#calendarStatsGrid").innerHTML=scopedStatusStatsHTML({
-      pending:pending.length,
-      completed:completed.length,
-      missed:missed.length
-    },"calendar");
 
-    $("#calendarPendingList").innerHTML=listHtml(pending,selectedDate);
-    $("#calendarCompletedList").innerHTML=listHtml(completed,selectedDate);
-    $("#calendarMissedList").innerHTML=listHtml(missed,selectedDate);
+    $("#calendarPendingList").innerHTML=compactTaskListHTML(pending,selectedDate,"calendar-pending");
+    $("#calendarCompletedList").innerHTML=compactTaskListHTML(completed,selectedDate,"calendar-completed");
+    $("#calendarMissedList").innerHTML=compactTaskListHTML(missed,selectedDate,"calendar-missed");
 
-    bindScopedStatusButtons($("#calendarView"));
     bindTaskActions();
+    bindCompactTaskExpansion($("#calendarView"));
   };
 
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
@@ -1367,6 +1440,7 @@ function renderCalendar(){
     renderWeek();
     renderCalendar();
     renderExpenseSummary();
+    renderGlobalStatusStrip();
   });
 
   renderSelectedCalendarDay();
@@ -1386,10 +1460,7 @@ function renderWeek(){
   $("#weekBoard").innerHTML=daysWithTasks.length ? daysWithTasks.map(({d,list})=>`
     <section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
-      ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}" data-edit-date="${dateKey(d)}">
-        <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
-        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} · ${recurrenceButtonHTML(t,true,d)} ${taskMovementIndicatorHTML(t)} · <button type="button" class="mini-comment-btn ${hasTaskCommentForOccurrence(t,dateKey(d))?"has-comment":"no-comment"}" data-comment-task="${t.id}" data-comment-date="${dateKey(d)}">${hasTaskCommentForOccurrence(t,dateKey(d))?"💬":"💬＋"}</button></small></span>
-      </div>`).join("")}
+      ${compactTaskListHTML(list,d,"week-main")}
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
 
@@ -1398,18 +1469,12 @@ function renderWeek(){
   const completed=occurrences.filter(x=>x.t.status==="completed");
   const missed=occurrences.filter(x=>x.t.status==="missed");
 
-  $("#weekStatsGrid").innerHTML=scopedStatusStatsHTML({
-    pending:pending.length,
-    completed:completed.length,
-    missed:missed.length
-  },"week");
-
   $("#weekPendingList").innerHTML=weekOccurrenceListHTML(pending);
   $("#weekCompletedList").innerHTML=weekOccurrenceListHTML(completed);
   $("#weekMissedList").innerHTML=weekOccurrenceListHTML(missed);
 
-  bindScopedStatusButtons($("#weekView"));
   bindTaskActions();
+  bindCompactTaskExpansion($("#weekView"));
 }
 function renderBoard(){
   const groups={pending:[],in_progress:[],waiting:[],completed:[]};
@@ -1615,6 +1680,7 @@ function switchView(view){
   $$(".view").forEach(v=>v.classList.toggle("active",v.id===`${view}View`));
   $$(".view-tab").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
   $$(".bottom-tab[data-view]").forEach(b=>b.classList.toggle("active",b.dataset.view===view));
+  renderGlobalStatusStrip();
 }
 
 function updateTaskFinanceTypeUI(){

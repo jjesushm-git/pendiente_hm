@@ -32,6 +32,12 @@
       <button data-view="board" class="view-tab">Tablero</button>
     </nav>
 
+    <section id="globalStatusStrip" class="global-status-strip" aria-label="Resumen de tareas">
+      <span class="global-status-item pending"><i></i><b id="globalPendingCount">0</b><small>Pendientes</small></span>
+      <span class="global-status-item completed"><i></i><b id="globalCompletedCount">0</b><small>Completadas</small></span>
+      <span class="global-status-item missed"><i></i><b id="globalMissedCount">0</b><small>Vencidas</small></span>
+    </section>
+
     <section class="expense-summary-bar" id="expenseSummaryBar">
       <button type="button" id="financeLedgerBtn" class="expense-balance-btn" title="Ver contabilidad completa">
         <strong id="expenseDayTotal">Balance del día: $0.00 MN</strong>
@@ -417,7 +423,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.7</strong>
+      <strong id="settingsVersionTop">11.7.1</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -468,7 +474,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.1</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
