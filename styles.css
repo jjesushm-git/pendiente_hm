@@ -3652,3 +3652,22 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     text-align:center;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.6.5 — EDICIÓN DE SERIES RECURRENTES
+   ========================================================= */
+
+.recur-edit-btn,
+.mini-recurrence-btn{
+  position:relative;
+}
+
+/* Mantiene claro que la recurrencia es una acción editable */
+.recur-edit-btn::after,
+.mini-recurrence-btn::after{
+  content:"›";
+  margin-left:2px;
+  opacity:.58;
+  font-weight:900;
+}

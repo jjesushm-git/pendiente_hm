@@ -225,6 +225,7 @@
       </div>
 
       <input type="hidden" id="taskId" />
+      <input type="hidden" id="editOccurrenceDate" />
 
       <label>Título *
         <input id="title" maxlength="120" required placeholder="Ej. Enviar reporte semanal" />
@@ -403,7 +404,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.4</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.5</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -745,6 +746,7 @@
     </div>
 
     <input type="hidden" id="recurrenceTaskId" />
+    <input type="hidden" id="recurrenceOccurrenceDate" />
 
     <div class="recurrence-options">
       <button type="button" class="recurrence-option" data-recurrence-value="none">

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.6.4";
+const APP_VERSION = "11.6.5";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -670,7 +670,7 @@ function renderDay(){
   // Global sections: do not hide tasks just because they belong to another date.
   const bookTasks=activeTasks();
   const allPending = bookTasks
-    .filter(t=>t.status==="pending")
+    .filter(t=>t.status==="pending" && !recurrenceSegmentEndedBefore(t,selectedDate))
     .sort(compareTasksByDate);
 
   const allCompleted = bookTasks
@@ -784,6 +784,101 @@ function migrateTaskCommentsV1155(){
   }
 }
 
+
+
+function recurrenceSegmentEndedBefore(t,referenceDate=selectedDate){
+  if(!t || t.recurrence==="none" || !t.recurrenceUntil) return false;
+  return parseDate(t.recurrenceUntil)<startOfDay(referenceDate||new Date());
+}
+
+function occurrenceEditKey(t,referenceDate=selectedDate){
+  if(!t) return dateKey(referenceDate||new Date());
+  if(t.recurrence==="none") return t.startDate || dateKey(referenceDate||new Date());
+  return occurrenceKeyForTask(t,referenceDate);
+}
+
+function isLaterSeriesOccurrence(t,occurrenceKey){
+  if(!t || t.recurrence==="none" || !occurrenceKey || !t.startDate) return false;
+  return occurrenceKey>t.startDate && occursOn(t,parseDate(occurrenceKey));
+}
+
+function moveOccurrenceCommentsForSplit(sourceTask,newTask,splitKey){
+  const sourceMap=ensureTaskCommentMap(sourceTask);
+  const newMap={};
+
+  Object.keys(sourceMap).forEach(key=>{
+    if(key>=splitKey){
+      newMap[key]=sourceMap[key];
+      delete sourceMap[key];
+    }
+  });
+
+  newTask.commentsByOccurrence=newMap;
+}
+
+function splitRecurringTaskFromOccurrence(sourceTask,splitKey,data){
+  const splitDate=parseDate(splitKey);
+  const previousKey=dateKey(addDays(splitDate,-1));
+  const originalUntil=sourceTask.recurrenceUntil||"";
+
+  const newTask={
+    ...sourceTask,
+    ...data,
+    id:uid(),
+    startDate:data.startDate||splitKey,
+    recurrenceUntil:originalUntil,
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
+    seriesParentId:sourceTask.seriesParentId||sourceTask.id,
+    seriesSplitFrom:splitKey,
+    completedAt:null,
+    missedAt:null
+  };
+
+  sourceTask.recurrenceUntil=previousKey;
+  sourceTask.updatedAt=new Date().toISOString();
+
+  moveOccurrenceCommentsForSplit(sourceTask,newTask,splitKey);
+
+  tasks.push(newTask);
+  return newTask;
+}
+
+function splitRecurrenceOnlyFromOccurrence(sourceTask,splitKey,newRecurrence){
+  let shiftedDue="";
+  if(sourceTask.dueDate){
+    const durationDays=Math.max(
+      0,
+      Math.round((startOfDay(parseDate(sourceTask.dueDate))-startOfDay(parseDate(sourceTask.startDate)))/86400000)
+    );
+    shiftedDue=dateKey(addDays(parseDate(splitKey),durationDays));
+  }
+
+  const data={
+    title:sourceTask.title,
+    description:sourceTask.description,
+    emoji:sourceTask.emoji,
+    startDate:splitKey,
+    dueDate:shiftedDue,
+    allDay:sourceTask.allDay,
+    startTime:sourceTask.startTime,
+    dueTime:"",
+    recurrence:newRecurrence,
+    status:"pending",
+    boardStage:sourceTask.boardStage==="completed"?"pending":boardStageOf(sourceTask),
+    notify:false,
+    notifyAmount:1,
+    notifyUnit:"days",
+    highImportance:sourceTask.highImportance
+  };
+
+  const newTask=splitRecurringTaskFromOccurrence(sourceTask,splitKey,data);
+
+  /* Los movimientos financieros existentes permanecen en el tramo original.
+     No se duplican automáticamente al dividir una serie. */
+  return newTask;
+}
+
 function occursOn(t,d){
   const target=startOfDay(d);
   const start=startOfDay(parseDate(t.startDate));
@@ -795,6 +890,10 @@ function occursOn(t,d){
   }
 
   if(target<start) return false;
+
+  const recurrenceUntil=t.recurrenceUntil?startOfDay(parseDate(t.recurrenceUntil)):null;
+  if(recurrenceUntil && target>recurrenceUntil) return false;
+
   if(due && t.status!=="pending" && target>due) return false;
 
   switch(t.recurrence){
@@ -810,20 +909,25 @@ function listHtml(list,occurrenceDate=selectedDate){
   return list.map(t=>taskCard(t,occurrenceDate)).join("");
 }
 
-function recurrenceButtonHTML(t,compact=false){
+function recurrenceButtonHTML(t,compact=false,occurrenceDate=selectedDate){
   const value=t?.recurrence||"none";
   const label=recurrenceLabel(value);
+  const occurrenceKey=occurrenceEditKey(t,occurrenceDate);
   return `<button type="button"
                   class="${compact?"mini-recurrence-btn":"recur-pill recur-edit-btn"}"
                   data-recurrence-task="${t.id}"
+                  data-recurrence-date="${occurrenceKey}"
                   title="Cambiar recurrencia">↻ ${label}</button>`;
 }
 
-function openRecurrenceDialog(taskId){
+function openRecurrenceDialog(taskId,occurrenceKey){
   const task=tasks.find(t=>t.id===taskId);
   if(!task) return;
 
+  const key=occurrenceKey || occurrenceEditKey(task,selectedDate);
+
   $("#recurrenceTaskId").value=task.id;
+  $("#recurrenceOccurrenceDate").value=key;
   $("#recurrenceDialogTitle").textContent=task.title||"Cambiar recurrencia";
 
   $$("[data-recurrence-value]").forEach(btn=>{
@@ -833,12 +937,22 @@ function openRecurrenceDialog(taskId){
   $("#recurrenceDialog").showModal();
 }
 
-function setTaskRecurrence(taskId,value){
+function setTaskRecurrence(taskId,value,occurrenceKey){
   const task=tasks.find(t=>t.id===taskId);
   if(!task) return;
 
   const allowed=["none","daily","weekly","monthly","yearly"];
   if(!allowed.includes(value)) return;
+
+  const key=occurrenceKey || occurrenceEditKey(task,selectedDate);
+
+  if(isLaterSeriesOccurrence(task,key)){
+    const futureTask=splitRecurrenceOnlyFromOccurrence(task,key,value);
+    $("#recurrenceDialog").close();
+    saveTasks();
+    toast(`Recurrencia actualizada desde ${shortDate(parseDate(key))}: ${recurrenceLabel(value)}.`);
+    return futureTask;
+  }
 
   task.recurrence=value;
   task.updatedAt=new Date().toISOString();
@@ -846,6 +960,7 @@ function setTaskRecurrence(taskId,value){
   $("#recurrenceDialog").close();
   saveTasks();
   toast(`Recurrencia actualizada: ${recurrenceLabel(value)}.`);
+  return task;
 }
 
 function taskCard(t,occurrenceDate=selectedDate){
@@ -862,7 +977,7 @@ function taskCard(t,occurrenceDate=selectedDate){
         <div class="task-meta">
           <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
           <span>🕒 ${formatTimeMeta(t)}</span>
-          ${recurrenceButtonHTML(t)}
+          ${recurrenceButtonHTML(t,false,occurrenceDate)}
           ${taskMovementIndicatorHTML(t)}
           ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
@@ -879,7 +994,7 @@ function taskCard(t,occurrenceDate=selectedDate){
           </button>
           <div class="task-action-row board-book-action-row">
             <div class="task-action-left">
-              <button data-edit="${t.id}">Editar</button>
+              <button data-edit="${t.id}" data-edit-date="${occurrenceKey}">Editar</button>
               ${t.status==="missed"?`<button data-reopen="${t.id}">Reabrir</button>`:""}
             </div>
 
@@ -971,7 +1086,7 @@ function bindTaskActions(){
   $$("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
-    openRecurrenceDialog(btn.dataset.recurrenceTask);
+    openRecurrenceDialog(btn.dataset.recurrenceTask,btn.dataset.recurrenceDate);
   });
 
   $$("[data-task-money]").forEach(btn=>btn.onclick=e=>{
@@ -1047,7 +1162,7 @@ function bindTaskActions(){
     t.completedAt=ch.checked?new Date().toISOString():null;
     saveTasks();
   });
-  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
+  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit),b.dataset.editDate));
   $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); if(!t)return; reopenTask(t); saveTasks(); toast(`Tarea reabierta para ${shortDate(parseDate(t.startDate))}.`);});
   $$("[data-delete]").forEach(b=>b.onclick=async()=>{
     const t=tasks.find(x=>x.id===b.dataset.delete);
@@ -1106,9 +1221,9 @@ function renderWeek(){
   $("#weekBoard").innerHTML=days.length ? days.map(({d,list})=>`
     <section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
-      ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}">
+      ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}" data-edit-date="${dateKey(d)}">
         <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
-        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} · ${recurrenceButtonHTML(t,true)} ${taskMovementIndicatorHTML(t)} · <button type="button" class="mini-comment-btn ${hasTaskCommentForOccurrence(t,dateKey(d))?"has-comment":"no-comment"}" data-comment-task="${t.id}" data-comment-date="${dateKey(d)}">${hasTaskCommentForOccurrence(t,dateKey(d))?"💬":"💬＋"}</button></small></span>
+        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} · ${recurrenceButtonHTML(t,true,d)} ${taskMovementIndicatorHTML(t)} · <button type="button" class="mini-comment-btn ${hasTaskCommentForOccurrence(t,dateKey(d))?"has-comment":"no-comment"}" data-comment-task="${t.id}" data-comment-date="${dateKey(d)}">${hasTaskCommentForOccurrence(t,dateKey(d))?"💬":"💬＋"}</button></small></span>
       </div>`).join("")}
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
@@ -1116,7 +1231,7 @@ function renderWeek(){
   $$("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
-    openRecurrenceDialog(btn.dataset.recurrenceTask);
+    openRecurrenceDialog(btn.dataset.recurrenceTask,btn.dataset.recurrenceDate);
   });
 
   $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
@@ -1136,12 +1251,14 @@ function renderWeek(){
     e.stopPropagation();
     openEmojiOnlyEditor(btn.dataset.emojiTask);
   });
-  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit)));
+  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit),b.dataset.editDate));
 }
 function renderBoard(){
   const groups={pending:[],in_progress:[],waiting:[],completed:[]};
 
-  activeTasks().forEach(t=>{
+  activeTasks()
+    .filter(t=>!(t.status==="pending" && recurrenceSegmentEndedBefore(t,selectedDate)))
+    .forEach(t=>{
     const stage=boardStageOf(t);
     if(stage==="completed" || t.status==="completed") groups.completed.push(t);
     else if(stage==="in_progress") groups.in_progress.push(t);
@@ -1163,7 +1280,7 @@ function renderBoard(){
     <div class="board-card-meta">
       <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
       ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
-      ${recurrenceButtonHTML(t)}
+      ${recurrenceButtonHTML(t,false,parseDate(occurrenceKey))}
       ${taskMovementIndicatorHTML(t)}
       ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
       ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
@@ -1188,7 +1305,7 @@ function renderBoard(){
       </button>
       <div class="task-action-row board-book-action-row">
         <div class="task-action-left">
-          <button data-edit="${t.id}">Editar</button>
+          <button data-edit="${t.id}" data-edit-date="${occurrenceKey}">Editar</button>
         </div>
 
         <div class="board-book-move-wrap">
@@ -1432,9 +1549,11 @@ function openTaskMovementDetail(movementId){
   $("#taskMovementDialog").showModal();
 }
 
-function openTask(t=null){
+function openTask(t=null,occurrenceKey=""){
   $("#taskForm").reset();
   $("#taskId").value=t?.id||"";
+  const effectiveOccurrence=t ? (occurrenceKey||occurrenceEditKey(t,selectedDate)) : "";
+  $("#editOccurrenceDate").value=effectiveOccurrence;
   $("#taskDialogTitle").textContent=t?"Editar tarea":"Agregar tarea";
   $("#deleteTaskBtn").classList.toggle("hidden",!t);
   const defaultStartDate=dateKey(selectedDate||new Date());
@@ -1442,8 +1561,19 @@ function openTask(t=null){
   $("#description").value=t?.description||"";
   $("#taskEmoji").value=t?.emoji||"📌";
   $("#taskEmojiPreview").textContent=t?.emoji||"📌";
-  $("#startDate").value=t?.startDate||defaultStartDate;
-  $("#dueDate").value=t?.dueDate||"";
+  const editingLaterOccurrence=!!(t && isLaterSeriesOccurrence(t,effectiveOccurrence));
+  const formStartDate=editingLaterOccurrence ? effectiveOccurrence : (t?.startDate||defaultStartDate);
+  $("#startDate").value=formStartDate;
+  $("#startDate").min=editingLaterOccurrence ? effectiveOccurrence : "";
+
+  if(t?.dueDate && editingLaterOccurrence){
+    const originalStart=parseDate(t.startDate);
+    const originalDue=parseDate(t.dueDate);
+    const durationDays=Math.max(0,Math.round((startOfDay(originalDue)-startOfDay(originalStart))/86400000));
+    $("#dueDate").value=dateKey(addDays(parseDate(formStartDate),durationDays));
+  }else{
+    $("#dueDate").value=t?.dueDate||"";
+  }
   $("#allDay").checked=t?!!t.allDay:true;
   $("#startTime").value=t?.startTime||"09:00";
   $("#dueTime").value=t?.dueTime||"10:00";
@@ -1453,7 +1583,7 @@ function openTask(t=null){
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
   $("#highImportance").checked=!!t?.highImportance;
-  const taskMovement=t?findTaskMovement(t.id):null;
+  const taskMovement=(t && !editingLaterOccurrence)?findTaskMovement(t.id):null;
   $("#taskFinanceType").value=taskMovement?movementType(taskMovement):"expense";
   $("#taskFinanceTitle").value=taskMovement?.title||"";
   $("#taskFinanceDescription").value=taskMovement?.description||"";
@@ -2561,13 +2691,32 @@ $("#taskForm").addEventListener("submit",e=>{
     const data=readForm();
     const movementData=readTaskFinanceForm();
     const id=$("#taskId").value;
+    const editOccurrenceKey=$("#editOccurrenceDate").value;
+
+    if(id && editOccurrenceKey && data.startDate<editOccurrenceKey){
+      data.startDate=editOccurrenceKey;
+      $("#startDate").value=editOccurrenceKey;
+      if(data.dueDate && data.dueDate<data.startDate){
+        data.dueDate=data.startDate;
+        $("#dueDate").value=data.startDate;
+      }
+    }
     let savedTask;
+    let splitApplied=false;
 
     if(id){
       const i=tasks.findIndex(t=>t.id===id);
       if(i<0) throw new Error("No se encontró la tarea que deseas editar.");
-      tasks[i]={...tasks[i],...data,updatedAt:new Date().toISOString()};
-      savedTask=tasks[i];
+
+      const originalTask=tasks[i];
+
+      if(isLaterSeriesOccurrence(originalTask,editOccurrenceKey)){
+        savedTask=splitRecurringTaskFromOccurrence(originalTask,editOccurrenceKey,data);
+        splitApplied=true;
+      }else{
+        tasks[i]={...tasks[i],...data,updatedAt:new Date().toISOString()};
+        savedTask=tasks[i];
+      }
     }else{
       savedTask={
         id:uid(),
@@ -2583,7 +2732,12 @@ $("#taskForm").addEventListener("submit",e=>{
 
     $("#taskDialog").close();
     saveTasks();
-    toast(id ? "Tarea actualizada correctamente." : "Tarea guardada correctamente.");
+
+    if(splitApplied){
+      toast(`Tarea actualizada desde ${shortDate(parseDate(editOccurrenceKey))}. Las anteriores se conservaron.`);
+    }else{
+      toast(id ? "Tarea actualizada correctamente." : "Tarea guardada correctamente.");
+    }
   }catch(err){
     toast(err.message||"Revisa los datos de la tarea.");
   }
@@ -2646,8 +2800,9 @@ $("#closeRecurrenceDialog").onclick=$("#cancelRecurrenceDialog").onclick=()=>$("
 $$("[data-recurrence-value]").forEach(btn=>{
   btn.onclick=()=>{
     const taskId=$("#recurrenceTaskId").value;
+    const occurrenceKey=$("#recurrenceOccurrenceDate").value;
     if(!taskId) return;
-    setTaskRecurrence(taskId,btn.dataset.recurrenceValue);
+    setTaskRecurrence(taskId,btn.dataset.recurrenceValue,occurrenceKey);
   };
 });
 
