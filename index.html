@@ -382,6 +382,7 @@
             <option value="weekly">Semanal</option>
             <option value="monthly">Mensual</option>
             <option value="yearly">Anual</option>
+            <option id="recurrenceCopyOption" value="copy" hidden disabled>Copiar a otra fecha…</option>
           </select>
         </label>
         <label>Estado
@@ -423,7 +424,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.7.1</strong>
+      <strong id="settingsVersionTop">11.7.2</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -474,7 +475,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.1</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.2</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -496,17 +497,15 @@
         <button type="button" class="icon-btn" id="closeExpenseDialog">✕</button>
       </div>
 
-      <div class="expense-date-nav">
-        <button type="button" data-expense-shift="-month" title="Mes anterior">&lt;&lt;&lt;</button>
-        <button type="button" data-expense-shift="-week" title="Semana anterior">&lt;&lt;</button>
-        <button type="button" data-expense-shift="-day" title="Día anterior">&lt;</button>
-        <strong id="expenseDateLabel">08.09.2026</strong>
-        <button type="button" data-expense-shift="+day" title="Día siguiente">&gt;</button>
-        <button type="button" data-expense-shift="+week" title="Semana siguiente">&gt;&gt;</button>
-        <button type="button" data-expense-shift="+month" title="Mes siguiente">&gt;&gt;&gt;</button>
+      <div class="expense-date-nav expense-date-nav-simple">
+        <button type="button" data-expense-shift="-day" title="Día anterior" aria-label="Día anterior">‹</button>
+        <label class="expense-native-date" title="Seleccionar fecha">
+          <span aria-hidden="true">📅</span>
+          <input id="expenseDate" type="date" />
+          <span id="expenseDateLabel" class="visually-hidden"></span>
+        </label>
+        <button type="button" data-expense-shift="+day" title="Día siguiente" aria-label="Día siguiente">›</button>
       </div>
-
-      <input id="expenseDate" type="hidden" />
       <input id="expenseId" type="hidden" />
 
       <div class="movement-type-row">
@@ -547,7 +546,7 @@
   <div id="toast" class="toast"></div>
 
 
-  <dialog id="viewExpensesDialog" class="modal">
+  <dialog id="viewExpensesDialog" class="modal view-expenses-dialog">
     <div class="modal-head">
       <div>
         <p class="eyebrow">Consulta financiera</p>
@@ -556,17 +555,15 @@
       <button type="button" class="icon-btn" id="closeViewExpensesDialog">✕</button>
     </div>
 
-    <div class="expense-date-nav expense-date-nav-one-line">
-      <button type="button" data-view-expense-shift="-month">&lt;&lt;&lt;</button>
-      <button type="button" data-view-expense-shift="-week">&lt;&lt;</button>
-      <button type="button" data-view-expense-shift="-day">&lt;</button>
-      <strong id="viewExpenseDateLabel"></strong>
-      <button type="button" data-view-expense-shift="+day">&gt;</button>
-      <button type="button" data-view-expense-shift="+week">&gt;&gt;</button>
-      <button type="button" data-view-expense-shift="+month">&gt;&gt;&gt;</button>
+    <div class="expense-date-nav expense-date-nav-simple view-expense-date-nav">
+      <button type="button" data-view-expense-shift="-day" title="Día anterior" aria-label="Día anterior">‹</button>
+      <label class="expense-native-date" title="Seleccionar fecha">
+        <span aria-hidden="true">📅</span>
+        <input id="viewExpenseDate" type="date" />
+        <span id="viewExpenseDateLabel" class="visually-hidden"></span>
+      </label>
+      <button type="button" data-view-expense-shift="+day" title="Día siguiente" aria-label="Día siguiente">›</button>
     </div>
-
-    <input id="viewExpenseDate" type="hidden" />
     <div id="viewExpenseDayTotal" class="expense-view-total"></div>
     <div id="viewExpensesList" class="expense-list"></div>
   </dialog>
@@ -848,6 +845,12 @@
         <strong>Anual</strong>
         <small>Se repite cada año.</small>
       </button>
+
+      <button type="button" class="recurrence-option recurrence-copy-option" id="recurrenceCopyBtn">
+        <span>⧉</span>
+        <strong>Copiar</strong>
+        <small>Crea una copia de esta tarea en otra fecha futura.</small>
+      </button>
     </div>
 
     <div class="modal-actions">
@@ -872,6 +875,32 @@
 
     <div class="modal-actions">
       <button type="button" id="closeFinanceLedgerBtn" class="primary-btn">Cerrar</button>
+    </div>
+  </dialog>
+
+  
+  <dialog id="taskCopyDialog" class="modal task-copy-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Copiar tarea</p>
+        <h2 id="taskCopyDialogTitle">Elegir fecha futura</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeTaskCopyDialog">✕</button>
+    </div>
+
+    <input type="hidden" id="copyTaskId" />
+    <input type="hidden" id="copyTaskOccurrenceDate" />
+
+    <label>Fecha para la copia
+      <input id="copyTaskDate" type="date" />
+      <small>Solo se permiten fechas futuras.</small>
+    </label>
+
+    <div class="copy-task-preview" id="copyTaskPreview"></div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelTaskCopyBtn" class="ghost-btn">Cancelar</button>
+      <button type="button" id="saveTaskCopyBtn" class="primary-btn">Guardar copia</button>
     </div>
   </dialog>
 

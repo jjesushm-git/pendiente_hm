@@ -4460,3 +4460,330 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     margin-right:auto;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.2
+   ========================================================= */
+
+.visually-hidden{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:-1px !important;
+  overflow:hidden !important;
+  clip:rect(0,0,0,0) !important;
+  white-space:nowrap !important;
+  border:0 !important;
+}
+
+/* ---------------------------------------------------------
+   Fecha en Agregar gasto / Movimientos registrados
+   Solo día anterior, selector fecha, día siguiente.
+   --------------------------------------------------------- */
+.expense-date-nav-simple{
+  display:grid !important;
+  grid-template-columns:48px minmax(0,1fr) 48px !important;
+  gap:8px !important;
+  align-items:center !important;
+  width:100% !important;
+}
+
+.expense-date-nav-simple > button{
+  width:48px !important;
+  min-width:48px !important;
+  height:48px !important;
+  padding:0 !important;
+  font-size:1.25rem !important;
+}
+
+.expense-native-date{
+  min-width:0;
+  min-height:48px;
+  display:flex !important;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel-2);
+}
+
+.expense-native-date input[type="date"]{
+  width:100%;
+  min-width:0;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:4px 0 !important;
+  color:var(--text);
+  font:inherit;
+}
+
+:root[data-theme="emerald_gold"] .expense-native-date{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.40) !important;
+  color:#17382b !important;
+}
+
+/* ---------------------------------------------------------
+   Modal Movimientos registrados: siempre cabe en pantalla
+   --------------------------------------------------------- */
+.view-expenses-dialog{
+  width:min(96vw,640px) !important;
+  max-width:calc(100vw - 12px) !important;
+  max-height:calc(100dvh - 12px) !important;
+  overflow:hidden !important;
+  padding:14px !important;
+}
+
+.view-expenses-dialog[open]{
+  display:flex !important;
+  flex-direction:column;
+}
+
+.view-expenses-dialog .modal-head,
+.view-expenses-dialog .view-expense-date-nav,
+.view-expenses-dialog .expense-view-total{
+  flex:0 0 auto;
+}
+
+.view-expenses-dialog .expense-list{
+  min-height:0;
+  flex:1 1 auto;
+  overflow:auto;
+  padding-right:2px;
+}
+
+/* ---------------------------------------------------------
+   Tarjeta de movimiento compacta.
+   Cerrada: título, monto y fecha.
+   Abierta: descripción + menú 3 líneas.
+   --------------------------------------------------------- */
+.expense-collapsible-card{
+  cursor:pointer;
+  padding:11px 12px !important;
+}
+
+.expense-card-summary{
+  align-items:center !important;
+}
+
+.expense-card-date{
+  display:block;
+  margin-top:2px;
+  color:var(--muted);
+  font-size:.69rem;
+  font-weight:500;
+}
+
+.expense-expanded-content{
+  display:grid;
+  gap:8px;
+  margin-top:9px;
+  padding-top:9px;
+  border-top:1px dashed var(--line);
+}
+
+.expense-expanded-content.hidden{
+  display:none !important;
+}
+
+.expense-expanded-description{
+  margin:0 !important;
+  color:var(--muted);
+  overflow-wrap:anywhere;
+}
+
+.muted-text{
+  opacity:.72;
+}
+
+.expense-expanded-actions-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.expense-expanded-actions-row .expense-card-menu-btn{
+  position:relative;
+  z-index:2;
+}
+
+/* ---------------------------------------------------------
+   Calendario + tira semanal: número / emoji y $ en la misma fila
+   --------------------------------------------------------- */
+.day-bottom-indicators{
+  width:100%;
+  min-height:16px;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  flex-wrap:nowrap !important;
+}
+
+.calendar-day{
+  display:grid !important;
+  grid-template-rows:auto 16px !important;
+  align-content:center !important;
+  justify-items:center !important;
+  gap:2px !important;
+}
+
+.calendar-day-number{
+  line-height:1 !important;
+  font-weight:700;
+}
+
+.week-day{
+  display:grid !important;
+  grid-template-rows:auto auto 16px !important;
+  justify-items:center !important;
+  align-content:center !important;
+}
+
+.week-task-single,
+.calendar-task-single{
+  width:15px !important;
+  height:15px !important;
+  display:inline-grid !important;
+  place-items:center !important;
+  font-size:11px !important;
+  line-height:1 !important;
+}
+
+.week-task-count,
+.calendar-task-count{
+  min-width:17px !important;
+  height:17px !important;
+  padding:0 4px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  text-align:center !important;
+  line-height:17px !important;
+  font-size:.66rem !important;
+  font-weight:900 !important;
+}
+
+.week-expense-mark,
+.calendar-expense-mark{
+  position:static !important;
+  transform:none !important;
+  margin:0 !important;
+  font-size:.67rem !important;
+  line-height:1 !important;
+  white-space:nowrap;
+}
+
+.calendar-grid{
+  grid-auto-rows:minmax(39px,auto) !important;
+}
+
+.calendar-day{
+  min-height:39px !important;
+  padding:3px 1px !important;
+}
+
+/* ---------------------------------------------------------
+   Copiar tarea desde recurrencia / editar tarea existente
+   --------------------------------------------------------- */
+.recurrence-copy-option{
+  border-style:dashed !important;
+}
+
+.task-copy-dialog{
+  width:min(92vw,480px);
+}
+
+.copy-task-preview{
+  display:grid;
+  gap:4px;
+  margin-top:10px;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-2);
+}
+
+.copy-task-preview small{
+  color:var(--muted);
+}
+
+:root[data-theme="emerald_gold"] .copy-task-preview{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+@media(max-width:430px){
+  .view-expenses-dialog{
+    width:calc(100vw - 8px) !important;
+    max-width:calc(100vw - 8px) !important;
+    max-height:calc(100dvh - 8px) !important;
+    padding:10px !important;
+    border-radius:16px !important;
+  }
+
+  .view-expenses-dialog .modal-head h2{
+    font-size:1.12rem !important;
+  }
+
+  .expense-date-nav-simple{
+    grid-template-columns:42px minmax(0,1fr) 42px !important;
+    gap:6px !important;
+  }
+
+  .expense-date-nav-simple > button{
+    width:42px !important;
+    min-width:42px !important;
+    height:42px !important;
+  }
+
+  .expense-native-date{
+    min-height:42px;
+    padding:4px 7px;
+  }
+
+  .expense-native-date input[type="date"]{
+    font-size:.88rem !important;
+  }
+
+  .expense-collapsible-card{
+    padding:9px 10px !important;
+  }
+
+  .expense-card-summary{
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:8px !important;
+  }
+
+  .expense-card-amount{
+    font-size:.84rem !important;
+  }
+
+  .calendar-grid{
+    grid-auto-rows:minmax(36px,auto) !important;
+  }
+
+  .calendar-day{
+    min-height:36px !important;
+    padding:2px 1px !important;
+  }
+
+  .day-bottom-indicators{
+    min-height:14px;
+    gap:3px !important;
+  }
+
+  .week-task-count,
+  .calendar-task-count{
+    min-width:15px !important;
+    height:15px !important;
+    line-height:15px !important;
+    font-size:.60rem !important;
+  }
+}

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.1";
+const APP_VERSION = "11.7.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -132,7 +132,8 @@ function taskCountIndicatorHTML(dayTasks,scope="calendar"){
   }
 
   const level=count>=5?"red":"yellow";
-  return `<span class="${scope}-task-count ${level}" title="${count} tareas">${count}</span>`;
+  const displayCount=Math.min(count,99);
+  return `<span class="${scope}-task-count ${level}" title="${count} tareas">${displayCount}</span>`;
 }
 
 
@@ -874,9 +875,9 @@ function renderWeekStrip(){
     return `<button class="week-day ${key===dateKey(selectedDate)?"active":""}" data-date="${key}">
       <span class="dow">${d.toLocaleDateString("es-MX",{weekday:"short"}).replace(".","")}</span>
       <span class="num">${d.getDate()}</span>
-      <span class="week-day-indicators">
-        ${movementMark?`<span class="week-expense-mark" title="Hay movimientos registrados">${movementMark}</span>`:""}
+      <span class="day-bottom-indicators week-day-indicators">
         ${taskIndicator}
+        ${movementMark?`<span class="week-expense-mark" title="Hay movimientos registrados">${movementMark}</span>`:""}
       </span>
     </button>`;
   }).join("");
@@ -1134,6 +1135,74 @@ function recurrenceButtonHTML(t,compact=false,occurrenceDate=selectedDate){
                   data-recurrence-task="${t.id}"
                   data-recurrence-date="${occurrenceKey}"
                   title="Cambiar recurrencia">↻ ${label}</button>`;
+}
+
+function openTaskCopyDialog(taskId,occurrenceKey){
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task) return;
+
+  const key=occurrenceKey || occurrenceEditKey(task,selectedDate);
+  const today=startOfDay(new Date());
+  const occurrence=parseDate(key);
+  const minDate=addDays(today,1);
+  const suggested=occurrence>=minDate ? addDays(occurrence,1) : minDate;
+
+  $("#copyTaskId").value=task.id;
+  $("#copyTaskOccurrenceDate").value=key;
+  $("#copyTaskDate").min=dateKey(minDate);
+  $("#copyTaskDate").value=dateKey(suggested);
+  $("#taskCopyDialogTitle").textContent=`Copiar: ${task.title}`;
+  $("#copyTaskPreview").innerHTML=`<strong>${esc(task.title)}</strong><small>La copia será una tarea independiente, sin recurrencia, comentarios ni movimiento financiero.</small>`;
+
+  if($("#recurrenceDialog").open) $("#recurrenceDialog").close();
+  $("#taskCopyDialog").showModal();
+}
+
+function saveTaskCopy(){
+  const source=tasks.find(t=>t.id===$("#copyTaskId").value);
+  const copyDateValue=$("#copyTaskDate").value;
+  if(!source || !copyDateValue) return;
+
+  const copyDate=parseDate(copyDateValue);
+  const today=startOfDay(new Date());
+  if(copyDate<=today){
+    toast("La copia solo puede guardarse en una fecha futura.");
+    return;
+  }
+
+  const occurrenceKey=$("#copyTaskOccurrenceDate").value || source.startDate;
+  let shiftedDue="";
+  if(source.dueDate){
+    const baseStart=parseDate(source.startDate||occurrenceKey);
+    const durationDays=Math.max(0,Math.round((startOfDay(parseDate(source.dueDate))-startOfDay(baseStart))/86400000));
+    shiftedDue=dateKey(addDays(copyDate,durationDays));
+  }
+
+  const clone={
+    ...source,
+    id:uid(),
+    startDate:dateKey(copyDate),
+    dueDate:shiftedDue,
+    recurrence:"none",
+    recurrenceUntil:"",
+    status:"pending",
+    boardStage:"pending",
+    highImportance:!!source.highImportance,
+    commentsByOccurrence:{},
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
+    copiedFromTaskId:source.id,
+    copiedFromOccurrence:occurrenceKey
+  };
+
+  delete clone.completedAt;
+  delete clone.missedAt;
+  delete clone.seriesSplitFrom;
+
+  tasks.push(clone);
+  $("#taskCopyDialog").close();
+  saveTasks();
+  toast(`Tarea copiada al ${shortDate(copyDate)}.`);
 }
 
 function openRecurrenceDialog(taskId,occurrenceKey){
@@ -1409,9 +1478,11 @@ function renderCalendar(){
     const movementMark=movementMarkerForDateKey(key);
 
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
-      ${d.getDate()}
-      ${movementMark?`<span class="calendar-expense-mark">${movementMark}</span>`:""}
-      <span class="calendar-task-indicator">${taskIndicator}</span>
+      <span class="calendar-day-number">${d.getDate()}</span>
+      <span class="day-bottom-indicators calendar-task-indicator">
+        ${taskIndicator}
+        ${movementMark?`<span class="calendar-expense-mark">${movementMark}</span>`:""}
+      </span>
     </button>`;
   }).join("");
 
@@ -1803,7 +1874,12 @@ function openTask(t=null,occurrenceKey=""){
   $("#dueTime").value=t?.dueTime||"10:00";
   refreshTimeTrigger("startTime");
   refreshTimeTrigger("dueTime");
-  $("#recurrence").value=t?.recurrence||"none";
+  const recurrenceSelect=$("#recurrence");
+  const recurrenceCopyOption=$("#recurrenceCopyOption");
+  recurrenceCopyOption.hidden=!t;
+  recurrenceCopyOption.disabled=!t;
+  recurrenceSelect.value=t?.recurrence||"none";
+  recurrenceSelect.dataset.lastNonCopy=recurrenceSelect.value;
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
   $("#highImportance").checked=!!t?.highImportance;
@@ -2476,14 +2552,9 @@ function clampExpenseDateToToday(d){
 }
 
 function shiftExpenseDate(type){
-  let d=parseDate($("#expenseDate").value);
-
+  let d=parseDate($("#expenseDate").value || dateKey(selectedDate));
   if(type==="-day") d=addDays(d,-1);
   if(type==="+day") d=addDays(d,1);
-  if(type==="-week") d=addDays(d,-7);
-  if(type==="+week") d=addDays(d,7);
-  if(type==="-month") d.setMonth(d.getMonth()-1);
-  if(type==="+month") d.setMonth(d.getMonth()+1);
 
   if(isFutureDate(d)){
     toast("No puedes registrar movimientos en una fecha futura.");
@@ -2518,6 +2589,7 @@ function openExpenseDialog(expense=null){
   $("#expenseId").value=expense?.id||"";
 
   const d=expense?.date ? parseDate(expense.date) : clampExpenseDateToToday(selectedDate);
+  $("#expenseDate").max=dateKey(new Date());
   $("#expenseDate").value=dateKey(d);
   $("#expenseDateLabel").textContent=dotDate(d);
   $("#expenseTitle").value=expense?.title||"";
@@ -2539,14 +2611,9 @@ function openViewExpensesDialog(){
 }
 
 function shiftViewExpenseDate(type){
-  let d=parseDate($("#viewExpenseDate").value);
-
+  let d=parseDate($("#viewExpenseDate").value || dateKey(selectedDate));
   if(type==="-day") d=addDays(d,-1);
   if(type==="+day") d=addDays(d,1);
-  if(type==="-week") d=addDays(d,-7);
-  if(type==="+week") d=addDays(d,7);
-  if(type==="-month") d.setMonth(d.getMonth()-1);
-  if(type==="+month") d.setMonth(d.getMonth()+1);
 
   $("#viewExpenseDate").value=dateKey(d);
   $("#viewExpenseDateLabel").textContent=dotDate(d);
@@ -2554,7 +2621,6 @@ function shiftViewExpenseDate(type){
   selectedDate=startOfDay(d);
   calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
   weekCursor=startOfWeek(selectedDate);
-
   renderViewExpenses();
   renderAll();
 }
@@ -2716,48 +2782,61 @@ function renderViewExpenses(){
 
   $("#viewExpensesList").innerHTML=list.length ? list.map(e=>{
     const linkedTask=e.taskId?tasks.find(t=>t.id===e.taskId):null;
+    const type=movementType(e);
     return `
-    <article class="expense-card expense-card-menu-card">
-      <div class="expense-card-main">
+    <article class="expense-card expense-card-menu-card expense-collapsible-card" data-expense-expand="${e.id}">
+      <div class="expense-card-main expense-card-summary">
         <div class="movement-card-title">
           <span class="movement-gold-symbol">${movementSymbol(e)}</span>
           <span>
-            <small class="movement-type-label ${movementType(e)}">${movementTypeLabel(e)}</small>
             <strong>${esc(e.title)}</strong>
+            <small class="expense-card-date">📅 ${shortDate(parseDate(e.date))}</small>
           </span>
         </div>
 
-        <div class="expense-card-right">
-          <span class="expense-card-amount ${movementType(e)}">${signedMoney(movementSignedAmount(e))} ${e.currency}</span>
+        <span class="expense-card-amount ${type}">${signedMoney(movementSignedAmount(e))} ${e.currency}</span>
+      </div>
+
+      <div class="expense-expanded-content hidden" data-expense-expanded-content="${e.id}">
+        ${e.description ? `<p class="expense-expanded-description">${esc(e.description)}</p>` : `<p class="expense-expanded-description muted-text">Sin descripción.</p>`}
+        ${linkedTask ? `<small class="expense-linked-task">✅ Tarea: ${esc(linkedTask.title)}</small>` : ""}
+
+        <div class="expense-expanded-actions-row">
+          <small class="movement-type-label ${type}">${movementTypeLabel(e)}</small>
           <button type="button" class="expense-card-menu-btn" data-expense-menu="${e.id}" aria-label="Acciones del movimiento" title="Acciones">
             <span></span><span></span><span></span>
           </button>
         </div>
-      </div>
 
-      ${e.description ? `<p>${esc(e.description)}</p>` : ""}
-      ${linkedTask ? `<small class="expense-linked-task">✅ Tarea: ${esc(linkedTask.title)}</small>` : ""}
+        <div class="expense-card-popup hidden" data-expense-menu-panel="${e.id}">
+          <button type="button" data-expense-edit="${e.id}">✏ Editar</button>
 
-      <div class="expense-card-popup hidden" data-expense-menu-panel="${e.id}">
-        <button type="button" data-expense-edit="${e.id}">✏ Editar</button>
+          <div class="expense-menu-move-wrap">
+            <button type="button" data-open-expense-book-move="${e.id}">📖 Mover</button>
+            <select class="expense-book-move-select hidden"
+                    data-expense-book-move="${e.id}"
+                    aria-label="Mover movimiento a otro libro">
+              <option value="">Selecciona libro</option>
+              ${books
+                .filter(book=>book.id!==e.bookId)
+                .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
+                .join("")}
+            </select>
+          </div>
 
-        <div class="expense-menu-move-wrap">
-          <button type="button" data-open-expense-book-move="${e.id}">📖 Mover</button>
-          <select class="expense-book-move-select hidden"
-                  data-expense-book-move="${e.id}"
-                  aria-label="Mover movimiento a otro libro">
-            <option value="">Selecciona libro</option>
-            ${books
-              .filter(book=>book.id!==e.bookId)
-              .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
-              .join("")}
-          </select>
+          <button type="button" class="expense-delete-menu-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
         </div>
-
-        <button type="button" class="expense-delete-menu-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
       </div>
     </article>`;
   }).join("") : `<div class="empty">No hay gastos ni ingresos registrados en este día.</div>`;
+
+  $$('[data-expense-expand]').forEach(card=>{
+    card.onclick=e=>{
+      if(e.target.closest('button,select,input,label')) return;
+      const content=$(`[data-expense-expanded-content="${card.dataset.expenseExpand}"]`);
+      if(content) content.classList.toggle('hidden');
+    };
+  });
 
   $$("[data-expense-menu]").forEach(btn=>{
     btn.onclick=e=>{
@@ -2773,7 +2852,9 @@ function renderViewExpenses(){
   });
 
   $$("[data-expense-edit]").forEach(btn=>{
-    btn.onclick=()=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
       const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
       if(!expense) return;
       $("#viewExpensesDialog").close();
@@ -2793,16 +2874,13 @@ function renderViewExpenses(){
     btn.onclick=e=>{
       e.preventDefault();
       e.stopPropagation();
-
       const expense=expenses.find(x=>x.id===btn.dataset.openExpenseBookMove);
       if(!expense) return;
-
       const available=books.filter(book=>book.id!==expense.bookId);
       if(!available.length){
         toast("No hay otro libro disponible.");
         return;
       }
-
       const select=$(`[data-expense-book-move="${expense.id}"]`);
       if(!select) return;
       select.classList.toggle("hidden");
@@ -3038,6 +3116,33 @@ $("#timePickerDialog").addEventListener("click",e=>{
 
 $("#closeRecurrenceDialog").onclick=$("#cancelRecurrenceDialog").onclick=()=>$("#recurrenceDialog").close();
 
+$("#recurrenceCopyBtn").onclick=()=>{
+  const taskId=$("#recurrenceTaskId").value;
+  const occurrenceKey=$("#recurrenceOccurrenceDate").value;
+  if(taskId) openTaskCopyDialog(taskId,occurrenceKey);
+};
+
+$("#recurrence").addEventListener("change",()=>{
+  const select=$("#recurrence");
+  if(select.value==="copy"){
+    const taskId=$("#taskId").value;
+    const occurrenceKey=$("#editOccurrenceDate").value;
+    const fallback=select.dataset.lastNonCopy||"none";
+    select.value=fallback;
+    if(taskId) openTaskCopyDialog(taskId,occurrenceKey);
+    return;
+  }
+  select.dataset.lastNonCopy=select.value;
+});
+
+$("#closeTaskCopyDialog").onclick=$("#cancelTaskCopyBtn").onclick=()=>$("#taskCopyDialog").close();
+$("#saveTaskCopyBtn").onclick=saveTaskCopy;
+$("#taskCopyDialog").addEventListener("click",e=>{
+  if(e.target===$("#taskCopyDialog")) $("#taskCopyDialog").close();
+});
+
+
+
 $$("[data-recurrence-value]").forEach(btn=>{
   btn.onclick=()=>{
     const taskId=$("#recurrenceTaskId").value;
@@ -3083,6 +3188,15 @@ $("#closeViewExpensesDialog").onclick=()=>$("#viewExpensesDialog").close();
 $$("[data-view-expense-shift]").forEach(btn=>{
   btn.onclick=()=>shiftViewExpenseDate(btn.dataset.viewExpenseShift);
 });
+$("#viewExpenseDate").addEventListener("change",()=>{
+  const d=parseDate($("#viewExpenseDate").value);
+  $("#viewExpenseDateLabel").textContent=dotDate(d);
+  selectedDate=startOfDay(d);
+  calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  weekCursor=startOfWeek(selectedDate);
+  renderViewExpenses();
+  renderAll();
+});
 $("#addExpenseBtn").onclick=()=>openExpenseDialog();
 $("#closeExpenseDialog").onclick=$("#cancelExpenseBtn").onclick=()=>$("#expenseDialog").close();
 $("#closeTaskMovementDialog").onclick=$("#closeTaskMovementDetailBtn").onclick=()=>$("#taskMovementDialog").close();
@@ -3099,6 +3213,15 @@ $("#expenseLogDialog").addEventListener("click",e=>{
   if(e.target===$("#expenseLogDialog")) $("#expenseLogDialog").close();
 });
 $$("[data-expense-shift]").forEach(b=>b.onclick=()=>shiftExpenseDate(b.dataset.expenseShift));
+$("#expenseDate").addEventListener("change",()=>{
+  let d=parseDate($("#expenseDate").value);
+  if(isFutureDate(d)){
+    toast("No puedes registrar movimientos en una fecha futura.");
+    d=startOfDay(new Date());
+    $("#expenseDate").value=dateKey(d);
+  }
+  $("#expenseDateLabel").textContent=dotDate(d);
+});
 
 $("#expenseAmountDisplay").addEventListener("input",e=>{
   const caretWasAtEnd=e.target.selectionStart===e.target.value.length;
