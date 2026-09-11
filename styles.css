@@ -5310,3 +5310,301 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     min-width:min(88vw,320px);
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.5
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Libro activo superior: fondo blanco para máxima lectura
+   --------------------------------------------------------- */
+:root[data-theme="emerald_gold"] .topbar-v1173 .active-book-select-wrap,
+:root[data-theme="emerald_gold"] .active-book-select-wrap{
+  background:#ffffff !important;
+  background-image:none !important;
+  color:#17382b !important;
+  border-color:rgba(202,163,43,.72) !important;
+  box-shadow:0 2px 8px rgba(0,0,0,.06) !important;
+}
+
+:root[data-theme="emerald_gold"] .active-book-select,
+:root[data-theme="emerald_gold"] #activeBookDisplay,
+:root[data-theme="emerald_gold"] #activeBookTicker{
+  color:#17382b !important;
+}
+
+:root[data-theme="emerald_gold"] .active-book-select{
+  background:#ffffff !important;
+}
+
+/* ---------------------------------------------------------
+   Movimientos registrados: fecha visible como Día
+   --------------------------------------------------------- */
+.view-expense-date-nav{
+  display:grid !important;
+  grid-template-columns:48px minmax(0,1fr) 48px auto !important;
+  gap:8px !important;
+  align-items:center !important;
+}
+
+.view-expense-date-control{
+  position:relative;
+  min-width:0;
+  min-height:46px;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel-2);
+  color:var(--text);
+  cursor:pointer;
+}
+
+.view-expense-date-control #viewExpenseDateLabel{
+  min-width:0;
+  text-align:center;
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.view-expense-date-control input[type="date"]{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  opacity:0 !important;
+  cursor:pointer !important;
+}
+
+:root[data-theme="emerald_gold"] .view-expense-date-control{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+/* ---------------------------------------------------------
+   Modal Movimientos registrados: contenido completo
+   --------------------------------------------------------- */
+.view-expenses-dialog{
+  width:min(94vw,680px) !important;
+  max-width:min(94vw,680px) !important;
+  max-height:calc(100dvh - 18px) !important;
+  overflow:auto !important;
+  padding-bottom:max(14px,env(safe-area-inset-bottom)) !important;
+}
+
+#viewExpensesList{
+  max-height:none !important;
+  overflow:visible !important;
+  padding-bottom:10px;
+}
+
+.expense-detail-dialog{
+  width:min(92vw,560px);
+  max-width:calc(100vw - 16px) !important;
+  max-height:calc(100dvh - 20px) !important;
+  overflow:auto !important;
+}
+
+.expense-detail-body{
+  display:grid;
+  gap:10px;
+}
+
+.expense-detail-card{
+  display:grid;
+  gap:12px;
+  padding:13px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  background:var(--panel-2);
+}
+
+.expense-detail-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+}
+
+.expense-detail-head > div{
+  min-width:0;
+  display:grid;
+  gap:3px;
+}
+
+.expense-detail-head strong{
+  overflow-wrap:anywhere;
+}
+
+.expense-detail-amount{
+  font-weight:900;
+  white-space:nowrap;
+}
+
+.expense-detail-amount.expense{color:#c64f5d}
+.expense-detail-amount.income{color:#218a54}
+
+.expense-detail-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+.expense-detail-grid > div,
+.expense-detail-description,
+.expense-detail-linked-task{
+  display:grid;
+  gap:4px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:var(--panel);
+}
+
+.expense-detail-description p{
+  margin:0;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+.expense-detail-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px;
+  margin-top:12px;
+}
+
+.expense-detail-actions > button,
+.expense-detail-move > button,
+.expense-detail-move > select{
+  width:100%;
+  min-height:42px;
+}
+
+.expense-detail-move{
+  display:grid;
+  gap:6px;
+}
+
+:root[data-theme="emerald_gold"] .expense-detail-card,
+:root[data-theme="emerald_gold"] .expense-detail-grid > div,
+:root[data-theme="emerald_gold"] .expense-detail-description,
+:root[data-theme="emerald_gold"] .expense-detail-linked-task{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+/* ---------------------------------------------------------
+   Libros: icono/color opcionales y plegados
+   --------------------------------------------------------- */
+.book-appearance-details{
+  margin-top:10px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  overflow:hidden;
+  background:var(--panel-2);
+}
+
+.book-appearance-details > summary{
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  cursor:pointer;
+  list-style:none;
+  font-weight:800;
+}
+
+.book-appearance-details > summary::-webkit-details-marker{
+  display:none;
+}
+
+.book-appearance-details > summary small{
+  color:var(--muted);
+  font-weight:500;
+  text-align:right;
+}
+
+.book-appearance-details > summary::after{
+  content:"⌄";
+  margin-left:4px;
+}
+
+.book-appearance-details[open] > summary::after{
+  content:"⌃";
+}
+
+.book-appearance-body{
+  display:grid;
+  gap:10px;
+  padding:10px;
+  border-top:1px solid var(--line);
+}
+
+.book-optional-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+:root[data-theme="emerald_gold"] .book-appearance-details{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+/* ---------------------------------------------------------
+   Pantallas pequeñas
+   --------------------------------------------------------- */
+@media(max-width:430px){
+  .view-expense-date-nav{
+    grid-template-columns:42px minmax(0,1fr) 42px 58px !important;
+    gap:5px !important;
+  }
+
+  .view-expense-date-control{
+    min-height:42px;
+    padding:7px 8px;
+    gap:5px;
+    font-size:.78rem;
+  }
+
+  .view-expense-today-btn{
+    min-width:0 !important;
+    padding:6px !important;
+    font-size:.74rem !important;
+  }
+
+  .expense-detail-head{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  .expense-detail-amount{
+    grid-column:1 / -1;
+    justify-self:end;
+  }
+
+  .expense-detail-grid{
+    grid-template-columns:1fr;
+  }
+
+  .expense-detail-actions{
+    grid-template-columns:1fr;
+  }
+
+  .book-appearance-details > summary{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .book-appearance-details > summary small{
+    text-align:left;
+  }
+}

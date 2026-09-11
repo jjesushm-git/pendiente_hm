@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.4";
+const APP_VERSION = "11.7.5";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -195,22 +195,50 @@ function bindCompactTaskExpansion(root=document){
 
       bindTaskActions(shell);
 
+      let collapseTimer=null;
+
+      const collapseCard=()=>{
+        if(!shell.isConnected) return;
+        const fresh=tasks.find(x=>x.id===task.id);
+        if(!fresh) return;
+
+        if(collapseTimer){
+          clearTimeout(collapseTimer);
+          collapseTimer=null;
+        }
+
+        const temp=document.createElement("div");
+        temp.innerHTML=compactTaskCardHTML(fresh,occurrenceDate,scope).trim();
+        const newShell=temp.firstElementChild;
+
+        shell.replaceWith(newShell);
+        bindTaskActions(newShell);
+        bindCompactTaskExpansion(root);
+      };
+
+      const scheduleCollapse=()=>{
+        if(collapseTimer) clearTimeout(collapseTimer);
+        collapseTimer=setTimeout(collapseCard,5000);
+      };
+
       const article=shell.querySelector(".task-card");
       if(article){
+        article.classList.add("expanded-from-compact");
+
         article.onclick=evt=>{
           if(evt.target.closest("button,select,input,a,label,textarea,.task-card-popup,.task-unified-move")) return;
-
-          const fresh=tasks.find(x=>x.id===task.id);
-          if(!fresh) return;
-
-          const temp=document.createElement("div");
-          temp.innerHTML=compactTaskCardHTML(fresh,occurrenceDate,scope).trim();
-          const newShell=temp.firstElementChild;
-
-          shell.replaceWith(newShell);
-          bindTaskActions(newShell);
-          bindCompactTaskExpansion(root);
+          collapseCard();
         };
+
+        article.addEventListener("pointerdown",()=>{
+          scheduleCollapse();
+        },{passive:true});
+
+        article.addEventListener("focusin",()=>{
+          scheduleCollapse();
+        });
+
+        scheduleCollapse();
       }
     };
   });
@@ -532,8 +560,8 @@ function saveBooks(){
 const BOOK_COLORS=["#725cff","#3d8bfd","#22b573","#d7a928","#f06a6a","#b56cff","#5aa7a7","#8d98a8"];
 
 function normalizeBookAppearance(book){
-  if(!book.icon) book.icon="📖";
-  if(!book.color) book.color="#725cff";
+  if(book.icon===undefined || book.icon===null) book.icon="📖";
+  if(book.color===undefined || book.color===null) book.color="#725cff";
   return book;
 }
 
@@ -550,12 +578,13 @@ function resetBookForm(){
   editingBookId=null;
   $("#bookNameInput").value="";
   $("#bookNameCounter").textContent="0/20";
-  $("#bookIconInput").value="📖";
-  $("#bookColorInput").value="#725cff";
+  $("#bookIconInput").value="";
+  $("#bookColorInput").value="";
   $("#bookFormLabel").firstChild.textContent="Agregar libro ";
   $("#addBookBtn").textContent="＋ Agregar libro";
   $("#addBookBtn").classList.add("hidden");
   $("#deleteBookBtn").classList.add("hidden");
+  if($("#bookAppearanceDetails")) $("#bookAppearanceDetails").open=false;
   renderBookCustomizePickers();
 }
 
@@ -600,6 +629,20 @@ function renderBookCustomizePickers(){
     $("#bookColorInput").value=btn.dataset.bookColor;
     renderBookCustomizePickers();
   });
+
+  if($("#clearBookIconBtn")){
+    $("#clearBookIconBtn").onclick=()=>{
+      $("#bookIconInput").value="";
+      renderBookCustomizePickers();
+    };
+  }
+
+  if($("#clearBookColorBtn")){
+    $("#clearBookColorBtn").onclick=()=>{
+      $("#bookColorInput").value="";
+      renderBookCustomizePickers();
+    };
+  }
 }
 
 
@@ -609,11 +652,11 @@ function updateActiveBookSelect(){
 
   select.innerHTML=books.map(book=>{
     normalizeBookAppearance(book);
-    return `<option value="${book.id}" ${book.id===activeBookId?"selected":""}>${book.icon} ${esc(book.name)}</option>`;
+    return `<option value="${book.id}" ${book.id===activeBookId?"selected":""}>${book.icon?book.icon+" ":""}${esc(book.name)}</option>`;
   }).join("");
 
   const current=books.find(book=>book.id===activeBookId);
-  const label=current ? `${current.icon||"📖"} ${current.name}` : "📖 Cambiar libro";
+  const label=current ? `${current.icon?current.icon+" ":""}${current.name}` : "Cambiar libro";
   select.title=label;
 
   const display=$("#activeBookDisplay");
@@ -1762,8 +1805,6 @@ function renderWeek(){
   const pending=occurrences.filter(x=>x.t.status==="pending");
   const completed=occurrences.filter(x=>x.t.status==="completed");
   const missed=occurrences.filter(x=>x.t.status==="missed");
-
-  $("#weekPendingList").innerHTML=weekOccurrenceListHTML(pending);
   $("#weekCompletedList").innerHTML=weekOccurrenceListHTML(completed);
   $("#weekMissedList").innerHTML=weekOccurrenceListHTML(missed);
 
@@ -2256,14 +2297,14 @@ function renderBooks(){
     const expenseCount=expenses.filter(e=>e.bookId===book.id).length;
 
     return `
-      <article class="book-select-card ${selected?"selected":""}" style="--book-accent:${book.color}">
+      <article class="book-select-card ${selected?"selected":""}" style="--book-accent:${book.color||"transparent"}">
         <label class="book-check-wrap" title="${selected?"Quitar selección":"Seleccionar libro"}">
           <input type="checkbox" data-book-select="${book.id}" ${selected?"checked":""}>
           <span class="book-custom-check">✓</span>
         </label>
 
         <button type="button" class="book-name-btn" data-book-edit="${book.id}" title="Editar nombre, icono o color">
-          <span class="book-card-icon" style="--book-accent:${book.color}">${book.icon}</span>
+          ${book.icon?`<span class="book-card-icon" style="--book-accent:${book.color||"transparent"}">${book.icon}</span>`:""}
           <span class="book-card-copy">
             <strong>${esc(book.name)}</strong>
             <small>${taskCount} ${taskCount===1?"tarea":"tareas"} · ${expenseCount} ${expenseCount===1?"gasto":"gastos"}</small>
@@ -2296,13 +2337,14 @@ function renderBooks(){
     editingBookId=book.id;
     $("#bookNameInput").value=book.name;
     $("#bookNameCounter").textContent=`${book.name.length}/20`;
-    $("#bookIconInput").value=book.icon;
-    $("#bookColorInput").value=book.color;
+    $("#bookIconInput").value=book.icon||"";
+    $("#bookColorInput").value=book.color||"";
     $("#bookFormLabel").firstChild.textContent="Editar libro ";
     $("#addBookBtn").textContent="Guardar";
     $("#addBookBtn").classList.remove("hidden");
     $("#deleteBookBtn").classList.remove("hidden");
     setBookFormOpen(true);
+    if($("#bookAppearanceDetails")) $("#bookAppearanceDetails").open=false;
     renderBookCustomizePickers();
     $("#bookNameInput").focus();
   });
@@ -2321,8 +2363,8 @@ function openBooksDialog(){
 
 function addBook(){
   const name=$("#bookNameInput").value.trim();
-  const icon=$("#bookIconInput").value||"📖";
-  const color=$("#bookColorInput").value||"#725cff";
+  const icon=$("#bookIconInput").value||"";
+  const color=$("#bookColorInput").value||"";
 
   if(!name){
     toast(editingBookId?"Escribe el nuevo nombre del libro.":"Escribe el nombre del libro.");
@@ -2346,8 +2388,8 @@ function addBook(){
     editingBookId=null;
     $("#bookNameInput").value="";
     $("#bookNameCounter").textContent="0/20";
-    $("#bookIconInput").value="📖";
-    $("#bookColorInput").value="#725cff";
+    $("#bookIconInput").value="";
+    $("#bookColorInput").value="";
     $("#bookFormLabel").firstChild.textContent="Agregar libro ";
     $("#addBookBtn").textContent="＋ Agregar libro";
     $("#addBookBtn").classList.add("hidden");
@@ -2373,8 +2415,8 @@ function addBook(){
   localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
   $("#bookNameInput").value="";
   $("#bookNameCounter").textContent="0/20";
-  $("#bookIconInput").value="📖";
-  $("#bookColorInput").value="#725cff";
+  $("#bookIconInput").value="";
+  $("#bookColorInput").value="";
   renderBookCustomizePickers();
   $("#deleteBookBtn").classList.add("hidden");
   renderBooks();
@@ -2708,7 +2750,7 @@ function openExpenseDialog(expense=null){
 }
 function openViewExpensesDialog(){
   $("#viewExpenseDate").value=dateKey(selectedDate);
-  $("#viewExpenseDateLabel").textContent=dotDate(selectedDate);
+  $("#viewExpenseDateLabel").textContent=shortDate(selectedDate);
   renderViewExpenses();
   $("#viewExpensesDialog").showModal();
 }
@@ -2719,7 +2761,7 @@ function shiftViewExpenseDate(type){
   if(type==="+day") d=addDays(d,1);
 
   $("#viewExpenseDate").value=dateKey(d);
-  $("#viewExpenseDateLabel").textContent=dotDate(d);
+  $("#viewExpenseDateLabel").textContent=shortDate(d);
 
   selectedDate=startOfDay(d);
   calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
@@ -2869,6 +2911,56 @@ function moveExpenseToBook(expenseId,destinationBookId){
   return true;
 }
 
+
+function openExpenseDetailDialog(expenseId){
+  const expense=expenses.find(e=>e.id===expenseId);
+  if(!expense) return;
+
+  const linkedTask=expense.taskId?tasks.find(t=>t.id===expense.taskId):null;
+  const type=movementType(expense);
+
+  $("#expenseDetailId").value=expense.id;
+  $("#expenseDetailTitle").textContent=expense.title||"Movimiento";
+
+  $("#expenseDetailBody").innerHTML=`
+    <article class="expense-detail-card ${type}">
+      <div class="expense-detail-head">
+        <span class="movement-gold-symbol">${movementSymbol(expense)}</span>
+        <div>
+          <small class="movement-type-label ${type}">${movementTypeLabel(expense)}</small>
+          <strong>${esc(expense.title)}</strong>
+        </div>
+        <span class="expense-detail-amount ${type}">${signedMoney(movementSignedAmount(expense))} ${esc(expense.currency||"MN")}</span>
+      </div>
+
+      <div class="expense-detail-grid">
+        <div><small>Fecha</small><strong>📅 ${shortDate(parseDate(expense.date))}</strong></div>
+        <div><small>Libro</small><strong>${esc(books.find(b=>b.id===expense.bookId)?.name||"Libro")}</strong></div>
+      </div>
+
+      <div class="expense-detail-description">
+        <small>Descripción</small>
+        <p>${expense.description?esc(expense.description):"Sin descripción."}</p>
+      </div>
+
+      ${linkedTask?`
+        <div class="expense-detail-linked-task">
+          <small>Tarea relacionada</small>
+          <strong>✅ ${esc(linkedTask.title)}</strong>
+        </div>`:""}
+    </article>`;
+
+  const select=$("#expenseDetailBookSelect");
+  select.innerHTML=`<option value="">Selecciona libro</option>`+
+    books
+      .filter(book=>book.id!==expense.bookId)
+      .map(book=>`<option value="${book.id}">${book.icon?book.icon+" ":""}${esc(book.name)}</option>`)
+      .join("");
+  select.classList.add("hidden");
+
+  $("#expenseDetailDialog").showModal();
+}
+
 function renderViewExpenses(){
   if(!$("#viewExpensesList")) return;
 
@@ -2878,6 +2970,8 @@ function renderViewExpenses(){
     .filter(e=>e.date===key)
     .sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||"")));
 
+  $("#viewExpenseDateLabel").textContent=shortDate(d);
+
   const dayTotals=expenseTotalsForDate(d);
   $("#viewExpenseDayTotal").textContent=totalsText("Balance del día",dayTotals);
   $("#viewExpenseDayTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
@@ -2886,117 +2980,55 @@ function renderViewExpenses(){
   $("#viewExpensesList").innerHTML=list.length ? list.map(e=>{
     const linkedTask=e.taskId?tasks.find(t=>t.id===e.taskId):null;
     const type=movementType(e);
+
     return `
-    <article class="expense-card expense-card-menu-card expense-collapsible-card" data-expense-expand="${e.id}">
-      <div class="expense-card-main expense-card-summary">
-        <div class="movement-card-title">
-          <span class="movement-gold-symbol">${movementSymbol(e)}</span>
-          <span>
-            <strong>${esc(e.title)}</strong>
-            <small class="expense-card-date">📅 ${shortDate(parseDate(e.date))}</small>
-          </span>
-        </div>
-
-        <span class="expense-card-amount ${type}">${signedMoney(movementSignedAmount(e))} ${e.currency}</span>
-      </div>
-
-      <div class="expense-expanded-content hidden" data-expense-expanded-content="${e.id}">
-        ${e.description ? `<p class="expense-expanded-description">${esc(e.description)}</p>` : `<p class="expense-expanded-description muted-text">Sin descripción.</p>`}
-        ${linkedTask ? `<small class="expense-linked-task">✅ Tarea: ${esc(linkedTask.title)}</small>` : ""}
-
-        <div class="expense-expanded-actions-row">
-          <small class="movement-type-label ${type}">${movementTypeLabel(e)}</small>
-          <button type="button" class="expense-card-menu-btn" data-expense-menu="${e.id}" aria-label="Acciones del movimiento" title="Acciones">
-            <span></span><span></span><span></span>
-          </button>
-        </div>
-
-        <div class="expense-card-popup hidden" data-expense-menu-panel="${e.id}">
-          <button type="button" data-expense-edit="${e.id}">✏ Editar</button>
-
-          <div class="expense-menu-move-wrap">
-            <button type="button" data-open-expense-book-move="${e.id}">📖 Mover</button>
-            <select class="expense-book-move-select hidden"
-                    data-expense-book-move="${e.id}"
-                    aria-label="Mover movimiento a otro libro">
-              <option value="">Selecciona libro</option>
-              ${books
-                .filter(book=>book.id!==e.bookId)
-                .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
-                .join("")}
-            </select>
+      <article class="expense-card expense-card-menu-card expense-collapsible-card"
+               data-expense-expand="${e.id}">
+        <div class="expense-card-main expense-card-summary">
+          <div class="movement-card-title">
+            <span class="movement-gold-symbol">${movementSymbol(e)}</span>
+            <span>
+              <strong>${esc(e.title)}</strong>
+              <small class="expense-card-date">📅 ${shortDate(parseDate(e.date))}</small>
+            </span>
           </div>
 
-          <button type="button" class="expense-delete-menu-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
+          <div class="expense-card-right">
+            <span class="expense-card-amount ${type}">${signedMoney(movementSignedAmount(e))} ${e.currency}</span>
+            <button type="button"
+                    class="expense-card-menu-btn"
+                    data-expense-detail="${e.id}"
+                    aria-label="Ver detalle y acciones"
+                    title="Detalle y acciones">
+              <span></span><span></span><span></span>
+            </button>
+          </div>
         </div>
-      </div>
-    </article>`;
+
+        <div class="expense-expanded-content hidden" data-expense-expanded-content="${e.id}">
+          ${e.description
+            ? `<p class="expense-expanded-description">${esc(e.description)}</p>`
+            : `<p class="expense-expanded-description muted-text">Sin descripción.</p>`}
+          ${linkedTask
+            ? `<small class="expense-linked-task">✅ Tarea: ${esc(linkedTask.title)}</small>`
+            : ""}
+        </div>
+      </article>`;
   }).join("") : `<div class="empty">No hay gastos ni ingresos registrados en este día.</div>`;
 
-  $$('[data-expense-expand]').forEach(card=>{
+  $$("[data-expense-expand]").forEach(card=>{
     card.onclick=e=>{
-      if(e.target.closest('button,select,input,label')) return;
+      if(e.target.closest("button,select,input,label")) return;
       const content=$(`[data-expense-expanded-content="${card.dataset.expenseExpand}"]`);
-      if(content) content.classList.toggle('hidden');
+      if(content) content.classList.toggle("hidden");
     };
   });
 
-  $$("[data-expense-menu]").forEach(btn=>{
+  $$("[data-expense-detail]").forEach(btn=>{
     btn.onclick=e=>{
       e.preventDefault();
       e.stopPropagation();
-      const panel=$(`[data-expense-menu-panel="${btn.dataset.expenseMenu}"]`);
-      if(!panel) return;
-      $$("[data-expense-menu-panel]").forEach(other=>{
-        if(other!==panel) other.classList.add("hidden");
-      });
-      panel.classList.toggle("hidden");
-    };
-  });
-
-  $$("[data-expense-edit]").forEach(btn=>{
-    btn.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
-      if(!expense) return;
-      $("#viewExpensesDialog").close();
-      openExpenseDialog(expense);
-    };
-  });
-
-  $$("[data-expense-delete]").forEach(btn=>{
-    btn.onclick=async e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      await deleteExpenseById(btn.dataset.expenseDelete);
-    };
-  });
-
-  $$("[data-open-expense-book-move]").forEach(btn=>{
-    btn.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      const expense=expenses.find(x=>x.id===btn.dataset.openExpenseBookMove);
-      if(!expense) return;
-      const available=books.filter(book=>book.id!==expense.bookId);
-      if(!available.length){
-        toast("No hay otro libro disponible.");
-        return;
-      }
-      const select=$(`[data-expense-book-move="${expense.id}"]`);
-      if(!select) return;
-      select.classList.toggle("hidden");
-      if(!select.classList.contains("hidden")) select.focus();
-    };
-  });
-
-  $$("[data-expense-book-move]").forEach(select=>{
-    select.onchange=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      if(!select.value) return;
-      moveExpenseToBook(select.dataset.expenseBookMove,select.value);
+      openExpenseDetailDialog(btn.dataset.expenseDetail);
     };
   });
 }
@@ -3286,12 +3318,65 @@ $("#closeFinanceLedgerDialog").onclick=$("#closeFinanceLedgerBtn").onclick=()=>$
 $("#financeLedgerDialog").addEventListener("click",e=>{
   if(e.target===$("#financeLedgerDialog")) $("#financeLedgerDialog").close();
 });
+
+$("#closeExpenseDetailDialog").onclick=()=>$("#expenseDetailDialog").close();
+
+$("#expenseDetailDialog").addEventListener("click",e=>{
+  if(e.target===$("#expenseDetailDialog")) $("#expenseDetailDialog").close();
+});
+
+$("#expenseDetailEditBtn").onclick=()=>{
+  const expense=expenses.find(e=>e.id===$("#expenseDetailId").value);
+  if(!expense) return;
+
+  $("#expenseDetailDialog").close();
+  $("#viewExpensesDialog").close();
+  openExpenseDialog(expense);
+};
+
+$("#expenseDetailMoveBtn").onclick=()=>{
+  const select=$("#expenseDetailBookSelect");
+  const expense=expenses.find(e=>e.id===$("#expenseDetailId").value);
+  if(!expense) return;
+
+  if(!books.some(book=>book.id!==expense.bookId)){
+    toast("No hay otro libro disponible.");
+    return;
+  }
+
+  select.classList.toggle("hidden");
+  if(!select.classList.contains("hidden")) select.focus();
+};
+
+$("#expenseDetailBookSelect").onchange=()=>{
+  const expenseId=$("#expenseDetailId").value;
+  const destination=$("#expenseDetailBookSelect").value;
+  if(!expenseId || !destination) return;
+
+  moveExpenseToBook(expenseId,destination);
+  $("#expenseDetailDialog").close();
+
+  if($("#viewExpensesDialog").open){
+    renderViewExpenses();
+  }
+};
+
+$("#expenseDetailDeleteBtn").onclick=async()=>{
+  const expenseId=$("#expenseDetailId").value;
+  if(!expenseId) return;
+
+  const deleted=await deleteExpenseById(expenseId);
+  if(deleted){
+    $("#expenseDetailDialog").close();
+  }
+};
+
 $("#viewExpensesBtn").onclick=openViewExpensesDialog;
 $("#closeViewExpensesDialog").onclick=()=>$("#viewExpensesDialog").close();
 $("#viewExpenseTodayBtn").onclick=()=>{
   const d=startOfDay(new Date());
   $("#viewExpenseDate").value=dateKey(d);
-  $("#viewExpenseDateLabel").textContent=dotDate(d);
+  $("#viewExpenseDateLabel").textContent=shortDate(d);
   selectedDate=d;
   calendarCursor=new Date(d.getFullYear(),d.getMonth(),1);
   weekCursor=startOfWeek(d);
@@ -3303,7 +3388,7 @@ $$("[data-view-expense-shift]").forEach(btn=>{
 });
 $("#viewExpenseDate").addEventListener("change",()=>{
   const d=parseDate($("#viewExpenseDate").value);
-  $("#viewExpenseDateLabel").textContent=dotDate(d);
+  $("#viewExpenseDateLabel").textContent=shortDate(d);
   selectedDate=startOfDay(d);
   calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
   weekCursor=startOfWeek(selectedDate);
@@ -3448,7 +3533,7 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   if($("#viewExpensesDialog") && $("#viewExpensesDialog").open){
     $("#viewExpenseDate").value=data.date;
-    $("#viewExpenseDateLabel").textContent=dotDate(parseDate(data.date));
+    $("#viewExpenseDateLabel").textContent=shortDate(parseDate(data.date));
     renderViewExpenses();
   }
 
@@ -3488,7 +3573,11 @@ $("#booksBtn").onclick=openBooksDialog;
 $("#activeBookSelect").onchange=e=>{
   setActiveBook(e.target.value);
 };
-$("#toggleBookFormBtn").onclick=()=>setBookFormOpen($("#bookFormPanel").classList.contains("hidden"));
+$("#toggleBookFormBtn").onclick=()=>{
+  const opening=$("#bookFormPanel").classList.contains("hidden");
+  setBookFormOpen(opening);
+  if(opening && $("#bookAppearanceDetails")) $("#bookAppearanceDetails").open=false;
+};
 $("#closeBooksDialog").onclick=()=>{finalizeBookSelection();$("#booksDialog").close();};
 $("#addBookBtn").onclick=addBook;
 $("#deleteBookBtn").onclick=deleteEditingBook;
@@ -3559,7 +3648,12 @@ $("#nextMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1
 $("#prevWeek").onclick=()=>{weekCursor=addDays(weekCursor,-7);renderWeek();};
 $("#nextWeek").onclick=()=>{weekCursor=addDays(weekCursor,7);renderWeek();};
 $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll();});
-$("#settingsBtnTop").onclick=()=>{populateSettings();$("#settingsSavedMessage").classList.add("hidden");$("#settingsDialog").showModal();};
+$("#settingsBtnTop").onclick=()=>{
+  populateSettings();
+  $("#settingsSavedMessage").classList.add("hidden");
+  $$("#settingsDialog details.settings-group").forEach(group=>group.open=false);
+  $("#settingsDialog").showModal();
+};
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
   try{

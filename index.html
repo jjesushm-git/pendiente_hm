@@ -173,18 +173,7 @@
         </div>
         <div id="weekBoard" class="week-board"></div>
         <div class="stats-grid view-status-stats" id="weekStatsGrid"></div>
-
-        <section class="panel" id="weekPendingSection">
-          <div class="panel-head">
-            <div>
-              <h3>Pendientes de la semana</h3>
-              <p>Organizadas por día.</p>
-            </div>
-          </div>
-          <div id="weekPendingList" class="task-list week-status-list"></div>
-        </section>
-
-        <section class="panel" id="weekCompletedSection">
+<section class="panel" id="weekCompletedSection">
           <div class="panel-head">
             <div>
               <h3 class="green">Completadas</h3>
@@ -422,7 +411,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.7.4</strong>
+      <strong id="settingsVersionTop">11.7.5</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -473,7 +462,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.4</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.5</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -555,11 +544,14 @@
 
     <div class="expense-date-nav expense-date-nav-simple view-expense-date-nav">
       <button type="button" data-view-expense-shift="-day" title="Día anterior" aria-label="Día anterior">‹</button>
-      <label class="expense-native-date" title="Seleccionar fecha">
+
+      <label class="view-expense-date-control" title="Seleccionar fecha">
         <span aria-hidden="true">📅</span>
-        <input id="viewExpenseDate" type="date" />
-        <span id="viewExpenseDateLabel" class="visually-hidden"></span>
+        <span id="viewExpenseDateLabel">--/--/----</span>
+        <span aria-hidden="true">⌄</span>
+        <input id="viewExpenseDate" type="date" aria-label="Seleccionar fecha" />
       </label>
+
       <button type="button" data-view-expense-shift="+day" title="Día siguiente" aria-label="Día siguiente">›</button>
       <button type="button" id="viewExpenseTodayBtn" class="view-expense-today-btn">Hoy</button>
     </div>
@@ -650,19 +642,32 @@
         <input id="bookNameInput" type="text" maxlength="20" placeholder="Máximo 20 caracteres" autocomplete="off" />
       </label>
 
-      <div class="book-customize-grid">
-        <div>
-          <small class="book-customize-label">Icono</small>
-          <div id="bookIconPicker" class="book-icon-picker"></div>
-        </div>
-        <div>
-          <small class="book-customize-label">Color</small>
-          <div id="bookColorPicker" class="book-color-picker"></div>
-        </div>
-      </div>
+      <details id="bookAppearanceDetails" class="book-appearance-details">
+        <summary>
+          <span>🎨 Icono y color</span>
+          <small>Opcional · toca para personalizar</small>
+        </summary>
 
-      <input id="bookIconInput" type="hidden" value="📖" />
-      <input id="bookColorInput" type="hidden" value="#725cff" />
+        <div class="book-appearance-body">
+          <div class="book-optional-actions">
+            <button type="button" id="clearBookIconBtn" class="ghost-btn">Sin icono</button>
+            <button type="button" id="clearBookColorBtn" class="ghost-btn">Sin color</button>
+          </div>
+
+          <div class="book-customize-grid">
+            <div>
+              <small class="book-customize-label">Icono</small>
+              <div id="bookIconPicker" class="book-icon-picker"></div>
+            </div>
+            <div>
+              <small class="book-customize-label">Color</small>
+              <div id="bookColorPicker" class="book-color-picker"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+      <input id="bookIconInput" type="hidden" value="" />
+      <input id="bookColorInput" type="hidden" value="" />
 
       <div class="book-form-actions">
         <button id="deleteBookBtn" type="button" class="danger-btn hidden">🗑 Borrar libro</button>
@@ -900,6 +905,33 @@
     <div class="modal-actions">
       <button type="button" id="cancelTaskCopyBtn" class="ghost-btn">Cancelar</button>
       <button type="button" id="saveTaskCopyBtn" class="primary-btn">Guardar copia</button>
+    </div>
+  </dialog>
+
+  
+  <dialog id="expenseDetailDialog" class="modal expense-detail-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Detalle del movimiento</p>
+        <h2 id="expenseDetailTitle">Movimiento</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeExpenseDetailDialog">✕</button>
+    </div>
+
+    <input id="expenseDetailId" type="hidden" />
+    <div id="expenseDetailBody" class="expense-detail-body"></div>
+
+    <div class="expense-detail-actions">
+      <button type="button" id="expenseDetailEditBtn" class="ghost-btn">✏ Editar</button>
+
+      <div class="expense-detail-move">
+        <button type="button" id="expenseDetailMoveBtn" class="ghost-btn">📖 Mover</button>
+        <select id="expenseDetailBookSelect" class="hidden" aria-label="Mover movimiento a otro libro">
+          <option value="">Selecciona libro</option>
+        </select>
+      </div>
+
+      <button type="button" id="expenseDetailDeleteBtn" class="danger-btn">🗑 Borrar</button>
     </div>
   </dialog>
 
