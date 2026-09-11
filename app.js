@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.6.1";
+const APP_VERSION = "11.6.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -360,6 +360,9 @@ function updateActiveBookSelect(){
     normalizeBookAppearance(book);
     return `<option value="${book.id}" ${book.id===activeBookId?"selected":""}>${book.icon} ${esc(book.name)}</option>`;
   }).join("");
+
+  const current=books.find(book=>book.id===activeBookId);
+  select.title=current ? `${current.icon||"📖"} ${current.name}` : "Cambiar libro";
 }
 
 function ensureBookMigration(){
