@@ -1,53 +1,62 @@
-# Mis Tareas — Versión 11.7.3
+# Mis Tareas — Versión 11.7.4
 
-Base: Versión 11.7.2 ESTABLE.
+Base: Versión 11.7.3 ESTABLE.
 
-## Tareas no completadas
-- Una tarea marcada como No completada ya puede marcarse después como Completada.
-- Al hacerlo se agrega automáticamente un comentario en la ocurrencia correspondiente:
-  - `Tarea completada fuera de tiempo el día DD/MM/AAAA.`
-- Se conserva la funcionalidad Reabrir.
-- El cambio también se respeta al completar desde Tablero.
+## Tarjetas unificadas
+Las tarjetas de tareas ahora usan el mismo diseño y comportamiento en:
+- Día.
+- Calendario.
+- Semana.
+- Tablero.
 
-## Tarjetas de tareas compactas / expandidas
-- Las tarjetas compactas de Calendario y Semana siguen expandiéndose al tocarlas.
-- Si la tarjeta ya está expandida y se vuelve a tocar una zona libre, regresa al formato compacto.
-- Los controles interactivos no provocan el cierre accidental.
-- En la tarjeta expandida, junto a fecha y horario aparece un botón de tres líneas.
+Todas:
+- aparecen compactas por defecto,
+- al tocar una zona libre se expanden,
+- al volver a tocar una zona libre vuelven a compactarse,
+- conservan emoticono, recurrencia, comentarios y movimiento financiero.
+
+## Menú de tres líneas
+- Se corrigió el botón de tres líneas para las tarjetas expandidas.
+- El menú se busca dentro de la propia tarjeta y no por ID global.
+- Esto corrige especialmente tareas recurrentes que pueden aparecer varias veces.
 - El menú contiene:
-  - Editar.
-  - Reabrir, cuando corresponde.
-  - Mover a libro.
+  - Editar,
+  - Reabrir cuando corresponda,
   - Eliminar.
-- Alta importancia, recurrencia, comentario y movimiento de dinero conservan sus funciones.
+- “Mover a libro” se eliminó del menú.
 
-## Movimientos registrados
-- Las tarjetas siguen compactas: título, monto y fecha.
-- Tocar una tarjeta muestra descripción y menú de tres líneas.
-- Volver a tocarla la compacta.
-- El selector superior queda como:
-  - Día anterior.
-  - Fecha seleccionable.
-  - Día siguiente.
-  - Hoy.
-- El botón Hoy regresa realmente a la fecha actual.
-- El modal fue ajustado para no quedar cortado en pantallas pequeñas.
+## Mover a / Mover a libro
+Todas las tarjetas expandidas incluyen un único control de movimiento.
 
-## Tablero de actividades
-- El resumen superior se muestra en un solo renglón.
-- Presenta:
-  - Pendientes.
-  - Completadas.
-  - No completadas.
-- Es un poco más grande que la tira global de estados.
+Por defecto el botón dice:
+- Mover a
 
-## Tira semanal
-- Las celdas tienen contorno dorado en el tema Esmeralda/Dorado.
-- El día seleccionado se rellena en verde.
+Al tocarlo cambia a:
+- Mover a libro
 
-## Encabezado y Libro
-- Título principal, selector de Libro y Ajustes permanecen en el mismo renglón.
-- El nombre del libro usa un visor propio para evitar que quede mocho.
-- Si el nombre es más largo que el espacio disponible, se desplaza automáticamente cada 5 segundos para poder leerlo completo.
+Funciona como el cambio MN / DLS:
+- Mover a: permite seleccionar Pendiente, En proceso, En espera o Completada.
+- Mover a libro: muestra los demás libros disponibles.
 
-Se conservan recurrencias por tramos, copiar recurrencia, comentarios por ocurrencia, gastos/ingresos, Bitácora, exportación/importación y selector responsive de hora.
+Al volver a tocar el botón cambia nuevamente al otro modo.
+
+La funcionalidad está disponible en Día, Calendario, Semana y Tablero.
+
+## Tablero
+- Se eliminó la barra duplicada Pendientes / Completadas / No completadas debajo de “Tablero de actividades”.
+- Se conserva únicamente el resumen global superior.
+- Las actividades del tablero ahora se muestran compactas.
+- Mantienen las columnas Pendientes, En proceso, En espera y Completadas.
+- Al expandirse usan exactamente la misma tarjeta que las demás pestañas.
+
+## Compatibilidad
+Se mantienen:
+- completar una tarea fuera de tiempo y su comentario automático,
+- recurrencias por tramos,
+- comentarios por ocurrencia,
+- gastos e ingresos,
+- libros,
+- selector responsive de hora,
+- Bitácora,
+- importación/exportación,
+- contabilidad y balance.

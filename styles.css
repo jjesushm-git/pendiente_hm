@@ -5198,3 +5198,115 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     padding:8px !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.4 — TARJETAS UNIFICADAS
+   ========================================================= */
+
+/* Ya existe el resumen global superior; el resumen local de Tablero desaparece. */
+#boardStats{
+  display:none !important;
+}
+
+/* Todas las listas de tareas usan el mismo compacto. */
+#dayView .task-list,
+#calendarView .task-list,
+#weekView .task-list,
+#boardView .board-list{
+  display:grid;
+  gap:8px;
+}
+
+#boardView .compact-task-card,
+#dayView .compact-task-card,
+#calendarView .compact-task-card,
+#weekView .compact-task-card{
+  width:100%;
+}
+
+/* El menú de tres líneas se mantiene dentro del área de metadatos. */
+.task-meta-with-menu{
+  position:relative;
+}
+
+.task-card-popup{
+  z-index:50 !important;
+}
+
+/* Control unificado:
+   botón alterna "Mover a" <-> "Mover a libro", igual que MN/DLS. */
+.task-unified-move{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+  margin-top:10px;
+}
+
+.task-move-mode-btn{
+  min-width:108px;
+  min-height:40px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel-2);
+  color:var(--text);
+  font-weight:800;
+  cursor:pointer;
+}
+
+.task-move-mode-btn:active{
+  transform:scale(.96);
+}
+
+.task-move-select{
+  width:100%;
+  min-width:0;
+  min-height:40px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel-2);
+  color:var(--text);
+}
+
+:root[data-theme="emerald_gold"] .task-move-mode-btn,
+:root[data-theme="emerald_gold"] .task-move-select{
+  background:#fffef8 !important;
+  color:#0f5c43 !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+/* El menú hamburguesa ya no contiene Mover a libro. */
+.task-card-popup{
+  min-width:170px;
+}
+
+/* Tablero conserva columnas, pero sus tarjetas ahora son iguales
+   a Día / Calendario / Semana. */
+#boardView .board-column{
+  min-width:min(86vw,330px);
+}
+
+#boardView .board-list{
+  align-content:start;
+}
+
+#boardView .compact-task-shell{
+  width:100%;
+}
+
+@media(max-width:520px){
+  .task-unified-move{
+    grid-template-columns:1fr;
+  }
+
+  .task-move-mode-btn,
+  .task-move-select{
+    width:100%;
+  }
+
+  #boardView .board-column{
+    min-width:min(88vw,320px);
+  }
+}

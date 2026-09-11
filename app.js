@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.3";
+const APP_VERSION = "11.7.4";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -140,8 +140,12 @@ function taskCountIndicatorHTML(dayTasks,scope="calendar"){
 function compactTaskCardHTML(t,occurrenceDate=selectedDate,scope="compact"){
   const occurrenceKey=occurrenceKeyForTask(t,occurrenceDate);
   const comment=taskCommentForOccurrence(t,occurrenceKey);
+
   return `
-    <div class="compact-task-shell" data-compact-shell="${t.id}" data-compact-date="${occurrenceKey}">
+    <div class="compact-task-shell"
+         data-compact-shell="${t.id}"
+         data-compact-date="${occurrenceKey}"
+         data-compact-scope="${scope}">
       <div class="mini-task compact-task-card ${t.highImportance?"high-importance":""}"
            data-expand-task="${t.id}"
            data-expand-date="${occurrenceKey}"
@@ -150,11 +154,13 @@ function compactTaskCardHTML(t,occurrenceDate=selectedDate,scope="compact"){
                 class="mini-task-emoji task-emoji-edit"
                 data-emoji-task="${t.id}"
                 title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
+
         <span class="compact-task-copy">
           <strong>${esc(t.title)}</strong>
           <small>
-            ${formatTimeMeta(t)} · ${statusLabel(t.status)} ·
-            ${recurrenceButtonHTML(t,true,occurrenceDate)}
+            ${formatTimeMeta(t)} · ${statusLabel(t.status)}
+            ${t.status==="pending"?` · ${boardStageLabel(boardStageOf(t))}`:""}
+            · ${recurrenceButtonHTML(t,true,occurrenceDate)}
             ${taskMovementIndicatorHTML(t)} ·
             <button type="button"
                     class="mini-comment-btn ${comment?"has-comment":"no-comment"}"
@@ -174,7 +180,7 @@ function compactTaskListHTML(list,occurrenceDate=selectedDate,scope="compact"){
 function bindCompactTaskExpansion(root=document){
   root.querySelectorAll("[data-expand-task]").forEach(card=>{
     card.onclick=e=>{
-      if(e.target.closest("button,select,input,a,label")) return;
+      if(e.target.closest("button,select,input,a,label,textarea")) return;
 
       const task=tasks.find(t=>t.id===card.dataset.expandTask);
       if(!task) return;
@@ -186,20 +192,23 @@ function bindCompactTaskExpansion(root=document){
 
       shell.innerHTML=taskCard(task,occurrenceDate);
       shell.classList.add("expanded-task-shell");
-      bindTaskActions();
+
+      bindTaskActions(shell);
 
       const article=shell.querySelector(".task-card");
       if(article){
-        article.classList.add("expanded-from-compact");
         article.onclick=evt=>{
-          if(evt.target.closest("button,select,input,a,label,textarea,.task-card-popup")) return;
+          if(evt.target.closest("button,select,input,a,label,textarea,.task-card-popup,.task-unified-move")) return;
+
           const fresh=tasks.find(x=>x.id===task.id);
           if(!fresh) return;
-          const replacement=document.createElement("div");
-          replacement.innerHTML=compactTaskCardHTML(fresh,occurrenceDate,scope).trim();
-          const newShell=replacement.firstElementChild;
+
+          const temp=document.createElement("div");
+          temp.innerHTML=compactTaskCardHTML(fresh,occurrenceDate,scope).trim();
+          const newShell=temp.firstElementChild;
+
           shell.replaceWith(newShell);
-          bindTaskActions();
+          bindTaskActions(newShell);
           bindCompactTaskExpansion(root);
         };
       }
@@ -974,10 +983,11 @@ function renderDay(){
       .sort(compareTasksByDate);
   }
 
-  $("#pendingList").innerHTML=listHtml(filtered,selectedDate);
-  $("#completedList").innerHTML=listHtml(allCompleted,selectedDate);
-  $("#missedList").innerHTML=listHtml(allMissed,selectedDate);
-  bindTaskActions();
+  $("#pendingList").innerHTML=compactTaskListHTML(filtered,selectedDate,"day-pending");
+  $("#completedList").innerHTML=compactTaskListHTML(allCompleted,selectedDate,"day-completed");
+  $("#missedList").innerHTML=compactTaskListHTML(allMissed,selectedDate,"day-missed");
+  bindTaskActions($("#dayView"));
+  bindCompactTaskExpansion($("#dayView"));
 }
 function expandedTasksForDate(d){ return activeTasks().filter(t=>occursOn(t,d)); }
 
@@ -1291,26 +1301,138 @@ function setTaskRecurrence(taskId,value,occurrenceKey){
   return task;
 }
 
+
+function taskMoveControlHTML(t,occurrenceKey){
+  return `
+    <div class="task-unified-move" data-task-move-control>
+      <button type="button"
+              class="task-move-mode-btn"
+              data-task-move-mode="stage"
+              aria-label="Cambiar tipo de movimiento">Mover a</button>
+
+      <select class="task-move-select"
+              data-task-move-select
+              data-task-id="${t.id}"
+              data-occurrence-date="${occurrenceKey}">
+        <option value="">Selecciona destino</option>
+        <option value="pending">Pendiente</option>
+        <option value="in_progress">En proceso</option>
+        <option value="waiting">En espera</option>
+        <option value="completed">Completada</option>
+      </select>
+    </div>`;
+}
+
+function populateTaskMoveSelect(wrapper,task,mode){
+  const select=wrapper?.querySelector("[data-task-move-select]");
+  const button=wrapper?.querySelector("[data-task-move-mode]");
+  if(!select || !button || !task) return;
+
+  select.value="";
+  button.dataset.taskMoveMode=mode;
+
+  if(mode==="book"){
+    button.textContent="Mover a libro";
+    select.innerHTML=`<option value="">Selecciona libro</option>`+
+      books
+        .filter(book=>book.id!==task.bookId)
+        .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
+        .join("");
+  }else{
+    button.textContent="Mover a";
+    select.innerHTML=`
+      <option value="">Selecciona destino</option>
+      <option value="pending">Pendiente</option>
+      <option value="in_progress">En proceso</option>
+      <option value="waiting">En espera</option>
+      <option value="completed">Completada</option>`;
+  }
+}
+
+function applyTaskStageMove(task,value,occurrenceKey){
+  if(!task || !value) return;
+
+  task.boardStage=value;
+
+  if(value==="completed"){
+    if(task.status==="missed"){
+      completeTaskOutOfTime(task,occurrenceKey);
+    }else{
+      task.status="completed";
+      task.completedAt=task.completedAt||new Date().toISOString();
+    }
+  }else if(task.status==="completed"){
+    task.status="pending";
+    task.completedAt=null;
+  }
+
+  task.updatedAt=new Date().toISOString();
+  saveTasks();
+  toast(`Movida a ${boardStageLabel(value)}.`);
+}
+
+function applyTaskBookMove(task,destinationId){
+  if(!task || !destinationId) return;
+
+  const destination=books.find(book=>book.id===destinationId);
+  if(!destination) return;
+
+  const origin=books.find(book=>book.id===task.bookId);
+  task.bookId=destination.id;
+  task.updatedAt=new Date().toISOString();
+
+  expenses.filter(e=>e.taskId===task.id).forEach(e=>{
+    e.bookId=destination.id;
+    e.updatedAt=new Date().toISOString();
+  });
+  localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses));
+
+  saveTasks();
+  toast(`Tarea movida de ${origin?.name||"libro"} a ${destination.name}.`);
+}
+
 function taskCard(t,occurrenceDate=selectedDate){
-  const due=taskDueDate(t);
   const occurrenceKey=occurrenceKeyForTask(t,occurrenceDate);
   const occurrenceComment=taskCommentForOccurrence(t,occurrenceKey);
-  return `<article class="task-card ${t.status} ${t.highImportance?"high-importance":""}" data-task-card-id="${t.id}">
+
+  return `<article class="task-card ${t.status} ${t.highImportance?"high-importance":""}"
+                   data-task-card-id="${t.id}"
+                   data-task-occurrence="${occurrenceKey}">
     <div class="task-row">
-      <input class="task-check" type="checkbox" data-complete="${t.id}" data-complete-date="${occurrenceKey}" ${t.status==="completed"?"checked":""}/>
-      <button type="button" class="task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
+      <input class="task-check"
+             type="checkbox"
+             data-complete="${t.id}"
+             data-complete-date="${occurrenceKey}"
+             ${t.status==="completed"?"checked":""}/>
+
+      <button type="button"
+              class="task-emoji task-emoji-edit"
+              data-emoji-task="${t.id}"
+              title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
+
       <div class="task-card-content">
         <div class="task-title">${esc(t.title)}</div>
         ${t.description?`<div class="task-desc">${esc(t.description)}</div>`:""}
+
         <div class="task-meta task-meta-with-menu">
           <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
           <span>🕒 ${formatTimeMeta(t)}</span>
-          <button type="button" class="task-card-menu-btn" data-task-menu="${t.id}" aria-label="Acciones de la tarea" title="Acciones"><span></span><span></span><span></span></button>
+
+          <button type="button"
+                  class="task-card-menu-btn"
+                  data-task-menu
+                  aria-label="Acciones de la tarea"
+                  title="Acciones">
+            <span></span><span></span><span></span>
+          </button>
+
           ${recurrenceButtonHTML(t,false,occurrenceDate)}
           ${taskMovementIndicatorHTML(t)}
+
           ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
           ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
+
           <button type="button"
                   class="comment-icon-btn ${occurrenceComment?"has-comment":"no-comment"}"
                   data-comment-task="${t.id}"
@@ -1318,21 +1440,18 @@ function taskCard(t,occurrenceDate=selectedDate){
                   title="${occurrenceComment?"Ver / editar comentario":"Agregar comentario"}">${occurrenceComment?"💬":"💬＋"}</button>
         </div>
 
-        <div class="task-card-popup hidden" data-task-menu-panel="${t.id}">
+        <div class="task-card-popup hidden" data-task-menu-panel>
           <button type="button" data-edit="${t.id}" data-edit-date="${occurrenceKey}">✏ Editar</button>
           ${t.status==="missed"?`<button type="button" data-reopen="${t.id}">↻ Reabrir</button>`:""}
-          <div class="task-menu-move-wrap">
-            <button type="button" data-open-book-move="${t.id}">📖 Mover a libro</button>
-            <select class="board-book-move-select hidden" data-book-move="${t.id}" aria-label="Mover tarea a otro libro">
-              <option value="">Selecciona libro</option>
-              ${books.filter(book=>book.id!==t.bookId).map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`).join("")}
-            </select>
-          </div>
           <button type="button" class="task-delete-btn" data-delete="${t.id}">🗑 Eliminar</button>
         </div>
 
+        ${taskMoveControlHTML(t,occurrenceKey)}
+
         <div class="card-actions task-card-actions task-card-actions-compact">
-          <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
+          <button type="button"
+                  class="importance-chip ${t.highImportance?"active":""}"
+                  data-important="${t.id}">
             ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
           </button>
         </div>
@@ -1411,74 +1530,80 @@ function openCommentDialog(taskId,occurrenceKey){
   $("#commentDialog").showModal();
 }
 
-function bindTaskActions(){
-  $$('[data-task-menu]').forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    const panel=$(`[data-task-menu-panel="${btn.dataset.taskMenu}"]`);
-    if(!panel) return;
-    $$('[data-task-menu-panel]').forEach(other=>{ if(other!==panel) other.classList.add('hidden'); });
-    panel.classList.toggle('hidden');
+function bindTaskActions(root=document){
+  root.querySelectorAll("[data-task-menu]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const card=btn.closest(".task-card");
+      const panel=card?.querySelector("[data-task-menu-panel]");
+      if(!panel) return;
+
+      document.querySelectorAll("[data-task-menu-panel]").forEach(other=>{
+        if(other!==panel) other.classList.add("hidden");
+      });
+
+      panel.classList.toggle("hidden");
+    };
   });
 
-  $$("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
+  root.querySelectorAll("[data-task-move-mode]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const wrapper=btn.closest("[data-task-move-control]");
+      const card=btn.closest(".task-card");
+      const taskId=card?.dataset.taskCardId;
+      const task=tasks.find(t=>t.id===taskId);
+      if(!wrapper || !task) return;
+
+      const current=btn.dataset.taskMoveMode||"stage";
+      populateTaskMoveSelect(wrapper,task,current==="stage"?"book":"stage");
+    };
+  });
+
+  root.querySelectorAll("[data-task-move-select]").forEach(select=>{
+    select.onchange=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const wrapper=select.closest("[data-task-move-control]");
+      const button=wrapper?.querySelector("[data-task-move-mode]");
+      const card=select.closest(".task-card");
+      const taskId=card?.dataset.taskCardId;
+      const task=tasks.find(t=>t.id===taskId);
+
+      if(!task || !select.value || !button) return;
+
+      if(button.dataset.taskMoveMode==="book"){
+        applyTaskBookMove(task,select.value);
+      }else{
+        applyTaskStageMove(task,select.value,select.dataset.occurrenceDate);
+      }
+    };
+  });
+
+  root.querySelectorAll("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
     openRecurrenceDialog(btn.dataset.recurrenceTask,btn.dataset.recurrenceDate);
   });
 
-  $$("[data-task-money]").forEach(btn=>btn.onclick=e=>{
+  root.querySelectorAll("[data-task-money]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
     openTaskMovementDetail(btn.dataset.taskMoney);
   });
 
-  $$("[data-open-book-move]").forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-
-    const task=tasks.find(t=>t.id===btn.dataset.openBookMove);
-    if(!task) return;
-
-    const available=books.filter(book=>book.id!==task.bookId);
-    if(!available.length){
-      toast("No hay otro libro disponible.");
-      return;
-    }
-
-    const select=$(`[data-book-move="${task.id}"]`);
-    if(!select) return;
-
-    select.classList.toggle("hidden");
-    if(!select.classList.contains("hidden")) select.focus();
-  });
-
-  $$("[data-book-move]").forEach(select=>select.onchange=()=>{
-    const task=tasks.find(t=>t.id===select.dataset.bookMove);
-    const destination=books.find(book=>book.id===select.value);
-    if(!task || !destination) return;
-
-    const origin=books.find(book=>book.id===task.bookId);
-    task.bookId=destination.id;
-    task.updatedAt=new Date().toISOString();
-
-    expenses.filter(e=>e.taskId===task.id).forEach(e=>{
-      e.bookId=destination.id;
-      e.updatedAt=new Date().toISOString();
-    });
-    localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses));
-
-    saveTasks();
-    toast(`Tarea movida de ${origin?.name||"libro"} a ${destination.name}.`);
-  });
-
-  $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
+  root.querySelectorAll("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
     openCommentDialog(btn.dataset.commentTask,btn.dataset.commentDate);
   });
 
-  $$("[data-important]").forEach(btn=>btn.onclick=e=>{
+  root.querySelectorAll("[data-important]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
     const task=tasks.find(t=>t.id===btn.dataset.important);
@@ -1488,42 +1613,75 @@ function bindTaskActions(){
     toast(task.highImportance?"Alta importancia activada.":"Alta importancia desactivada.");
   });
 
-  $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
+  root.querySelectorAll("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
     openEmojiOnlyEditor(btn.dataset.emojiTask);
   });
 
-  $$('[data-complete]').forEach(ch=>ch.onchange=()=>{
-    const t=tasks.find(x=>x.id===ch.dataset.complete); if(!t)return;
+  root.querySelectorAll("[data-complete]").forEach(ch=>ch.onchange=()=>{
+    const t=tasks.find(x=>x.id===ch.dataset.complete);
+    if(!t) return;
+
     const previous=t.status;
+
     if(ch.checked){
-      if(previous==='missed') completeTaskOutOfTime(t,ch.dataset.completeDate);
-      else{
-        t.status='completed';
-        t.boardStage='completed';
+      if(previous==="missed"){
+        completeTaskOutOfTime(t,ch.dataset.completeDate);
+      }else{
+        t.status="completed";
+        t.boardStage="completed";
         t.completedAt=new Date().toISOString();
       }
     }else{
-      t.status='pending';
-      t.boardStage='pending';
+      t.status="pending";
+      t.boardStage="pending";
       t.completedAt=null;
     }
+
     saveTasks();
-    if(previous==='missed' && ch.checked) toast('Tarea completada fuera de tiempo. Se agregó el comentario.');
-  });
-  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit),b.dataset.editDate));
-  $$("[data-reopen]").forEach(b=>b.onclick=()=>{const t=tasks.find(x=>x.id===b.dataset.reopen); if(!t)return; reopenTask(t); saveTasks(); toast(`Tarea reabierta para ${shortDate(parseDate(t.startDate))}.`);});
-  $$("[data-delete]").forEach(b=>b.onclick=async()=>{
-    const t=tasks.find(x=>x.id===b.dataset.delete);
-    if(!t) return;
-    if(await comicConfirm(`¿Eliminar "${t.title}"? Se moverá a la papelera y podrás restaurarla durante 24 horas.`,{
-      title:"Eliminar tarea",
-      okText:"🗑 Eliminar"
-    })){
-      moveToTrash(t.id);
-      toast("Tarea movida a la papelera.");
+
+    if(previous==="missed" && ch.checked){
+      toast("Tarea completada fuera de tiempo. Se agregó el comentario.");
     }
+  });
+
+  root.querySelectorAll("[data-edit]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openTask(tasks.find(t=>t.id===btn.dataset.edit),btn.dataset.editDate);
+    };
+  });
+
+  root.querySelectorAll("[data-reopen]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const t=tasks.find(x=>x.id===btn.dataset.reopen);
+      if(!t) return;
+      reopenTask(t);
+      saveTasks();
+      toast(`Tarea reabierta para ${shortDate(parseDate(t.startDate))}.`);
+    };
+  });
+
+  root.querySelectorAll("[data-delete]").forEach(btn=>{
+    btn.onclick=async e=>{
+      e.preventDefault();
+      e.stopPropagation();
+
+      const t=tasks.find(x=>x.id===btn.dataset.delete);
+      if(!t) return;
+
+      if(await comicConfirm(`¿Eliminar "${t.title}"? Se moverá a la papelera y podrás restaurarla durante 24 horas.`,{
+        title:"Eliminar tarea",
+        okText:"🗑 Eliminar"
+      })){
+        moveToTrash(t.id);
+        toast("Tarea movida a la papelera.");
+      }
+    };
   });
 }
 function renderCalendar(){
@@ -1563,7 +1721,7 @@ function renderCalendar(){
     $("#calendarCompletedList").innerHTML=compactTaskListHTML(completed,selectedDate,"calendar-completed");
     $("#calendarMissedList").innerHTML=compactTaskListHTML(missed,selectedDate,"calendar-missed");
 
-    bindTaskActions();
+    bindTaskActions($("#calendarView"));
     bindCompactTaskExpansion($("#calendarView"));
   };
 
@@ -1609,7 +1767,7 @@ function renderWeek(){
   $("#weekCompletedList").innerHTML=weekOccurrenceListHTML(completed);
   $("#weekMissedList").innerHTML=weekOccurrenceListHTML(missed);
 
-  bindTaskActions();
+  bindTaskActions($("#weekView"));
   bindCompactTaskExpansion($("#weekView"));
 }
 function renderBoard(){
@@ -1618,158 +1776,32 @@ function renderBoard(){
   activeTasks()
     .filter(t=>!(t.status==="pending" && recurrenceSegmentEndedBefore(t,selectedDate)))
     .forEach(t=>{
-    const stage=boardStageOf(t);
-    if(stage==="completed" || t.status==="completed") groups.completed.push(t);
-    else if(stage==="in_progress") groups.in_progress.push(t);
-    else if(stage==="waiting") groups.waiting.push(t);
-    else groups.pending.push(t);
-  });
+      const stage=boardStageOf(t);
+      if(stage==="completed" || t.status==="completed") groups.completed.push(t);
+      else if(stage==="in_progress") groups.in_progress.push(t);
+      else if(stage==="waiting") groups.waiting.push(t);
+      else groups.pending.push(t);
+    });
 
   Object.values(groups).forEach(list=>list.sort(compareTasksByDate));
 
-  const boardCard=t=>{
-    const occurrenceKey=occurrenceKeyForTask(t,selectedDate);
-    const occurrenceComment=taskCommentForOccurrence(t,occurrenceKey);
-    return `<article class="board-card ${t.status} ${t.highImportance?"high-importance":""}">
-    <div class="board-card-head">
-      <div class="board-title-with-emoji"><button type="button" class="board-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button><strong>${esc(t.title)}</strong></div>
-      <span class="status-pill ${t.status}">${statusLabel(t.status)}</span>
-    </div>
-    ${t.description?`<p>${esc(t.description)}</p>`:""}
-    <div class="board-card-meta">
-      <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
-      ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
-      ${recurrenceButtonHTML(t,false,parseDate(occurrenceKey))}
-      ${taskMovementIndicatorHTML(t)}
-      ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
-      ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
-      ${t.status==="missed"?`<span class="state-chip missed">✕ No completada</span>`:""}
-      <button type="button"
-              class="comment-icon-btn ${occurrenceComment?"has-comment":"no-comment"}"
-              data-comment-task="${t.id}"
-              data-comment-date="${occurrenceKey}"
-              title="${occurrenceComment?"Ver / editar comentario":"Agregar comentario"}">${occurrenceComment?"💬":"💬＋"}</button>
-    </div>
-    <label class="board-move-label">Mover a
-      <select data-board-move="${t.id}">
-        <option value="pending" ${boardStageOf(t)==="pending"?"selected":""}>Pendiente</option>
-        <option value="in_progress" ${boardStageOf(t)==="in_progress"?"selected":""}>En proceso</option>
-        <option value="waiting" ${boardStageOf(t)==="waiting"?"selected":""}>En espera</option>
-        <option value="completed" ${boardStageOf(t)==="completed"?"selected":""}>Completada</option>
-      </select>
-    </label>
-    <div class="card-actions board-card-actions">
-      <button type="button" class="importance-chip ${t.highImportance?"active":""}" data-important="${t.id}">
-        ${t.highImportance?"★ Alta importancia":"☆ Alta importancia"}
-      </button>
-      <div class="task-action-row board-book-action-row">
-        <div class="task-action-left">
-          <button data-edit="${t.id}" data-edit-date="${occurrenceKey}">Editar</button>
-        </div>
+  const renderGroup=(list,scope)=>
+    list.length
+      ? compactTaskListHTML(list,selectedDate,scope)
+      : `<div class="empty">Sin actividades</div>`;
 
-        <div class="board-book-move-wrap">
-          <button type="button"
-                  class="board-book-move-btn"
-                  data-open-book-move="${t.id}">
-            📖 Mover a libro
-          </button>
-          <select class="board-book-move-select hidden"
-                  data-book-move="${t.id}"
-                  aria-label="Mover tarea a otro libro">
-            <option value="">Selecciona libro</option>
-            ${books
-              .filter(book=>book.id!==t.bookId)
-              .map(book=>`<option value="${book.id}">${book.icon||"📖"} ${esc(book.name)}</option>`)
-              .join("")}
-          </select>
-        </div>
-
-        <button class="task-delete-btn" data-delete="${t.id}">Eliminar</button>
-      </div>
-    </div>
-  </article>`;
-  };
-
-  $("#boardPending").innerHTML=groups.pending.length?groups.pending.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
-  $("#boardProgress").innerHTML=groups.in_progress.length?groups.in_progress.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
-  $("#boardWaiting").innerHTML=groups.waiting.length?groups.waiting.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
-  $("#boardCompleted").innerHTML=groups.completed.length?groups.completed.map(boardCard).join(""):`<div class="empty">Sin actividades</div>`;
+  $("#boardPending").innerHTML=renderGroup(groups.pending,"board-pending");
+  $("#boardProgress").innerHTML=renderGroup(groups.in_progress,"board-progress");
+  $("#boardWaiting").innerHTML=renderGroup(groups.waiting,"board-waiting");
+  $("#boardCompleted").innerHTML=renderGroup(groups.completed,"board-completed");
 
   $("#boardCountPending").textContent=groups.pending.length;
   $("#boardCountProgress").textContent=groups.in_progress.length;
   $("#boardCountWaiting").textContent=groups.waiting.length;
   $("#boardCountCompleted").textContent=groups.completed.length;
 
-  const boardStatusSource=activeTasks().filter(t=>!(t.status==='pending' && recurrenceSegmentEndedBefore(t,selectedDate)));
-  const boardPendingCount=boardStatusSource.filter(t=>t.status==='pending').length;
-  const boardCompletedCount=boardStatusSource.filter(t=>t.status==='completed').length;
-  const boardMissedCount=boardStatusSource.filter(t=>t.status==='missed').length;
-  $("#boardStats").innerHTML=`
-    <div class="board-status-item pending"><i></i><strong>${boardPendingCount}</strong><small>Pendientes</small></div>
-    <div class="board-status-item completed"><i></i><strong>${boardCompletedCount}</strong><small>Completadas</small></div>
-    <div class="board-status-item missed"><i></i><strong>${boardMissedCount}</strong><small>No completadas</small></div>`;
-
-  $$("[data-board-move]").forEach(sel=>sel.onchange=()=>{
-    const t=tasks.find(x=>x.id===sel.dataset.boardMove);
-    if(!t) return;
-    t.boardStage=sel.value;
-    if(sel.value==="completed"){
-      if(t.status==="missed") completeTaskOutOfTime(t,occurrenceKeyForTask(t,selectedDate));
-      else{
-        t.status="completed";
-        t.completedAt=t.completedAt||new Date().toISOString();
-      }
-    }else if(t.status==="completed"){
-      t.status="pending";
-      t.completedAt=null;
-    }
-    saveTasks();
-    toast(`Movida a ${boardStageLabel(sel.value)}.`);
-  });
-
-  $$("[data-open-book-move]").forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-
-    const task=tasks.find(t=>t.id===btn.dataset.openBookMove);
-    if(!task) return;
-
-    const available=books.filter(book=>book.id!==task.bookId);
-    if(!available.length){
-      toast("No hay otro libro disponible.");
-      return;
-    }
-
-    const select=$(`[data-book-move="${task.id}"]`);
-    if(!select) return;
-
-    select.classList.toggle("hidden");
-    if(!select.classList.contains("hidden")){
-      select.focus();
-    }
-  });
-
-  $$("[data-book-move]").forEach(select=>select.onchange=()=>{
-    const task=tasks.find(t=>t.id===select.dataset.bookMove);
-    const destination=books.find(book=>book.id===select.value);
-    if(!task || !destination) return;
-
-    const origin=books.find(book=>book.id===task.bookId);
-    task.bookId=destination.id;
-    task.updatedAt=new Date().toISOString();
-
-    expenses.filter(e=>e.taskId===task.id).forEach(e=>{
-      e.bookId=destination.id;
-      e.updatedAt=new Date().toISOString();
-    });
-    localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses));
-
-    saveTasks();
-
-    toast(`Tarea movida de ${origin?.name||"libro"} a ${destination.name}.`);
-  });
-
-  bindTaskActions();
+  bindTaskActions($("#boardView"));
+  bindCompactTaskExpansion($("#boardView"));
 }
 
 
