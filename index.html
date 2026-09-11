@@ -403,7 +403,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.3</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.4</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -731,6 +731,55 @@
       <button type="button" id="clearTimePickerBtn" class="ghost-btn">Borrar</button>
       <button type="button" id="cancelTimePickerBtn" class="ghost-btn">Cancelar</button>
       <button type="button" id="applyTimePickerBtn" class="primary-btn">Establecer</button>
+    </div>
+  </dialog>
+
+  
+  <dialog id="recurrenceDialog" class="modal recurrence-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Repetición de tarea</p>
+        <h2 id="recurrenceDialogTitle">Cambiar recurrencia</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeRecurrenceDialog">✕</button>
+    </div>
+
+    <input type="hidden" id="recurrenceTaskId" />
+
+    <div class="recurrence-options">
+      <button type="button" class="recurrence-option" data-recurrence-value="none">
+        <span>○</span>
+        <strong>Sin recurrencia</strong>
+        <small>La tarea no se repite.</small>
+      </button>
+
+      <button type="button" class="recurrence-option" data-recurrence-value="daily">
+        <span>↻</span>
+        <strong>Diaria</strong>
+        <small>Se repite todos los días.</small>
+      </button>
+
+      <button type="button" class="recurrence-option" data-recurrence-value="weekly">
+        <span>7</span>
+        <strong>Semanal</strong>
+        <small>Se repite cada semana.</small>
+      </button>
+
+      <button type="button" class="recurrence-option" data-recurrence-value="monthly">
+        <span>30</span>
+        <strong>Mensual</strong>
+        <small>Se repite cada mes.</small>
+      </button>
+
+      <button type="button" class="recurrence-option" data-recurrence-value="yearly">
+        <span>12</span>
+        <strong>Anual</strong>
+        <small>Se repite cada año.</small>
+      </button>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelRecurrenceDialog" class="ghost-btn">Cancelar</button>
     </div>
   </dialog>
 

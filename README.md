@@ -1,29 +1,35 @@
-# Mis Tareas — Versión 11.6.3
+# Mis Tareas — Versión 11.6.4
 
-Base: Versión 11.6.2 ESTABLE.
+Base: Versión 11.6.3 ESTABLE.
 
-Corrección principal:
-- Se reemplazó el selector de hora nativo de Android/Chrome por un selector propio de la aplicación.
-- Esto evita que en celulares de pantalla pequeña se corten botones como Borrar, Cancelar o Establecer.
+## Fecha de vencimiento
+- La fecha de vencimiento nunca puede quedar antes de la fecha de inicio.
+- Al seleccionar una fecha de vencimiento menor:
+  - automáticamente se cambia a la misma fecha de inicio,
+  - se muestra un aviso.
+- Si después se cambia la fecha de inicio y esta queda después del vencimiento:
+  - el vencimiento también se corrige automáticamente.
+- El campo Fecha de vencimiento usa además `min` con la Fecha de inicio.
+- `readForm()` conserva una validación de respaldo para impedir fechas inválidas.
 
-Se aplica a:
-- Hora de inicio.
-- Hora de vencimiento.
+## Recurrencia directa desde tarjetas
+- Todas las tarjetas muestran siempre la recurrencia.
+- Si no se repite, muestra “↻ Sin recurrencia”.
+- Al tocar la recurrencia abre un modal.
+- Opciones:
+  - Sin recurrencia.
+  - Diaria.
+  - Semanal.
+  - Mensual.
+  - Anual.
+- Al seleccionar una opción:
+  - el modal se cierra,
+  - la tarea se guarda,
+  - la tarjeta se actualiza inmediatamente.
+- Funciona en:
+  - Día.
+  - Calendario.
+  - Semana.
+  - Tablero.
 
-Nuevo selector:
-- Hora de 1 a 12.
-- Minutos de 00 a 59.
-- A.M. / P.M.
-- Vista previa de la hora seleccionada.
-- Botón Borrar.
-- Botón Cancelar.
-- Botón Establecer.
-
-Adaptación móvil:
-- Hasta 430 px, el selector ocupa prácticamente todo el ancho disponible.
-- Los botones se colocan uno debajo de otro para que ninguno quede cortado.
-- Hora inicio y Hora vencimiento se muestran en una sola columna.
-- Hasta 350 px se reduce adicionalmente el tamaño y los espacios.
-- El selector respeta todos los temas de la aplicación.
-
-No se modificaron las demás funciones de tareas, libros, calendario, gastos/ingresos, comentarios, Bitácora ni exportación/importación.
+No se modificaron las demás funciones de tareas, horas, libros, gastos/ingresos, comentarios, Bitácora ni exportación/importación.

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.6.3";
+const APP_VERSION = "11.6.4";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -554,7 +554,13 @@ function formatTimeMeta(t){
   return t.allDay ? "Todo el día" : `${t.startTime||"--:--"}${t.dueTime ? " – "+t.dueTime : ""}`;
 }
 function recurrenceLabel(r){
-  return ({daily:"Diaria",weekly:"Semanal",monthly:"Mensual",yearly:"Anual"})[r]||"";
+  return ({
+    none:"Sin recurrencia",
+    daily:"Diaria",
+    weekly:"Semanal",
+    monthly:"Mensual",
+    yearly:"Anual"
+  })[r]||"Sin recurrencia";
 }
 function statusLabel(s){ return ({pending:"Pendiente",completed:"Completada",missed:"No completada"})[s]; }
 let emojiEditTaskId=null;
@@ -803,6 +809,45 @@ function listHtml(list,occurrenceDate=selectedDate){
   if(!list.length) return `<div class="empty">No hay tareas en esta sección.</div>`;
   return list.map(t=>taskCard(t,occurrenceDate)).join("");
 }
+
+function recurrenceButtonHTML(t,compact=false){
+  const value=t?.recurrence||"none";
+  const label=recurrenceLabel(value);
+  return `<button type="button"
+                  class="${compact?"mini-recurrence-btn":"recur-pill recur-edit-btn"}"
+                  data-recurrence-task="${t.id}"
+                  title="Cambiar recurrencia">↻ ${label}</button>`;
+}
+
+function openRecurrenceDialog(taskId){
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task) return;
+
+  $("#recurrenceTaskId").value=task.id;
+  $("#recurrenceDialogTitle").textContent=task.title||"Cambiar recurrencia";
+
+  $$("[data-recurrence-value]").forEach(btn=>{
+    btn.classList.toggle("active",btn.dataset.recurrenceValue===(task.recurrence||"none"));
+  });
+
+  $("#recurrenceDialog").showModal();
+}
+
+function setTaskRecurrence(taskId,value){
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task) return;
+
+  const allowed=["none","daily","weekly","monthly","yearly"];
+  if(!allowed.includes(value)) return;
+
+  task.recurrence=value;
+  task.updatedAt=new Date().toISOString();
+
+  $("#recurrenceDialog").close();
+  saveTasks();
+  toast(`Recurrencia actualizada: ${recurrenceLabel(value)}.`);
+}
+
 function taskCard(t,occurrenceDate=selectedDate){
   const due=taskDueDate(t);
   const occurrenceKey=occurrenceKeyForTask(t,occurrenceDate);
@@ -817,7 +862,7 @@ function taskCard(t,occurrenceDate=selectedDate){
         <div class="task-meta">
           <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
           <span>🕒 ${formatTimeMeta(t)}</span>
-          ${t.recurrence!=="none"?`<span class="recur-pill">↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+          ${recurrenceButtonHTML(t)}
           ${taskMovementIndicatorHTML(t)}
           ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
           ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
@@ -923,6 +968,12 @@ function openCommentDialog(taskId,occurrenceKey){
 }
 
 function bindTaskActions(){
+  $$("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openRecurrenceDialog(btn.dataset.recurrenceTask);
+  });
+
   $$("[data-task-money]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
     e.stopPropagation();
@@ -1057,10 +1108,16 @@ function renderWeek(){
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
       ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}">
         <button type="button" class="mini-task-emoji task-emoji-edit" data-emoji-task="${t.id}" title="Cambiar emoticono">${esc(t.emoji||"📌")}</button>
-        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} ${taskMovementIndicatorHTML(t)} · <button type="button" class="mini-comment-btn ${hasTaskCommentForOccurrence(t,dateKey(d))?"has-comment":"no-comment"}" data-comment-task="${t.id}" data-comment-date="${dateKey(d)}">${hasTaskCommentForOccurrence(t,dateKey(d))?"💬":"💬＋"}</button></small></span>
+        <span><strong>${esc(t.title)}</strong><small>${formatTimeMeta(t)} · ${statusLabel(t.status)} · ${recurrenceButtonHTML(t,true)} ${taskMovementIndicatorHTML(t)} · <button type="button" class="mini-comment-btn ${hasTaskCommentForOccurrence(t,dateKey(d))?"has-comment":"no-comment"}" data-comment-task="${t.id}" data-comment-date="${dateKey(d)}">${hasTaskCommentForOccurrence(t,dateKey(d))?"💬":"💬＋"}</button></small></span>
       </div>`).join("")}
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
+
+  $$("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
+    e.preventDefault();
+    e.stopPropagation();
+    openRecurrenceDialog(btn.dataset.recurrenceTask);
+  });
 
   $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
     e.preventDefault();
@@ -1106,7 +1163,7 @@ function renderBoard(){
     <div class="board-card-meta">
       <span>📅 ${t.dueDate?shortDate(parseDate(t.dueDate)):"Sin vencimiento"}</span>
       ${!t.allDay && t.startTime?`<span>🕒 ${t.startTime}</span>`:""}
-      ${t.recurrence!=="none"?`<span>↻ ${recurrenceLabel(t.recurrence)}</span>`:""}
+      ${recurrenceButtonHTML(t)}
       ${taskMovementIndicatorHTML(t)}
       ${t.status==="pending"?`<span class="board-pill stage-${boardStageOf(t)}">▦ ${boardStageLabel(boardStageOf(t))}</span>`:""}
       ${t.status==="completed"?`<span class="state-chip completed">✓ Completada</span>`:""}
@@ -1405,6 +1462,7 @@ function openTask(t=null){
   $("#taskFinanceAmountDisplay").value=taskFinanceAmount?formatMoneyInput(taskFinanceAmount):"";
   $("#taskFinanceCurrencyBtn").textContent=taskMovement?.currency||"MN";
   updateTaskFinanceTypeUI();
+  syncDueDependentFields();
   toggleTimeFields();
   $("#taskDialog").showModal();
 }
@@ -1475,8 +1533,11 @@ function validateTaskForm(){
 
 function readForm(){
   const start=$("#startDate").value;
-  const due=$("#dueDate").value;
-  if(due && parseDate(due)<parseDate(start)) throw new Error("La fecha de vencimiento no puede ser anterior al inicio.");
+  let due=$("#dueDate").value;
+  if(due && start && due<start){
+    due=start;
+    $("#dueDate").value=start;
+  }
 
   let status=$("#status").value;
   let boardStage=$("#boardStage").value;
@@ -2579,9 +2640,41 @@ $("#timePickerDialog").addEventListener("click",e=>{
   if(e.target===$("#timePickerDialog")) $("#timePickerDialog").close();
 });
 
-$("#allDay").onchange=toggleTimeFields; function syncDueDependentFields(){}
 
-$("#dueDate").addEventListener("change",syncDueDependentFields);
+$("#closeRecurrenceDialog").onclick=$("#cancelRecurrenceDialog").onclick=()=>$("#recurrenceDialog").close();
+
+$$("[data-recurrence-value]").forEach(btn=>{
+  btn.onclick=()=>{
+    const taskId=$("#recurrenceTaskId").value;
+    if(!taskId) return;
+    setTaskRecurrence(taskId,btn.dataset.recurrenceValue);
+  };
+});
+
+$("#recurrenceDialog").addEventListener("click",e=>{
+  if(e.target===$("#recurrenceDialog")) $("#recurrenceDialog").close();
+});
+
+$("#allDay").onchange=toggleTimeFields;
+
+function syncDueDependentFields({notify=false}={}){
+  const startValue=$("#startDate").value;
+  const dueValue=$("#dueDate").value;
+
+  if(!startValue) return;
+
+  $("#dueDate").min=startValue;
+
+  if(dueValue && dueValue<startValue){
+    $("#dueDate").value=startValue;
+    if(notify){
+      toast("La fecha de vencimiento no puede ser anterior a la fecha de inicio. Se ajustó automáticamente.");
+    }
+  }
+}
+
+$("#dueDate").addEventListener("change",()=>syncDueDependentFields({notify:true}));
+$("#startDate").addEventListener("change",()=>syncDueDependentFields({notify:true}));
 
 
 $("#viewExpensesBtn").onclick=openViewExpensesDialog;
