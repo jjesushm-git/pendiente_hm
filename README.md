@@ -1,40 +1,53 @@
-# Mis Tareas — Versión 11.7.2
+# Mis Tareas — Versión 11.7.3
 
-Base: Versión 11.7.1 ESTABLE.
+Base: Versión 11.7.2 ESTABLE.
+
+## Tareas no completadas
+- Una tarea marcada como No completada ya puede marcarse después como Completada.
+- Al hacerlo se agrega automáticamente un comentario en la ocurrencia correspondiente:
+  - `Tarea completada fuera de tiempo el día DD/MM/AAAA.`
+- Se conserva la funcionalidad Reabrir.
+- El cambio también se respeta al completar desde Tablero.
+
+## Tarjetas de tareas compactas / expandidas
+- Las tarjetas compactas de Calendario y Semana siguen expandiéndose al tocarlas.
+- Si la tarjeta ya está expandida y se vuelve a tocar una zona libre, regresa al formato compacto.
+- Los controles interactivos no provocan el cierre accidental.
+- En la tarjeta expandida, junto a fecha y horario aparece un botón de tres líneas.
+- El menú contiene:
+  - Editar.
+  - Reabrir, cuando corresponde.
+  - Mover a libro.
+  - Eliminar.
+- Alta importancia, recurrencia, comentario y movimiento de dinero conservan sus funciones.
 
 ## Movimientos registrados
-- Las tarjetas se muestran compactas con solamente título, monto y fecha.
-- La descripción queda oculta inicialmente.
-- Al tocar la tarjeta se despliega la descripción y, si corresponde, la tarea asociada.
-- El botón de tres líneas horizontales aparece en el contenido desplegado.
-- El menú conserva Editar, Mover y Borrar.
-- Se corrigió el modal para que siempre quepa en pantallas móviles pequeñas.
-- La lista interna tiene desplazamiento propio sin cortar encabezado ni controles.
+- Las tarjetas siguen compactas: título, monto y fecha.
+- Tocar una tarjeta muestra descripción y menú de tres líneas.
+- Volver a tocarla la compacta.
+- El selector superior queda como:
+  - Día anterior.
+  - Fecha seleccionable.
+  - Día siguiente.
+  - Hoy.
+- El botón Hoy regresa realmente a la fecha actual.
+- El modal fue ajustado para no quedar cortado en pantallas pequeñas.
 
-## Fecha de gasto / ingreso
-- Se quitaron los saltos por semana y mes.
-- Solo quedan día anterior y día siguiente.
-- La fecha central es un selector `date`; al tocarla abre el calendario del dispositivo como selector.
-- Al abrir Agregar gasto/ingreso usa la fecha actualmente seleccionada en la app.
-- Se conserva la regla existente de no permitir movimientos en fechas futuras.
-- Movimientos registrados usa el mismo formato simple de navegación por día.
+## Tablero de actividades
+- El resumen superior se muestra en un solo renglón.
+- Presenta:
+  - Pendientes.
+  - Completadas.
+  - No completadas.
+- Es un poco más grande que la tira global de estados.
 
-## Recurrencia — Copiar
-- Se agrega la opción Copiar al editar recurrencia desde cualquier tarjeta.
-- También aparece en el selector Repetir al editar una tarea existente.
-- No aparece en Nueva tarea.
-- Al elegir Copiar se muestra un selector de fecha.
-- Solo permite fechas futuras.
-- Guardar crea una nueva tarea independiente en la fecha seleccionada.
-- La copia queda sin recurrencia, sin comentarios y sin duplicar el movimiento financiero.
+## Tira semanal
+- Las celdas tienen contorno dorado en el tema Esmeralda/Dorado.
+- El día seleccionado se rellena en verde.
 
-## Calendario y tira semanal
-- El emoticono/contador de tareas y $/$$ aparecen en una sola fila debajo del número del día.
-- 1 tarea muestra su emoticono.
-- 2 a 4 tareas muestran un contador amarillo.
-- 5 o más muestran contador rojo.
-- El contador queda centrado y usa como máximo dos dígitos visibles (hasta 99).
-- Se redujo aún más la altura de las celdas para compactar el calendario.
-- Calendario y tira superior usan el mismo formato visual.
+## Encabezado y Libro
+- Título principal, selector de Libro y Ajustes permanecen en el mismo renglón.
+- El nombre del libro usa un visor propio para evitar que quede mocho.
+- Si el nombre es más largo que el espacio disponible, se desplaza automáticamente cada 5 segundos para poder leerlo completo.
 
-Se conservan las funciones de Calendario, Día, Semana, Tablero, Libros, comentarios por ocurrencia, recurrencias por tramos, gastos/ingresos, Bitácora, exportación/importación y selector responsive de hora.
+Se conservan recurrencias por tramos, copiar recurrencia, comentarios por ocurrencia, gastos/ingresos, Bitácora, exportación/importación y selector responsive de hora.

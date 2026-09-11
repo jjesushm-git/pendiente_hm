@@ -10,16 +10,17 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Organizador personal</p>
+    <header class="topbar topbar-v1173">
+      <p class="eyebrow topbar-eyebrow">Organizador personal</p>
+      <div class="topbar-main-row">
         <h1 id="appTitle">Mis Tareas</h1>
-      </div>
-      <div class="top-actions">
-        <label class="active-book-select-wrap" title="Cambiar libro">
-          <select id="activeBookSelect" class="active-book-select" aria-label="Libro activo"></select>
-        </label>
-        <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
+        <div class="top-actions">
+          <label class="active-book-select-wrap active-book-ticker-wrap" title="Cambiar libro">
+            <span id="activeBookDisplay" class="active-book-display" aria-hidden="true"><span id="activeBookTicker" class="active-book-ticker">📖 Libro</span></span>
+            <select id="activeBookSelect" class="active-book-select active-book-native-select" aria-label="Libro activo"></select>
+          </label>
+          <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
+        </div>
       </div>
     </header>
 
@@ -424,7 +425,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.7.2</strong>
+      <strong id="settingsVersionTop">11.7.3</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -475,7 +476,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.2</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7.3</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -563,6 +564,7 @@
         <span id="viewExpenseDateLabel" class="visually-hidden"></span>
       </label>
       <button type="button" data-view-expense-shift="+day" title="Día siguiente" aria-label="Día siguiente">›</button>
+      <button type="button" id="viewExpenseTodayBtn" class="view-expense-today-btn">Hoy</button>
     </div>
     <div id="viewExpenseDayTotal" class="expense-view-total"></div>
     <div id="viewExpensesList" class="expense-list"></div>

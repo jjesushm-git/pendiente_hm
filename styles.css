@@ -4787,3 +4787,414 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
     font-size:.60rem !important;
   }
 }
+
+/* =========================================================
+   VERSION 11.7.3 — REPARACIONES DE INTERACCIÓN Y MÓVIL
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Encabezado: título + libro + ajustes en el mismo renglón
+   --------------------------------------------------------- */
+.topbar-v1173{
+  display:block !important;
+  padding-top:12px !important;
+}
+
+.topbar-v1173 .topbar-eyebrow{
+  margin:0 0 5px !important;
+}
+
+.topbar-main-row{
+  width:100%;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.topbar-main-row #appTitle{
+  flex:0 1 38%;
+  min-width:0;
+  white-space:nowrap;
+  font-size:clamp(.95rem,4vw,1.7rem) !important;
+  line-height:1.05;
+}
+
+.topbar-v1173 .top-actions{
+  flex:1 1 0 !important;
+  min-width:0 !important;
+  max-width:none !important;
+  width:auto !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) 40px !important;
+  align-items:center !important;
+  gap:7px !important;
+}
+
+.topbar-v1173 .active-book-select-wrap{
+  position:relative !important;
+  width:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:40px !important;
+  min-height:40px !important;
+  padding:0 !important;
+  overflow:hidden !important;
+}
+
+.active-book-display{
+  position:absolute;
+  inset:0;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  padding:0 28px 0 10px;
+  border-radius:inherit;
+  pointer-events:none;
+}
+
+.active-book-display::after{
+  content:"⌄";
+  position:absolute;
+  right:9px;
+  top:50%;
+  transform:translateY(-52%);
+  font-size:.9rem;
+}
+
+.active-book-ticker{
+  display:block;
+  width:max-content;
+  max-width:none;
+  white-space:nowrap;
+  transform:translateX(0);
+  transition:transform .7s ease;
+  will-change:transform;
+  font-size:.78rem;
+}
+
+.active-book-display.show-end .active-book-ticker{
+  transform:translateX(calc(-1 * var(--book-scroll-distance, 0px)));
+}
+
+.active-book-native-select{
+  position:absolute !important;
+  inset:0 !important;
+  z-index:2 !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  opacity:.001 !important;
+  cursor:pointer !important;
+  padding:0 !important;
+}
+
+.topbar-v1173 #settingsBtnTop{
+  width:40px !important;
+  min-width:40px !important;
+  height:40px !important;
+}
+
+@media(max-width:430px){
+  .topbar-v1173{
+    display:block !important;
+    padding:10px 0 7px !important;
+  }
+  .topbar-v1173 .topbar-eyebrow{
+    margin-bottom:4px !important;
+    font-size:.60rem !important;
+  }
+  .topbar-main-row{
+    display:flex !important;
+    grid-template-columns:none !important;
+    gap:6px !important;
+  }
+  .topbar-main-row #appTitle{
+    flex:0 1 36% !important;
+    font-size:clamp(.90rem,4vw,1.12rem) !important;
+  }
+  .topbar-v1173 .top-actions{
+    grid-column:auto !important;
+    width:auto !important;
+    max-width:none !important;
+    grid-template-columns:minmax(0,1fr) 36px !important;
+    gap:5px !important;
+  }
+  .topbar-v1173 .active-book-select-wrap{
+    min-width:0 !important;
+    min-height:36px !important;
+    height:36px !important;
+  }
+  .active-book-display{
+    padding-left:8px;
+    padding-right:22px;
+  }
+  .active-book-ticker{
+    font-size:.69rem;
+  }
+  .topbar-v1173 #settingsBtnTop{
+    width:36px !important;
+    min-width:36px !important;
+    height:36px !important;
+  }
+}
+
+/* ---------------------------------------------------------
+   Tira semanal: contorno dorado y seleccionado verde
+   --------------------------------------------------------- */
+:root[data-theme="emerald_gold"] .week-day{
+  border:1px solid rgba(202,163,43,.65) !important;
+  background:#fffef8 !important;
+  color:#2f4d41 !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="emerald_gold"] .week-day .num,
+:root[data-theme="emerald_gold"] .week-day .dow{
+  color:#2f4d41 !important;
+}
+
+:root[data-theme="emerald_gold"] .week-day.active{
+  background:linear-gradient(135deg,#0d593e,#168158) !important;
+  border-color:#caa32b !important;
+  color:#fff !important;
+  box-shadow:0 5px 14px rgba(15,92,67,.18) !important;
+}
+
+:root[data-theme="emerald_gold"] .week-day.active .num,
+:root[data-theme="emerald_gold"] .week-day.active .dow{
+  color:#fff !important;
+}
+
+/* ---------------------------------------------------------
+   Tarjeta de tarea expandida: menú de tres líneas
+   --------------------------------------------------------- */
+.task-card{
+  position:relative;
+}
+
+.task-card-content{
+  min-width:0;
+  position:relative;
+}
+
+.task-meta-with-menu{
+  align-items:center !important;
+}
+
+.task-card-menu-btn{
+  width:34px;
+  height:30px;
+  flex:0 0 34px;
+  display:grid;
+  place-content:center;
+  gap:3px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:9px;
+  background:var(--panel-2);
+  color:var(--text);
+  cursor:pointer;
+}
+
+.task-card-menu-btn span{
+  display:block;
+  width:16px;
+  height:2px;
+  border-radius:999px;
+  background:currentColor;
+}
+
+.task-card-popup{
+  position:absolute;
+  z-index:18;
+  top:78px;
+  right:0;
+  width:min(230px,calc(100vw - 56px));
+  display:grid;
+  gap:7px;
+  padding:9px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel);
+  box-shadow:0 12px 28px rgba(0,0,0,.20);
+}
+
+.task-card-popup.hidden{
+  display:none !important;
+}
+
+.task-card-popup > button,
+.task-menu-move-wrap > button{
+  width:100%;
+  min-height:40px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel-2);
+  color:var(--text);
+  text-align:left;
+}
+
+.task-menu-move-wrap{
+  display:grid;
+  gap:6px;
+}
+
+.task-card-popup .task-delete-btn{
+  color:#c64f5d !important;
+}
+
+.task-card-actions-compact{
+  margin-top:8px !important;
+}
+
+:root[data-theme="emerald_gold"] .task-card-menu-btn,
+:root[data-theme="emerald_gold"] .task-card-popup,
+:root[data-theme="emerald_gold"] .task-card-popup > button,
+:root[data-theme="emerald_gold"] .task-menu-move-wrap > button{
+  background:#fffef8 !important;
+  color:#0f5c43 !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+.expanded-from-compact{
+  cursor:pointer;
+}
+
+.expanded-from-compact button,
+.expanded-from-compact input,
+.expanded-from-compact select,
+.expanded-from-compact label{
+  cursor:auto;
+}
+
+/* ---------------------------------------------------------
+   Tablero: resumen en un solo renglón, algo mayor que tira global
+   --------------------------------------------------------- */
+#boardStats.board-stats{
+  display:grid !important;
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:7px !important;
+  margin:8px 0 12px !important;
+}
+
+.board-status-item{
+  min-width:0;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel-2);
+  white-space:nowrap;
+}
+
+.board-status-item i{
+  width:8px;
+  height:8px;
+  flex:0 0 8px;
+  border-radius:50%;
+  background:currentColor;
+}
+
+.board-status-item strong{
+  font-size:.88rem;
+}
+
+.board-status-item small{
+  font-size:.72rem;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.board-status-item.pending{color:#b38a16}
+.board-status-item.completed{color:#218a54}
+.board-status-item.missed{color:#c64f5d}
+
+:root[data-theme="emerald_gold"] .board-status-item{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+@media(max-width:430px){
+  #boardStats.board-stats{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:4px !important;
+  }
+  .board-status-item{
+    min-height:38px;
+    padding:5px 3px;
+    gap:3px;
+  }
+  .board-status-item i{
+    width:6px;
+    height:6px;
+    flex-basis:6px;
+  }
+  .board-status-item strong{font-size:.76rem}
+  .board-status-item small{font-size:.59rem}
+}
+
+/* ---------------------------------------------------------
+   Movimientos registrados: navegación como Día + Hoy
+   --------------------------------------------------------- */
+.view-expense-date-nav{
+  grid-template-columns:42px minmax(0,1fr) 42px auto !important;
+  align-items:center !important;
+  gap:7px !important;
+}
+
+.view-expense-today-btn{
+  min-width:58px !important;
+  width:auto !important;
+  height:42px !important;
+  padding:0 10px !important;
+  border:1px solid var(--line) !important;
+  border-radius:12px !important;
+  background:var(--panel-2) !important;
+  color:var(--text) !important;
+}
+
+:root[data-theme="emerald_gold"] .view-expense-today-btn{
+  background:#fffef8 !important;
+  color:#0f5c43 !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+/* Asegura que el modal de movimientos nunca quede mocho */
+.view-expenses-dialog{
+  box-sizing:border-box !important;
+  width:min(96vw,640px) !important;
+  max-width:calc(100vw - 10px) !important;
+  max-height:calc(100dvh - 10px) !important;
+}
+
+@media(max-width:430px){
+  .view-expense-date-nav{
+    grid-template-columns:38px minmax(0,1fr) 38px 52px !important;
+    gap:5px !important;
+  }
+  .view-expense-date-nav > button{
+    width:38px !important;
+    min-width:38px !important;
+    height:40px !important;
+  }
+  .view-expense-date-nav .view-expense-today-btn{
+    width:52px !important;
+    min-width:52px !important;
+    padding:0 4px !important;
+    font-size:.76rem !important;
+  }
+  .view-expenses-dialog{
+    width:calc(100vw - 6px) !important;
+    max-width:calc(100vw - 6px) !important;
+    max-height:calc(100dvh - 6px) !important;
+    padding:8px !important;
+  }
+}
