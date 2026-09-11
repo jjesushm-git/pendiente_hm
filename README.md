@@ -1,61 +1,39 @@
-# Mis Tareas — Versión 11.7.5
+# Mis Tareas — Versión 11.7.6
 
-Base: Versión 11.7.4 ESTABLE.
+Base: Versión 11.7.5 ESTABLE.
 
-## Semana
-- Se eliminó el apartado duplicado “Pendientes de la semana”.
-- La vista principal de Semana continúa mostrando las tareas por día.
-- Se conservan los apartados Completadas y No completadas.
+## Modales
+- Se eliminó el rombo/cola azul oscuro que aparecía debajo de algunos modales de confirmación.
+- Se eliminó tanto el elemento HTML como cualquier decoración residual por CSS.
+- Se conservan bordes, fondos, tipografía, colores y botones de los modales.
 
 ## Movimientos registrados
-- La navegación de fecha se muestra completa:
-  - día anterior,
-  - fecha visible DD/MM/AAAA,
-  - día siguiente,
-  - botón Hoy.
-- Tocar la fecha abre el selector de fecha.
-- Cambiar fecha actualiza inmediatamente los movimientos, balance y las vistas relacionadas.
-- Hoy regresa a la fecha real en curso.
-- El modal de Movimientos registrados tiene ancho y alto responsive para evitar contenido cortado.
+- Se corrigió la navegación de fecha que se veía amontonada.
+- Ahora se muestran correctamente y separados:
+  - ‹ día anterior,
+  - 📅 DD/MM/AAAA,
+  - › día siguiente,
+  - Hoy.
+- Se corrigieron reglas CSS antiguas que intentaban mantener 7 columnas dentro de este modal.
+- El selector de fecha dispone del espacio central completo.
+- En pantallas pequeñas se adapta a 430 px y 350 px sin superponer texto ni botones.
+- Balance y lista de movimientos tienen mayor separación vertical.
 
-## Botón de tres líneas de movimientos
-- El botón de tres líneas abre un modal independiente de detalle.
-- Ese modal muestra toda la información del movimiento:
-  - Gasto/Ingreso,
-  - título,
-  - monto,
-  - fecha,
-  - libro,
-  - descripción,
-  - tarea relacionada si existe.
-- Desde el mismo modal funcionan:
-  - Editar,
-  - Mover,
-  - Borrar.
-- Las tarjetas de movimientos conservan el comportamiento compacto/expandido al tocarlas.
+## Detalle de gasto / ingreso
+El orden visual ahora es:
+1. Tipo, título y monto.
+2. Fecha.
+3. Descripción.
+4. Libro.
+5. Tarea relacionada, cuando existe.
+6. Editar / Mover / Borrar.
 
-## Tarjetas de tareas
-- Al expandir una tarjeta se inicia un temporizador de 5 segundos.
-- Después de 5 segundos vuelve automáticamente a su versión compacta.
-- Tocar una zona libre sigue permitiendo contraerla inmediatamente.
-- Las interacciones dentro de la tarjeta reinician el temporizador.
+- Descripción aparece antes de Libro como se solicitó.
+- Cada dato principal se muestra en un bloque separado para facilitar lectura en móvil.
 
-## Libro activo superior
-- En el tema Esmeralda dorado el selector de libro tiene fondo blanco para mejorar la lectura.
-- Se conserva el desplazamiento automático del nombre largo.
-
-## Agregar / Editar libros
-- Icono y Color están ocultos por defecto dentro de “Icono y color (opcional)”.
-- Pueden dejarse sin icono.
-- Pueden dejarse sin color.
-- Los libros anteriores conservan sus iconos y colores.
-- Se agregan botones “Sin icono” y “Sin color”.
-
-## Ajustes
-- Cada vez que se abre Ajustes:
-  - Visual aparece contraído,
-  - Gastos e ingresos aparece contraído,
-  - Exportar/importar aparece contraído,
-  - Acerca de aparece contraído.
-
-Se conservan las funciones de Calendario, Día, Semana, Tablero, recurrencias por tramos, comentarios por ocurrencia, Libros, Gastos/Ingresos, Bitácora y exportación/importación.
+## Validación
+- JavaScript sin errores de sintaxis.
+- CSS sin errores de sintaxis.
+- Sin IDs HTML duplicados.
+- Sin referencias JavaScript a elementos inexistentes.
+- Calendario, Día, Semana, Tablero, Libros, Gastos/Ingresos, Comentarios y recurrencias por tramos se conservan.

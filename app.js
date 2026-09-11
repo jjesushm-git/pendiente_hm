@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.5";
+const APP_VERSION = "11.7.6";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -2933,14 +2933,19 @@ function openExpenseDetailDialog(expenseId){
         <span class="expense-detail-amount ${type}">${signedMoney(movementSignedAmount(expense))} ${esc(expense.currency||"MN")}</span>
       </div>
 
-      <div class="expense-detail-grid">
-        <div><small>Fecha</small><strong>📅 ${shortDate(parseDate(expense.date))}</strong></div>
-        <div><small>Libro</small><strong>${esc(books.find(b=>b.id===expense.bookId)?.name||"Libro")}</strong></div>
+      <div class="expense-detail-date">
+        <small>Fecha</small>
+        <strong>📅 ${shortDate(parseDate(expense.date))}</strong>
       </div>
 
       <div class="expense-detail-description">
         <small>Descripción</small>
         <p>${expense.description?esc(expense.description):"Sin descripción."}</p>
+      </div>
+
+      <div class="expense-detail-book">
+        <small>Libro</small>
+        <strong>${esc(books.find(b=>b.id===expense.bookId)?.name||"Libro")}</strong>
       </div>
 
       ${linkedTask?`
