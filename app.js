@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.6.2";
+const APP_VERSION = "11.6.3";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1390,6 +1390,8 @@ function openTask(t=null){
   $("#allDay").checked=t?!!t.allDay:true;
   $("#startTime").value=t?.startTime||"09:00";
   $("#dueTime").value=t?.dueTime||"10:00";
+  refreshTimeTrigger("startTime");
+  refreshTimeTrigger("dueTime");
   $("#recurrence").value=t?.recurrence||"none";
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
@@ -1500,6 +1502,86 @@ function readForm(){
   };
 }
 function toggleTimeFields(){ $("#timeFields").classList.toggle("hidden",$("#allDay").checked); }
+
+let timePickerTargetId="";
+
+function time12Label(value){
+  if(!value) return "Seleccionar";
+  const [hh,mm]=value.split(":").map(Number);
+  const period=hh>=12?"P.M.":"A.M.";
+  const hour12=hh%12||12;
+  return `${hour12}:${pad(mm)} ${period}`;
+}
+
+function refreshTimeTrigger(inputId){
+  const input=$("#"+inputId);
+  const display=$("#"+inputId+"Display");
+  if(input && display) display.textContent=time12Label(input.value);
+}
+
+function updateTimePickerPreview(){
+  const hour=Number($("#timePickerHour").value||12);
+  const minute=Number($("#timePickerMinute").value||0);
+  const period=$("#timePickerAM").classList.contains("active")?"A.M.":"P.M.";
+  $("#timePickerPreview").textContent=`${hour}:${pad(minute)} ${period}`;
+}
+
+function setTimePickerPeriod(period){
+  const isAM=period==="AM";
+  $("#timePickerAM").classList.toggle("active",isAM);
+  $("#timePickerPM").classList.toggle("active",!isAM);
+  updateTimePickerPreview();
+}
+
+function openTimePicker(targetId){
+  const input=$("#"+targetId);
+  if(!input) return;
+
+  timePickerTargetId=targetId;
+  $("#timePickerTitle").textContent=targetId==="startTime"?"Hora de inicio":"Hora de vencimiento";
+
+  const current=input.value || (targetId==="startTime"?"09:00":"10:00");
+  let [hour24,minute]=current.split(":").map(Number);
+  if(!Number.isFinite(hour24)) hour24=9;
+  if(!Number.isFinite(minute)) minute=0;
+
+  const period=hour24>=12?"PM":"AM";
+  const hour12=hour24%12||12;
+
+  $("#timePickerHour").value=String(hour12);
+  $("#timePickerMinute").value=String(minute);
+  setTimePickerPeriod(period);
+
+  $("#timePickerDialog").showModal();
+}
+
+function applyTimePicker(){
+  if(!timePickerTargetId) return;
+
+  let hour=Number($("#timePickerHour").value||12);
+  const minute=Number($("#timePickerMinute").value||0);
+  const isPM=$("#timePickerPM").classList.contains("active");
+
+  if(isPM && hour<12) hour+=12;
+  if(!isPM && hour===12) hour=0;
+
+  const value=`${pad(hour)}:${pad(minute)}`;
+  const input=$("#"+timePickerTargetId);
+  if(input) input.value=value;
+  refreshTimeTrigger(timePickerTargetId);
+
+  $("#timePickerDialog").close();
+}
+
+function clearTimePicker(){
+  if(!timePickerTargetId) return;
+  const input=$("#"+timePickerTargetId);
+  if(input) input.value="";
+  refreshTimeTrigger(timePickerTargetId);
+  $("#timePickerDialog").close();
+}
+
+
 
 
 
@@ -2476,6 +2558,26 @@ $("#emojiSavedDialog").addEventListener("cancel",e=>{
   $("#emojiSavedDialog").close();
 });
 
+
+
+$$("[data-time-target]").forEach(btn=>{
+  btn.onclick=()=>openTimePicker(btn.dataset.timeTarget);
+});
+
+$("#timePickerHour").innerHTML=[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+$("#timePickerMinute").innerHTML=[...Array(60)].map((_,i)=>`<option value="${i}">${pad(i)}</option>`).join("");
+
+$("#timePickerHour").onchange=updateTimePickerPreview;
+$("#timePickerMinute").onchange=updateTimePickerPreview;
+$("#timePickerAM").onclick=()=>setTimePickerPeriod("AM");
+$("#timePickerPM").onclick=()=>setTimePickerPeriod("PM");
+$("#applyTimePickerBtn").onclick=applyTimePicker;
+$("#clearTimePickerBtn").onclick=clearTimePicker;
+$("#cancelTimePickerBtn").onclick=$("#closeTimePickerDialog").onclick=()=>$("#timePickerDialog").close();
+
+$("#timePickerDialog").addEventListener("click",e=>{
+  if(e.target===$("#timePickerDialog")) $("#timePickerDialog").close();
+});
 
 $("#allDay").onchange=toggleTimeFields; function syncDueDependentFields(){}
 

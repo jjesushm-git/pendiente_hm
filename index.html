@@ -261,10 +261,19 @@
 
       <div id="timeFields" class="two-cols hidden">
         <label>Hora inicio
-          <input id="startTime" type="time" />
+          <button type="button" id="startTimeBtn" class="time-picker-trigger" data-time-target="startTime">
+            <span id="startTimeDisplay">9:00 A.M.</span>
+            <span aria-hidden="true">🕒</span>
+          </button>
+          <input id="startTime" type="hidden" value="09:00" />
         </label>
+
         <label>Hora vencimiento
-          <input id="dueTime" type="time" />
+          <button type="button" id="dueTimeBtn" class="time-picker-trigger" data-time-target="dueTime">
+            <span id="dueTimeDisplay">10:00 A.M.</span>
+            <span aria-hidden="true">🕒</span>
+          </button>
+          <input id="dueTime" type="hidden" value="10:00" />
         </label>
       </div>
 
@@ -394,7 +403,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.2</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.3</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -686,6 +695,42 @@
 
     <div class="modal-actions">
       <button type="button" id="closeTaskMovementDetailBtn" class="ghost-btn">Cerrar</button>
+    </div>
+  </dialog>
+
+  
+  <dialog id="timePickerDialog" class="modal time-picker-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Seleccionar hora</p>
+        <h2 id="timePickerTitle">Hora</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeTimePickerDialog">✕</button>
+    </div>
+
+    <div id="timePickerPreview" class="time-picker-preview">9:00 A.M.</div>
+
+    <div class="time-picker-controls">
+      <label>Hora
+        <select id="timePickerHour" class="time-picker-select"></select>
+      </label>
+
+      <span class="time-picker-colon">:</span>
+
+      <label>Minutos
+        <select id="timePickerMinute" class="time-picker-select"></select>
+      </label>
+    </div>
+
+    <div class="time-picker-period">
+      <button type="button" id="timePickerAM" class="time-period-btn active" data-period="AM">A.M.</button>
+      <button type="button" id="timePickerPM" class="time-period-btn" data-period="PM">P.M.</button>
+    </div>
+
+    <div class="time-picker-actions">
+      <button type="button" id="clearTimePickerBtn" class="ghost-btn">Borrar</button>
+      <button type="button" id="cancelTimePickerBtn" class="ghost-btn">Cancelar</button>
+      <button type="button" id="applyTimePickerBtn" class="primary-btn">Establecer</button>
     </div>
   </dialog>
 

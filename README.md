@@ -1,14 +1,29 @@
-# Mis Tareas — Versión 11.6.2
+# Mis Tareas — Versión 11.6.3
 
-Base: Versión 11.6.1 REPARACIÓN ESTABLE.
+Base: Versión 11.6.2 ESTABLE.
 
-Cambio principal:
-- Se corrigió la visualización de nombres largos en Libros, especialmente en celulares de pantalla pequeña.
-- En pantallas de 430 px o menos, el selector del libro activo pasa a una segunda fila y ocupa casi todo el ancho disponible.
-- El engrane de Ajustes permanece a la derecha.
-- Se elimina el límite anterior que hacía que el nombre quedara muy recortado.
-- En pantallas muy pequeñas se reduce ligeramente la tipografía para aprovechar mejor el espacio.
-- En el modal Libros, los nombres largos pueden ocupar varias líneas y ya no se cortan con puntos suspensivos.
-- El selector guarda además el nombre completo en el atributo title para escritorio.
+Corrección principal:
+- Se reemplazó el selector de hora nativo de Android/Chrome por un selector propio de la aplicación.
+- Esto evita que en celulares de pantalla pequeña se corten botones como Borrar, Cancelar o Establecer.
 
-No se modificaron las funciones de Calendario, Día, Semana, Tablero, Tareas, Gastos/Ingresos, Comentarios, Bitácora ni movimiento entre libros.
+Se aplica a:
+- Hora de inicio.
+- Hora de vencimiento.
+
+Nuevo selector:
+- Hora de 1 a 12.
+- Minutos de 00 a 59.
+- A.M. / P.M.
+- Vista previa de la hora seleccionada.
+- Botón Borrar.
+- Botón Cancelar.
+- Botón Establecer.
+
+Adaptación móvil:
+- Hasta 430 px, el selector ocupa prácticamente todo el ancho disponible.
+- Los botones se colocan uno debajo de otro para que ninguno quede cortado.
+- Hora inicio y Hora vencimiento se muestran en una sola columna.
+- Hasta 350 px se reduce adicionalmente el tamaño y los espacios.
+- El selector respeta todos los temas de la aplicación.
+
+No se modificaron las demás funciones de tareas, libros, calendario, gastos/ingresos, comentarios, Bitácora ni exportación/importación.
