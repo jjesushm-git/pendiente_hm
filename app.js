@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.6";
+const APP_VERSION = "11.7.7";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -514,12 +514,35 @@ function totalsText(prefix,t){
   if(t.DLS) parts.push(`${signedMoney(t.DLS)} DLS`);
   return `${prefix}: ${parts.join(" · ")}`;
 }
+
+function financialRangeThroughDate(d){
+  const list=movementsThroughDate(d);
+  const end=startOfDay(d);
+
+  if(!list.length){
+    return {start:end,end};
+  }
+
+  const firstDate=list
+    .map(e=>e.date)
+    .filter(Boolean)
+    .sort((a,b)=>a.localeCompare(b))[0];
+
+  return {
+    start:firstDate?parseDate(firstDate):end,
+    end
+  };
+}
+
 function renderExpenseSummary(){
   if(!$("#expenseDayTotal")) return;
+
   const day=expenseTotalsForDate(selectedDate);
   const cumulative=financialTotalsThroughDate(selectedDate);
+  const range=financialRangeThroughDate(selectedDate);
 
   $("#expenseDayTotal").textContent=totalsText("Balance del día",day);
+  $("#expenseBalanceRange").textContent=`Desde ${shortDate(range.start)} hasta ${shortDate(range.end)}`;
   $("#expenseMonthTotal").textContent=`Acumulado hasta ${shortDate(selectedDate)}: ${totalsText("",cumulative).replace(/^:\s*/,"")}`;
 
   $("#expenseDayTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
@@ -2707,7 +2730,7 @@ function shiftExpenseDate(type){
   }
 
   $("#expenseDate").value=dateKey(d);
-  $("#expenseDateLabel").textContent=dotDate(d);
+  $("#expenseDateLabel").textContent=shortDate(d);
 }
 
 function updateExpenseTypeUI(){
@@ -3417,13 +3440,24 @@ $("#expenseLogDialog").addEventListener("click",e=>{
 });
 $$("[data-expense-shift]").forEach(b=>b.onclick=()=>shiftExpenseDate(b.dataset.expenseShift));
 $("#expenseDate").addEventListener("change",()=>{
-  let d=parseDate($("#expenseDate").value);
+  const raw=$("#expenseDate").value;
+
+  if(!raw){
+    const fallback=clampExpenseDateToToday(selectedDate);
+    $("#expenseDate").value=dateKey(fallback);
+    $("#expenseDateLabel").textContent=shortDate(fallback);
+    return;
+  }
+
+  let d=parseDate(raw);
+
   if(isFutureDate(d)){
     toast("No puedes registrar movimientos en una fecha futura.");
     d=startOfDay(new Date());
     $("#expenseDate").value=dateKey(d);
   }
-  $("#expenseDateLabel").textContent=dotDate(d);
+
+  $("#expenseDateLabel").textContent=shortDate(d);
 });
 
 $("#expenseAmountDisplay").addEventListener("input",e=>{
@@ -3494,7 +3528,14 @@ $("#expenseForm").addEventListener("submit",e=>{
   const type=$("#expenseType").value==="income" ? "income" : "expense";
   const title=$("#expenseTitle").value.trim();
   const amount=parseMoneyInput($("#expenseAmountDisplay").value);
-  const expenseDateValue=parseDate($("#expenseDate").value);
+  const expenseDateRaw=$("#expenseDate").value;
+
+  if(!expenseDateRaw){
+    toast("Selecciona la fecha del movimiento.");
+    return;
+  }
+
+  const expenseDateValue=parseDate(expenseDateRaw);
 
   if(isFutureDate(expenseDateValue)){
     toast("No puedes registrar movimientos en una fecha futura.");
@@ -3514,7 +3555,7 @@ $("#expenseForm").addEventListener("submit",e=>{
   const id=$("#expenseId").value;
   const data={
     type,
-    date:$("#expenseDate").value,
+    date:expenseDateRaw,
     title,
     description:$("#expenseDescription").value.trim(),
     amount:Number(amount.toFixed(2)),

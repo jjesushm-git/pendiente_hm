@@ -5832,3 +5832,141 @@ dialog .comic-bubble-tail,
     font-size:.72rem !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.7 — FECHA DE REGISTRO + RANGO DE BALANCE
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Agregar gasto / ingreso: fecha visible igual que consulta.
+   --------------------------------------------------------- */
+#expenseDialog .expense-entry-date-nav{
+  display:grid !important;
+  grid-template-columns:48px minmax(0,1fr) 48px !important;
+  gap:10px !important;
+  align-items:center !important;
+  width:100% !important;
+  margin:14px 0 22px !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:0 !important;
+}
+
+#expenseDialog .expense-entry-date-nav > button{
+  width:48px !important;
+  min-width:48px !important;
+  height:48px !important;
+  min-height:48px !important;
+  padding:0 !important;
+  border-radius:13px !important;
+  font-size:1.1rem !important;
+  grid-row:auto !important;
+}
+
+#expenseDialog .expense-entry-date-control{
+  position:relative;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:48px !important;
+  display:grid !important;
+  grid-template-columns:24px minmax(0,1fr) 18px !important;
+  align-items:center !important;
+  gap:8px !important;
+  padding:7px 12px !important;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel-2);
+  color:var(--text);
+  overflow:hidden;
+  cursor:pointer;
+}
+
+#expenseDialog .expense-entry-date-control #expenseDateLabel{
+  min-width:0 !important;
+  display:block !important;
+  text-align:left !important;
+  font-size:.95rem !important;
+  font-weight:700 !important;
+  line-height:1.1 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+#expenseDialog .expense-entry-date-control input[type="date"]{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  opacity:0 !important;
+  pointer-events:auto !important;
+  cursor:pointer !important;
+}
+
+:root[data-theme="emerald_gold"] #expenseDialog .expense-entry-date-control{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+/* ---------------------------------------------------------
+   Balance: rango inicio-fin con el mismo estilo del acumulado.
+   --------------------------------------------------------- */
+#expenseBalanceRange{
+  display:block;
+  font-size:.61rem !important;
+  line-height:1.15 !important;
+  color:var(--muted);
+  font-weight:500;
+}
+
+:root[data-theme="emerald_gold"] #expenseBalanceRange{
+  color:#67776e !important;
+}
+
+@media(max-width:430px){
+  #expenseDialog .expense-entry-date-nav{
+    grid-template-columns:42px minmax(0,1fr) 42px !important;
+    gap:6px !important;
+    margin:12px 0 18px !important;
+  }
+
+  #expenseDialog .expense-entry-date-nav > button{
+    width:42px !important;
+    min-width:42px !important;
+    height:42px !important;
+    min-height:42px !important;
+  }
+
+  #expenseDialog .expense-entry-date-control{
+    min-height:42px !important;
+    grid-template-columns:20px minmax(0,1fr) 14px !important;
+    gap:5px !important;
+    padding:6px 8px !important;
+  }
+
+  #expenseDialog .expense-entry-date-control #expenseDateLabel{
+    font-size:.80rem !important;
+  }
+
+  #expenseBalanceRange{
+    font-size:.56rem !important;
+  }
+}
+
+@media(max-width:350px){
+  #expenseDialog .expense-entry-date-nav{
+    grid-template-columns:38px minmax(0,1fr) 38px !important;
+    gap:4px !important;
+  }
+
+  #expenseDialog .expense-entry-date-nav > button{
+    width:38px !important;
+    min-width:38px !important;
+  }
+
+  #expenseDialog .expense-entry-date-control #expenseDateLabel{
+    font-size:.72rem !important;
+  }
+}
