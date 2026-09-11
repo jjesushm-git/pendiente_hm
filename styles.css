@@ -6088,3 +6088,149 @@ dialog .comic-bubble-tail,
     min-width:72px !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.8.1 — JERARQUÍA TIPOGRÁFICA ESMERALDA
+   ========================================================= */
+
+:root[data-theme="emerald_gold"]{
+  --eg-title:#173f31;
+  --eg-heading:#245443;
+  --eg-body:#365c4d;
+  --eg-secondary:#667a70;
+  --eg-caption:#7b887f;
+  --eg-action:#176549;
+  --eg-gold-text:#8f6d18;
+}
+
+/* Títulos principales sobre superficies claras */
+:root[data-theme="emerald_gold"] .panel h2,
+:root[data-theme="emerald_gold"] .panel h3,
+:root[data-theme="emerald_gold"] .task-title,
+:root[data-theme="emerald_gold"] .compact-task-copy strong,
+:root[data-theme="emerald_gold"] .book-card-copy strong,
+:root[data-theme="emerald_gold"] .expense-card strong,
+:root[data-theme="emerald_gold"] .ledger-movement-card strong,
+:root[data-theme="emerald_gold"] .expense-detail-card strong,
+:root[data-theme="emerald_gold"] .finance-ledger-totals h3,
+:root[data-theme="emerald_gold"] .settings-group summary span{
+  color:var(--eg-title) !important;
+}
+
+/* Encabezados secundarios */
+:root[data-theme="emerald_gold"] .panel-head h3,
+:root[data-theme="emerald_gold"] .week-column h3,
+:root[data-theme="emerald_gold"] .week-status-day h4,
+:root[data-theme="emerald_gold"] .book-customize-label,
+:root[data-theme="emerald_gold"] .expense-view-total,
+:root[data-theme="emerald_gold"] .finance-ledger-period-summary strong{
+  color:var(--eg-heading) !important;
+}
+
+/* Texto normal */
+:root[data-theme="emerald_gold"] .task-desc,
+:root[data-theme="emerald_gold"] .expense-card p,
+:root[data-theme="emerald_gold"] .expense-detail-description p,
+:root[data-theme="emerald_gold"] .comment-dialog-body,
+:root[data-theme="emerald_gold"] .books-footer-note,
+:root[data-theme="emerald_gold"] .empty,
+:root[data-theme="emerald_gold"] .settings-group-body,
+:root[data-theme="emerald_gold"] .ledger-movement-card p{
+  color:var(--eg-body) !important;
+}
+
+/* Metadatos y texto secundario */
+:root[data-theme="emerald_gold"] .task-meta,
+:root[data-theme="emerald_gold"] .compact-task-copy small,
+:root[data-theme="emerald_gold"] .panel-head p,
+:root[data-theme="emerald_gold"] .week-status-day h4,
+:root[data-theme="emerald_gold"] .expense-card-date,
+:root[data-theme="emerald_gold"] .expense-linked-task,
+:root[data-theme="emerald_gold"] .ledger-movement-meta,
+:root[data-theme="emerald_gold"] .settings-group summary small,
+:root[data-theme="emerald_gold"] .book-appearance-details > summary small{
+  color:var(--eg-secondary) !important;
+}
+
+/* Leyendas pequeñas */
+:root[data-theme="emerald_gold"] .eyebrow:not(.modal-head .eyebrow):not(.topbar-eyebrow),
+:root[data-theme="emerald_gold"] .expense-balance-hint,
+:root[data-theme="emerald_gold"] #expenseBalanceRange,
+:root[data-theme="emerald_gold"] .expense-detail-card small,
+:root[data-theme="emerald_gold"] .finance-ledger-period-summary span,
+:root[data-theme="emerald_gold"] .muted-text{
+  color:var(--eg-caption) !important;
+}
+
+/* Botones y controles neutrales: verde sobrio, no negro */
+:root[data-theme="emerald_gold"] .ghost-btn,
+:root[data-theme="emerald_gold"] .task-card-popup button:not(.task-delete-btn),
+:root[data-theme="emerald_gold"] .expense-card-popup button:not(.expense-delete-menu-btn),
+:root[data-theme="emerald_gold"] .task-move-mode-btn,
+:root[data-theme="emerald_gold"] .task-move-select,
+:root[data-theme="emerald_gold"] .book-row-actions button,
+:root[data-theme="emerald_gold"] .expense-date-nav button,
+:root[data-theme="emerald_gold"] .view-expense-date-nav button,
+:root[data-theme="emerald_gold"] .expense-entry-date-nav button{
+  color:var(--eg-action) !important;
+}
+
+/* Inputs y selects sobre fondo claro */
+:root[data-theme="emerald_gold"] input,
+:root[data-theme="emerald_gold"] textarea,
+:root[data-theme="emerald_gold"] select{
+  color:var(--eg-body) !important;
+}
+
+:root[data-theme="emerald_gold"] input::placeholder,
+:root[data-theme="emerald_gold"] textarea::placeholder{
+  color:#8b968f !important;
+  opacity:1;
+}
+
+/* Etiquetas de formularios */
+:root[data-theme="emerald_gold"] label,
+:root[data-theme="emerald_gold"] .form-label{
+  color:var(--eg-heading);
+}
+
+/* El contador amarillo deja de usar gris casi negro */
+:root[data-theme="emerald_gold"] .calendar-task-count.yellow,
+:root[data-theme="emerald_gold"] .week-task-count.yellow{
+  color:#604b0c !important;
+}
+
+/* Conservar contrastes especiales */
+:root[data-theme="emerald_gold"] .modal-head,
+:root[data-theme="emerald_gold"] .modal-head h2,
+:root[data-theme="emerald_gold"] .modal-head .eyebrow,
+:root[data-theme="emerald_gold"] .topbar,
+:root[data-theme="emerald_gold"] .topbar h1,
+:root[data-theme="emerald_gold"] .topbar .eyebrow{
+  color:#fffdf4 !important;
+}
+
+:root[data-theme="emerald_gold"] .balance-positive,
+:root[data-theme="emerald_gold"] .movement-type-label.income,
+:root[data-theme="emerald_gold"] .expense-card-amount.income,
+:root[data-theme="emerald_gold"] .ledger-movement-amount.income,
+:root[data-theme="emerald_gold"] .expense-detail-amount.income{
+  color:#24744f !important;
+}
+
+:root[data-theme="emerald_gold"] .balance-negative,
+:root[data-theme="emerald_gold"] .movement-type-label.expense,
+:root[data-theme="emerald_gold"] .expense-card-amount.expense,
+:root[data-theme="emerald_gold"] .ledger-movement-amount.expense,
+:root[data-theme="emerald_gold"] .expense-detail-amount.expense,
+:root[data-theme="emerald_gold"] .danger-btn,
+:root[data-theme="emerald_gold"] .task-delete-btn,
+:root[data-theme="emerald_gold"] .expense-delete-menu-btn{
+  color:#a94f59 !important;
+}
+
+:root[data-theme="emerald_gold"] .movement-gold-symbol,
+:root[data-theme="emerald_gold"] .task-money-indicator{
+  color:var(--eg-gold-text) !important;
+}
