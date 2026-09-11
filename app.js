@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.7";
+const APP_VERSION = "11.7.8";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -325,6 +325,37 @@ function movementsThroughDate(d){
     });
 }
 
+
+function financialBreakdownForPeriod(d){
+  const ref=startOfDay(d);
+  const period=expenseCycleRange(ref);
+  const through=ref>period.end ? period.end : ref;
+  const list=expensesInRange(period.start,through);
+
+  const out={
+    MN:{expenses:0,income:0,balance:0},
+    DLS:{expenses:0,income:0,balance:0}
+  };
+
+  list.forEach(e=>{
+    const cur=e.currency==="DLS"?"DLS":"MN";
+    const amount=Math.abs(Number(e.amount||0));
+    if(movementType(e)==="income") out[cur].income+=amount;
+    else out[cur].expenses+=amount;
+    out[cur].balance+=movementSignedAmount(e);
+  });
+
+  return {list,period,through,...out};
+}
+
+function financialTotalsForPeriod(d){
+  const data=financialBreakdownForPeriod(d);
+  return {
+    MN:data.MN.balance,
+    DLS:data.DLS.balance
+  };
+}
+
 function financialBreakdownThroughDate(d){
   const list=movementsThroughDate(d);
   const out={
@@ -352,9 +383,11 @@ function financialTotalsThroughDate(d){
 }
 
 function renderFinanceLedger(){
-  const through=startOfDay(selectedDate||new Date());
-  const data=financialBreakdownThroughDate(through);
-  $("#financeLedgerThroughDate").textContent=`Desde el movimiento más antiguo hasta ${shortDate(through)} · ${activeBook()?.name||"Libro"}`;
+  const reference=startOfDay(selectedDate||new Date());
+  const data=financialBreakdownForPeriod(reference);
+
+  $("#financeLedgerThroughDate").textContent=
+    `Periodo financiero: ${shortDate(data.period.start)} – ${shortDate(data.period.end)} · ${activeBook()?.name||"Libro"}`;
 
   $("#financeLedgerList").innerHTML=data.list.length ? data.list.map(e=>{
     const linkedTask=e.taskId?tasks.find(t=>t.id===e.taskId):null;
@@ -375,7 +408,7 @@ function renderFinanceLedger(){
           ${linkedTask?`<span>✅ Tarea: ${esc(linkedTask.title)}</span>`:""}
         </div>
       </article>`;
-  }).join("") : `<div class="empty">No hay gastos ni ingresos registrados hasta esta fecha.</div>`;
+  }).join("") : `<div class="empty">No hay gastos ni ingresos registrados en este periodo financiero hasta esta fecha.</div>`;
 
   const totalBlock=(currency,label)=>`
     <div class="ledger-total-currency">
@@ -386,7 +419,12 @@ function renderFinanceLedger(){
     </div>`;
 
   $("#financeLedgerTotals").innerHTML=`
-    <h3>Totales hasta ${shortDate(through)}</h3>
+    <div class="finance-ledger-period-summary">
+      <span>Inicio</span><strong>${shortDate(data.period.start)}</strong>
+      <span>Fin</span><strong>${shortDate(data.period.end)}</strong>
+      <span>Calculado al</span><strong>${shortDate(data.through)}</strong>
+    </div>
+    <h3>Totales del periodo</h3>
     ${totalBlock("MN","Moneda nacional")}
     <details class="ledger-dls-details">
       <summary>💵 Dólares (DLS) · tocar para ver</summary>
@@ -460,41 +498,89 @@ function setActiveBookExpenseCycleDay(day){
   if(!book) return;
 
   const next=Math.min(31,Math.max(1,Number(day||1)));
-  const today=dateKey(new Date());
-  const current=getBookExpenseCycleDayForDate(book,new Date());
+  const now=startOfDay(new Date());
+  const today=dateKey(now);
+  const current=getBookExpenseCycleDayForDate(book,now);
 
   book.expenseCycleDay=next;
   if(!Array.isArray(book.expenseCycleHistory)) book.expenseCycleHistory=[];
+  if(!Array.isArray(book.expenseCycleEditedPeriods)) book.expenseCycleEditedPeriods=[];
 
   if(next!==current){
+    const newCurrentPeriod=expenseCycleRangeForDay(now,next);
+    const previousReference=addDays(newCurrentPeriod.start,-1);
+    const previousPeriod=expenseCycleRangeForDay(previousReference,next);
+
+    /* Si el nuevo corte ya pasó, el periodo anterior queda cerrado.
+       Se conserva como periodo EDITADO para Bitácora. */
+    if(previousPeriod.end<now){
+      book.expenseCycleEditedPeriods=
+        book.expenseCycleEditedPeriods.filter(p=>p && p.editedOn!==today);
+
+      book.expenseCycleEditedPeriods.push({
+        id:uid(),
+        start:dateKey(previousPeriod.start),
+        end:dateKey(previousPeriod.end),
+        cycleDay:next,
+        previousCycleDay:current,
+        editedOn:today,
+        editedAt:new Date().toISOString()
+      });
+    }
+
     const existing=book.expenseCycleHistory.find(h=>h.from===today);
-    if(existing) existing.day=next;
-    else book.expenseCycleHistory.push({from:today,day:next});
+    if(existing){
+      existing.day=next;
+      existing.edited=true;
+      existing.previousDay=current;
+    }else{
+      book.expenseCycleHistory.push({
+        from:today,
+        day:next,
+        edited:true,
+        previousDay:current
+      });
+    }
+
     book.expenseCycleHistory.sort((a,b)=>a.from.localeCompare(b.from));
   }
 
   localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
 }
 
-function expenseCycleRange(d){
-  const cycle=getBookExpenseCycleDayForDate(activeBook(),d);
-  const y=d.getFullYear(), m=d.getMonth(), day=d.getDate();
+function expenseCycleRangeForDay(d,cycleDay){
+  const ref=startOfDay(d);
+  const cycle=Math.min(31,Math.max(1,Number(cycleDay||1)));
+  const y=ref.getFullYear(), m=ref.getMonth();
+
+  const thisMonthMax=new Date(y,m+1,0).getDate();
+  const thisMonthCycle=Math.min(cycle,thisMonthMax);
+
   let start;
-  if(day>=cycle){
-    const maxDay=new Date(y,m+1,0).getDate();
-    start=new Date(y,m-1,Math.min(cycle,new Date(y,m,0).getDate()));
-    if(cycle<=maxDay) start=new Date(y,m,cycle);
+  if(ref.getDate()>=thisMonthCycle){
+    start=new Date(y,m,thisMonthCycle);
   }else{
     const prevMax=new Date(y,m,0).getDate();
     start=new Date(y,m-1,Math.min(cycle,prevMax));
   }
-  const endMonth=start.getMonth()+1;
-  const endYear=start.getFullYear() + (endMonth>11?1:0);
-  const normalizedMonth=endMonth%12;
-  const endMax=new Date(endYear,normalizedMonth+1,0).getDate();
-  const nextStart=new Date(endYear,normalizedMonth,Math.min(cycle,endMax));
+
+  const nextMonthIndex=start.getMonth()+1;
+  const nextYear=start.getFullYear() + (nextMonthIndex>11?1:0);
+  const nextMonth=nextMonthIndex%12;
+  const nextMax=new Date(nextYear,nextMonth+1,0).getDate();
+  const nextStart=new Date(nextYear,nextMonth,Math.min(cycle,nextMax));
   const end=addDays(nextStart,-1);
-  return {start:startOfDay(start),end:startOfDay(end)};
+
+  return {
+    start:startOfDay(start),
+    end:startOfDay(end),
+    cycleDay:cycle
+  };
+}
+
+function expenseCycleRange(d){
+  const cycle=getBookExpenseCycleDayForDate(activeBook(),d);
+  return expenseCycleRangeForDay(d,cycle);
 }
 function expenseTotalsForCycle(d){
   const {start,end}=expenseCycleRange(d);
@@ -538,12 +624,15 @@ function renderExpenseSummary(){
   if(!$("#expenseDayTotal")) return;
 
   const day=expenseTotalsForDate(selectedDate);
-  const cumulative=financialTotalsThroughDate(selectedDate);
-  const range=financialRangeThroughDate(selectedDate);
+  const periodData=financialBreakdownForPeriod(selectedDate);
+  const cumulative={
+    MN:periodData.MN.balance,
+    DLS:periodData.DLS.balance
+  };
 
   $("#expenseDayTotal").textContent=totalsText("Balance del día",day);
-  $("#expenseBalanceRange").textContent=`Desde ${shortDate(range.start)} hasta ${shortDate(range.end)}`;
-  $("#expenseMonthTotal").textContent=`Acumulado hasta ${shortDate(selectedDate)}: ${totalsText("",cumulative).replace(/^:\s*/,"")}`;
+  $("#expenseBalanceRange").textContent=`Periodo: ${shortDate(periodData.period.start)} – ${shortDate(periodData.period.end)}`;
+  $("#expenseMonthTotal").textContent=`Acumulado al ${shortDate(periodData.through)}: ${totalsText("",cumulative).replace(/^:\s*/,"")}`;
 
   $("#expenseDayTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
   $("#expenseMonthTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
@@ -695,6 +784,14 @@ function updateActiveBookSelect(){
     }
 
     requestAnimationFrame(()=>{
+      const wrap=display.closest(".active-book-select-wrap");
+      const desiredWidth=Math.max(86,Math.ceil(ticker.scrollWidth+42));
+      const maxWidth=Math.max(125,Math.min(Math.floor(window.innerWidth*0.56),360));
+
+      if(wrap){
+        wrap.style.setProperty("--active-book-fit-width",`${Math.min(desiredWidth,maxWidth)}px`);
+      }
+
       const distance=Math.max(0,ticker.scrollWidth-display.clientWidth);
       if(distance>6){
         display.classList.add("can-scroll");
@@ -732,6 +829,10 @@ function ensureBookMigration(){
     if(!book.expenseCycleDay) book.expenseCycleDay=1;
     if(!Array.isArray(book.expenseCycleHistory) || !book.expenseCycleHistory.length){
       book.expenseCycleHistory=[{from:"1970-01-01",day:Number(book.expenseCycleDay||1)}];
+      changedBooks=true;
+    }
+    if(!Array.isArray(book.expenseCycleEditedPeriods)){
+      book.expenseCycleEditedPeriods=[];
       changedBooks=true;
     }
     if(beforeIcon!==book.icon || beforeColor!==book.color || beforeCycle!==book.expenseCycleDay) changedBooks=true;
@@ -2799,15 +2900,18 @@ function expensePeriodKey(period){
 
 function getExpenseLogPeriods(){
   const current=currentExpensePeriod();
-  const currentKey=expensePeriodKey(current);
   const map=new Map();
+  const book=activeBook();
+  const now=startOfDay(new Date());
 
+  /* Periodos normales: solo los que ya terminaron antes del periodo actual. */
   activeExpenses().forEach(e=>{
     const d=parseDate(e.date);
     const period=expenseCycleRange(d);
-    const key=expensePeriodKey(period);
-    if(key===currentKey) return;
 
+    if(period.end>=current.start) return;
+
+    const key=expensePeriodKey(period);
     if(!map.has(key)){
       map.set(key,{
         key,
@@ -2816,7 +2920,8 @@ function getExpenseLogPeriods(){
         token:periodFileToken(period),
         count:0,
         totalMN:0,
-        totalDLS:0
+        totalDLS:0,
+        edited:false
       });
     }
 
@@ -2824,6 +2929,43 @@ function getExpenseLogPeriods(){
     p.count++;
     if(e.currency==="DLS") p.totalDLS+=movementSignedAmount(e);
     else p.totalMN+=movementSignedAmount(e);
+  });
+
+  /* Periodos creados por un cambio de día de corte después de que el
+     nuevo corte ya había pasado. Se distinguen como EDITADO. */
+  const editedPeriods=Array.isArray(book?.expenseCycleEditedPeriods)
+    ? book.expenseCycleEditedPeriods
+    : [];
+
+  editedPeriods.forEach(saved=>{
+    if(!saved?.start || !saved?.end) return;
+
+    const start=parseDate(saved.start);
+    const end=parseDate(saved.end);
+    if(end>=now) return;
+
+    const list=expensesInRange(start,end);
+    const key=`edited__${saved.start}__${saved.end}__${saved.editedOn||""}`;
+    const period={start,end};
+
+    map.set(key,{
+      key,
+      start,
+      end,
+      token:periodFileToken(period),
+      fileToken:`${periodFileToken(period)}_EDITADO`,
+      count:list.length,
+      totalMN:list
+        .filter(e=>e.currency!=="DLS")
+        .reduce((sum,e)=>sum+movementSignedAmount(e),0),
+      totalDLS:list
+        .filter(e=>e.currency==="DLS")
+        .reduce((sum,e)=>sum+movementSignedAmount(e),0),
+      edited:true,
+      editedOn:saved.editedOn||"",
+      cycleDay:saved.cycleDay,
+      previousCycleDay:saved.previousCycleDay
+    });
   });
 
   return [...map.values()].sort((a,b)=>a.start-b.start);
@@ -2839,8 +2981,8 @@ function renderExpenseLog(){
       <input type="checkbox" data-expense-period="${p.key}">
       <span class="expense-log-check">✓</span>
       <span class="expense-log-copy">
-        <strong>${p.token}</strong>
-        <small>${dotDate(p.start)}–${dotDate(p.end)} · ${p.count} ${p.count===1?"movimiento":"movimientos"}</small>
+        <strong>${p.token}${p.edited?` <span class="expense-period-edited">EDITADO</span>`:""}</strong>
+        <small>${dotDate(p.start)}–${dotDate(p.end)} · ${p.count} ${p.count===1?"movimiento":"movimientos"}${p.edited?` · corte ${p.cycleDay}`:""}</small>
         <small>${p.totalMN?`${signedMoney(p.totalMN)} MN`:""}${p.totalMN&&p.totalDLS?" · ":""}${p.totalDLS?`${signedMoney(p.totalDLS)} DLS`:""}</small>
       </span>
     </label>
@@ -2866,7 +3008,7 @@ function exportSelectedExpensePeriods(){
   const rows=[];
   periods.forEach(period=>{
     expensesInRange(period.start,period.end).forEach(e=>{
-      rows.push({...e,_period:period.token});
+      rows.push({...e,_period:period.edited ? `${period.token}_EDITADO` : period.token});
     });
   });
 
@@ -2884,8 +3026,8 @@ function exportSelectedExpensePeriods(){
   ]));
 
   const csv="\\ufeff"+csvRows.map(r=>r.map(csvCell).join(",")).join("\\r\\n");
-  const first=periods[0].token;
-  const last=periods[periods.length-1].token;
+  const first=periods[0].fileToken||periods[0].token;
+  const last=periods[periods.length-1].fileToken||periods[periods.length-1].token;
   const name=periods.length===1 ? `gastos_${first}.csv` : `gastos_${first}-${last}.csv`;
 
   downloadText(name,csv,"text/csv;charset=utf-8");

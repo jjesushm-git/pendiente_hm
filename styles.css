@@ -5970,3 +5970,121 @@ dialog .comic-bubble-tail,
     font-size:.72rem !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.8 — PERIODO FINANCIERO + LIBRO SUPERIOR
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Balance / periodo financiero
+   --------------------------------------------------------- */
+.finance-ledger-period-summary{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  gap:5px 12px;
+  margin-bottom:10px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-2);
+  font-size:.76rem;
+}
+
+.finance-ledger-period-summary span{
+  color:var(--muted);
+}
+
+.finance-ledger-period-summary strong{
+  text-align:right;
+}
+
+:root[data-theme="emerald_gold"] .finance-ledger-period-summary{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+/* Bitácora: identificar claramente un corte que fue editado. */
+.expense-period-edited{
+  display:inline-flex;
+  align-items:center;
+  margin-left:5px;
+  padding:2px 6px;
+  border:1px solid rgba(184,132,13,.42);
+  border-radius:999px;
+  color:#9a700c;
+  background:rgba(218,174,49,.10);
+  font-size:.63rem;
+  line-height:1;
+  font-weight:900;
+}
+
+/* ---------------------------------------------------------
+   Encabezado: el botón de Libro ocupa solo lo necesario.
+   El nombre largo puede crecer, pero permanece en el mismo renglón.
+   --------------------------------------------------------- */
+.topbar-v1173 .topbar-main-row{
+  flex-wrap:nowrap !important;
+}
+
+.topbar-v1173 .topbar-main-row #appTitle{
+  flex:1 1 auto !important;
+  min-width:0 !important;
+}
+
+.topbar-v1173 .top-actions{
+  flex:0 1 auto !important;
+  width:auto !important;
+  max-width:62vw !important;
+  min-width:0 !important;
+  display:flex !important;
+  grid-template-columns:none !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:7px !important;
+}
+
+.topbar-v1173 .active-book-select-wrap{
+  width:var(--active-book-fit-width,120px) !important;
+  min-width:86px !important;
+  max-width:min(56vw,360px) !important;
+  flex:0 1 auto !important;
+}
+
+.topbar-v1173 #settingsBtnTop{
+  flex:0 0 auto !important;
+}
+
+/* La zona blanca sigue ajustada al ancho real del selector. */
+:root[data-theme="emerald_gold"] .topbar-v1173 .active-book-select-wrap{
+  background:#fff !important;
+}
+
+@media(max-width:430px){
+  .topbar-v1173 .top-actions{
+    max-width:64vw !important;
+    gap:5px !important;
+  }
+
+  .topbar-v1173 .active-book-select-wrap{
+    max-width:calc(64vw - 41px) !important;
+    min-width:78px !important;
+  }
+
+  .finance-ledger-period-summary{
+    font-size:.69rem;
+    padding:9px 10px;
+  }
+}
+
+@media(max-width:350px){
+  .topbar-v1173 .top-actions{
+    max-width:66vw !important;
+  }
+
+  .topbar-v1173 .active-book-select-wrap{
+    max-width:calc(66vw - 39px) !important;
+    min-width:72px !important;
+  }
+}
