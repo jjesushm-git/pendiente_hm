@@ -1,65 +1,41 @@
-# Mis Tareas — Versión 11.6 ESTABLE
+# Mis Tareas — Versión 11.6.1 REPARACIÓN
 
-Base: Versión 11.5.6 ESTABLE.
+Base: Versión 11.6 ESTABLE.
 
-## Gastos e ingresos
-- La aplicación ahora maneja Gasto e Ingreso.
-- Gasto = valor negativo.
-- Ingreso = valor positivo.
-- Gasto se muestra en rojo.
-- Ingreso se muestra en verde.
-- Indicador dorado:
-  - $ = Gasto
-  - $$ = Ingreso.
-- Los movimientos antiguos sin tipo se conservan automáticamente como Gasto.
-- El resumen muestra Balance del día y Acumulado del periodo.
+Correcciones:
 
-## Tareas
-- Crear/Editar tarea incluye una sección financiera opcional.
-- El selector inicia en Gasto y cambia a Ingreso al tocarlo.
-- Gasto pregunta: “¿En qué gasté?”.
-- Ingreso pregunta: “¿Cómo lo gané?”.
-- Incluye descripción, monto y moneda MN/DLS.
-- Si no se captura monto, la tarea queda sin movimiento.
-- Si la tarea tiene movimiento aparece $ o $$ dorado en la tarjeta.
-- Al tocar $ o $$ en una tarjeta de tarea se abre un modal con:
-  - tipo,
-  - concepto,
-  - descripción,
-  - importe,
-  - moneda,
-  - fecha.
-- El modal de $/$$ es exclusivo de las tarjetas de tareas.
-- Al mover una tarea a otro libro, su movimiento asociado también cambia de libro.
+## Calendario y semana superior
+- Al seleccionar cualquier fecha dentro de Calendario, la franja semanal superior cambia inmediatamente a la semana que contiene esa fecha.
+- También se actualiza `weekCursor` para que la pestaña Semana quede alineada con la fecha seleccionada.
 
-## Botón +$
-- Permite capturar Gasto o Ingreso.
-- Cambia automáticamente título, pregunta y texto del botón según el tipo.
+## Nueva tarea desde una fecha seleccionada
+- Si seleccionas un día en Calendario y después presionas Agregar, Fecha de inicio toma ese día.
+- Si estás en Día y cambias la fecha con sus controles, Agregar también toma esa fecha.
+- Al editar una tarea existente se conserva su propia fecha de inicio.
 
-## Consulta financiera
-- Las tarjetas muestran $ para Gasto y $$ para Ingreso.
-- Los importes aparecen con signo:
-  - -$ para gasto,
-  - +$ para ingreso.
-- La Bitácora, periodo actual, TXT y CSV calculan el neto correctamente.
-- Importación de movimientos mantiene compatibilidad con archivos anteriores.
+## Mensajes al guardar
+- El formulario usa validación propia para mostrar qué dato falta.
+- Puede indicar:
+  - Título.
+  - Fecha de inicio.
+  - Hora de inicio si no es Todo el día.
+  - Hora de vencimiento si existe fecha de vencimiento y no es Todo el día.
+  - Concepto del gasto/ingreso si se empezó a capturar un movimiento.
+  - Monto del gasto/ingreso si se empezó a capturar un movimiento.
+- El mensaje usa el formato: “Falta llenar: …”.
+- El formulario desplaza el foco al primer campo faltante.
 
-## Ajustes
-- “Título de la aplicación” ahora se muestra como “Título principal”.
+No se modificó la funcionalidad financiera de la 11.6:
+- Gasto (-), Ingreso (+).
+- $ dorado para gasto.
+- $$ dorado para ingreso.
+- Modal de detalle al tocar $ o $$ en tarjetas de tareas.
+- Balance diario y acumulado.
+- Libros, Bitácora, exportación/importación y comentarios.
 
-## Validación realizada
-- JavaScript: sin errores de sintaxis.
-- CSS: sin errores de parser.
+Validaciones realizadas:
+- JavaScript sin errores.
+- CSS sin errores de parser.
 - Sin IDs HTML duplicados.
 - Sin referencias JavaScript a IDs inexistentes.
 - Calendario, Día, Semana, Tablero, Libros, Gastos/Ingresos y Comentarios presentes.
-- Prueba funcional en navegador:
-  - creación de tarea con gasto,
-  - $ en tarjeta y modal de detalle,
-  - edición y guardado de tarea,
-  - creación de ingreso desde +$,
-  - balance -50 + 200 = +150,
-  - gasto rojo / ingreso verde,
-  - borrado con confirmación,
-  - movimiento de tarea y movimiento financiero asociado entre libros,
-  - creación de tarea con ingreso y símbolo $$.

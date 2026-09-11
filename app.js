@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.6";
+const APP_VERSION = "11.6.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1025,9 +1025,15 @@ function renderCalendar(){
   }).join("");
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
     selectedDate=parseDate(b.dataset.caldate);
+    weekCursor=startOfWeek(selectedDate);
+
     $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
     $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate),selectedDate);
-    bindTaskActions(); renderCalendar(); renderExpenseSummary();
+
+    bindTaskActions();
+    renderWeekStrip();
+    renderCalendar();
+    renderExpenseSummary();
   });
   $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
   $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate),selectedDate);
@@ -1371,12 +1377,12 @@ function openTask(t=null){
   $("#taskId").value=t?.id||"";
   $("#taskDialogTitle").textContent=t?"Editar tarea":"Agregar tarea";
   $("#deleteTaskBtn").classList.toggle("hidden",!t);
-  const today=dateKey(new Date());
+  const defaultStartDate=dateKey(selectedDate||new Date());
   $("#title").value=t?.title||"";
   $("#description").value=t?.description||"";
   $("#taskEmoji").value=t?.emoji||"📌";
   $("#taskEmojiPreview").textContent=t?.emoji||"📌";
-  $("#startDate").value=t?.startDate||today;
+  $("#startDate").value=t?.startDate||defaultStartDate;
   $("#dueDate").value=t?.dueDate||"";
   $("#allDay").checked=t?!!t.allDay:true;
   $("#startTime").value=t?.startTime||"09:00";
@@ -1397,6 +1403,71 @@ function openTask(t=null){
   toggleTimeFields();
   $("#taskDialog").showModal();
 }
+
+function validateTaskForm(){
+  const missing=[];
+  let firstField=null;
+
+  const title=$("#title").value.trim();
+  const start=$("#startDate").value;
+  const allDay=$("#allDay").checked;
+  const startTime=$("#startTime").value;
+  const due=$("#dueDate").value;
+  const dueTime=$("#dueTime").value;
+
+  if(!title){
+    missing.push("Título");
+    firstField=firstField||$("#title");
+  }
+
+  if(!start){
+    missing.push("Fecha de inicio");
+    firstField=firstField||$("#startDate");
+  }
+
+  if(!allDay && !startTime){
+    missing.push("Hora de inicio");
+    firstField=firstField||$("#startTime");
+  }
+
+  if(due && !allDay && !dueTime){
+    missing.push("Hora de vencimiento");
+    firstField=firstField||$("#dueTime");
+  }
+
+  const financeTitle=$("#taskFinanceTitle").value.trim();
+  const financeDescription=$("#taskFinanceDescription").value.trim();
+  const financeAmount=parseMoneyInput($("#taskFinanceAmountDisplay").value);
+  const financeStarted=!!financeTitle || !!financeDescription || financeAmount>0;
+
+  if(financeStarted){
+    if(!financeTitle){
+      missing.push($("#taskFinanceType").value==="income" ? "Cómo lo gané" : "En qué gasté");
+      firstField=firstField||$("#taskFinanceTitle");
+    }
+
+    if(financeAmount<=0){
+      missing.push($("#taskFinanceType").value==="income" ? "Monto del ingreso" : "Monto del gasto");
+      firstField=firstField||$("#taskFinanceAmountDisplay");
+    }
+  }
+
+  if(missing.length){
+    toast(`Falta llenar: ${missing.join(", ")}.`);
+    if(firstField){
+      setTimeout(()=>{
+        try{
+          firstField.focus({preventScroll:true});
+          firstField.scrollIntoView({behavior:"smooth",block:"center"});
+        }catch{}
+      },80);
+    }
+    return false;
+  }
+
+  return true;
+}
+
 function readForm(){
   const start=$("#startDate").value;
   const due=$("#dueDate").value;
@@ -2337,18 +2408,27 @@ function exportExpensesCsv(){
 
 $("#taskForm").addEventListener("submit",e=>{
   e.preventDefault();
+
+  if(!validateTaskForm()) return;
+
   try{
-    const data=readForm(); if(!data.title) return;
+    const data=readForm();
     const movementData=readTaskFinanceForm();
     const id=$("#taskId").value;
     let savedTask;
 
     if(id){
       const i=tasks.findIndex(t=>t.id===id);
-      tasks[i]={...tasks[i],...data};
+      if(i<0) throw new Error("No se encontró la tarea que deseas editar.");
+      tasks[i]={...tasks[i],...data,updatedAt:new Date().toISOString()};
       savedTask=tasks[i];
     }else{
-      savedTask={id:uid(),bookId:activeBookId,createdAt:new Date().toISOString(),...data};
+      savedTask={
+        id:uid(),
+        bookId:activeBookId,
+        createdAt:new Date().toISOString(),
+        ...data
+      };
       tasks.push(savedTask);
     }
 
@@ -2357,9 +2437,9 @@ $("#taskForm").addEventListener("submit",e=>{
 
     $("#taskDialog").close();
     saveTasks();
-    toast("Tarea guardada.");
+    toast(id ? "Tarea actualizada correctamente." : "Tarea guardada correctamente.");
   }catch(err){
-    toast(err.message||"Revisa los datos.");
+    toast(err.message||"Revisa los datos de la tarea.");
   }
 });
 $("#deleteTaskBtn").onclick=async()=>{
