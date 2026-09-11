@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.6.5";
+const APP_VERSION = "11.7";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -119,6 +119,147 @@ function taskMovementIndicatorHTML(t){
                   class="task-money-indicator"
                   data-task-money="${movement.id}"
                   title="${movementTypeLabel(movement)} asociado a esta tarea">${movementSymbol(movement)}</button>`;
+}
+
+
+function taskCountIndicatorHTML(dayTasks,scope="calendar"){
+  const count=dayTasks.length;
+  if(!count) return "";
+
+  if(count===1){
+    const emoji=esc(dayTasks[0].emoji||"📌");
+    return `<span class="${scope}-task-single" title="1 tarea">${emoji}</span>`;
+  }
+
+  const level=count>=5?"red":"yellow";
+  return `<span class="${scope}-task-count ${level}" title="${count} tareas">${count}</span>`;
+}
+
+function scopedStatusStatsHTML(counts,targetPrefix){
+  return `
+    <button class="stat-card stat-link" data-status-target="${targetPrefix}PendingSection">
+      <strong>${counts.pending}</strong><small>Pendientes</small>
+    </button>
+    <button class="stat-card stat-link" data-status-target="${targetPrefix}CompletedSection">
+      <strong>${counts.completed}</strong><small>Completadas</small>
+    </button>
+    <button class="stat-card stat-link" data-status-target="${targetPrefix}MissedSection">
+      <strong>${counts.missed}</strong><small>Vencidas</small>
+    </button>`;
+}
+
+function bindScopedStatusButtons(root=document){
+  root.querySelectorAll("[data-status-target]").forEach(btn=>{
+    btn.onclick=()=>{
+      const target=document.getElementById(btn.dataset.statusTarget);
+      if(target) target.scrollIntoView({behavior:"smooth",block:"start"});
+    };
+  });
+}
+
+function weekOccurrenceListHTML(items){
+  if(!items.length) return `<div class="empty">No hay tareas en esta sección.</div>`;
+
+  const groups=new Map();
+  items.forEach(({t,d})=>{
+    const key=dateKey(d);
+    if(!groups.has(key)) groups.set(key,{d,items:[]});
+    groups.get(key).items.push(t);
+  });
+
+  return [...groups.values()]
+    .sort((a,b)=>a.d-b.d)
+    .map(group=>`
+      <div class="week-status-day">
+        <h4>${group.d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h4>
+        <div class="task-list">
+          ${group.items.map(t=>taskCard(t,group.d)).join("")}
+        </div>
+      </div>
+    `).join("");
+}
+
+function movementsThroughDate(d){
+  const key=dateKey(d);
+  return activeExpenses()
+    .filter(e=>e.date<=key)
+    .sort((a,b)=>{
+      const byDate=a.date.localeCompare(b.date);
+      if(byDate) return byDate;
+      return String(a.createdAt||"").localeCompare(String(b.createdAt||""));
+    });
+}
+
+function financialBreakdownThroughDate(d){
+  const list=movementsThroughDate(d);
+  const out={
+    MN:{expenses:0,income:0,balance:0},
+    DLS:{expenses:0,income:0,balance:0}
+  };
+
+  list.forEach(e=>{
+    const cur=e.currency==="DLS"?"DLS":"MN";
+    const amount=Math.abs(Number(e.amount||0));
+    if(movementType(e)==="income") out[cur].income+=amount;
+    else out[cur].expenses+=amount;
+    out[cur].balance+=movementSignedAmount(e);
+  });
+
+  return {list,...out};
+}
+
+function financialTotalsThroughDate(d){
+  const data=financialBreakdownThroughDate(d);
+  return {
+    MN:data.MN.balance,
+    DLS:data.DLS.balance
+  };
+}
+
+function renderFinanceLedger(){
+  const through=startOfDay(selectedDate||new Date());
+  const data=financialBreakdownThroughDate(through);
+  $("#financeLedgerThroughDate").textContent=`Desde el movimiento más antiguo hasta ${shortDate(through)} · ${activeBook()?.name||"Libro"}`;
+
+  $("#financeLedgerList").innerHTML=data.list.length ? data.list.map(e=>{
+    const linkedTask=e.taskId?tasks.find(t=>t.id===e.taskId):null;
+    const type=movementType(e);
+    return `
+      <article class="ledger-movement-card ${type}">
+        <div class="ledger-movement-head">
+          <span class="movement-gold-symbol">${movementSymbol(e)}</span>
+          <div>
+            <small class="movement-type-label ${type}">${movementTypeLabel(e)}</small>
+            <strong>${esc(e.title)}</strong>
+          </div>
+          <span class="ledger-movement-amount ${type}">${signedMoney(movementSignedAmount(e))} ${esc(e.currency||"MN")}</span>
+        </div>
+        ${e.description?`<p>${esc(e.description)}</p>`:""}
+        <div class="ledger-movement-meta">
+          <span>📅 ${shortDate(parseDate(e.date))}</span>
+          ${linkedTask?`<span>✅ Tarea: ${esc(linkedTask.title)}</span>`:""}
+        </div>
+      </article>`;
+  }).join("") : `<div class="empty">No hay gastos ni ingresos registrados hasta esta fecha.</div>`;
+
+  const totalBlock=(currency,label)=>`
+    <div class="ledger-total-currency">
+      <strong>${label}</strong>
+      <div><span>Gastos</span><b class="balance-negative">-$${money(data[currency].expenses)} ${currency}</b></div>
+      <div><span>Ingresos</span><b class="balance-positive">+$${money(data[currency].income)} ${currency}</b></div>
+      <div class="ledger-net"><span>Balance</span><b class="${data[currency].balance>0?"balance-positive":data[currency].balance<0?"balance-negative":"balance-neutral"}">${signedMoney(data[currency].balance)} ${currency}</b></div>
+    </div>`;
+
+  $("#financeLedgerTotals").innerHTML=`
+    <h3>Totales hasta ${shortDate(through)}</h3>
+    ${totalBlock("MN","Moneda nacional")}
+    ${totalBlock("DLS","Dólares")}
+  `;
+}
+
+function openFinanceLedger(){
+  renderFinanceLedger();
+  $("#financeLedgerDialog").showModal();
 }
 
 function movementMarkerForDateKey(key){
@@ -238,15 +379,15 @@ function totalsText(prefix,t){
 function renderExpenseSummary(){
   if(!$("#expenseDayTotal")) return;
   const day=expenseTotalsForDate(selectedDate);
-  const cyc=expenseTotalsForCycle(selectedDate);
+  const cumulative=financialTotalsThroughDate(selectedDate);
 
   $("#expenseDayTotal").textContent=totalsText("Balance del día",day);
-  $("#expenseMonthTotal").textContent=`Acumulado del periodo: ${totalsText("",cyc).replace(/^:\s*/,"")} · ${dotDate(cyc.start)}–${dotDate(cyc.end)}`;
+  $("#expenseMonthTotal").textContent=`Acumulado hasta ${shortDate(selectedDate)}: ${totalsText("",cumulative).replace(/^:\s*/,"")}`;
 
   $("#expenseDayTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
   $("#expenseMonthTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
   $("#expenseDayTotal").classList.add(balanceClassForTotals(day));
-  $("#expenseMonthTotal").classList.add(balanceClassForTotals(cyc));
+  $("#expenseMonthTotal").classList.add(balanceClassForTotals(cumulative));
 }
 
 function esc(s=""){ return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m])); }
@@ -644,7 +785,8 @@ function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
   $("#weekStrip").innerHTML = [...Array(7)].map((_,i)=>{
     const d=addDays(week,i), key=dateKey(d);
-    const hasTask=activeTasks().some(t=>occursOn(t,d)&&t.status==="pending");
+    const dayTasks=expandedTasksForDate(d).sort(compareTasksByDate);
+    const taskIndicator=taskCountIndicatorHTML(dayTasks,"week");
     const movementMark=movementMarkerForDateKey(key);
 
     return `<button class="week-day ${key===dateKey(selectedDate)?"active":""}" data-date="${key}">
@@ -652,13 +794,14 @@ function renderWeekStrip(){
       <span class="num">${d.getDate()}</span>
       <span class="week-day-indicators">
         ${movementMark?`<span class="week-expense-mark" title="Hay movimientos registrados">${movementMark}</span>`:""}
-        ${hasTask?'<span class="dot"></span>':""}
+        ${taskIndicator}
       </span>
     </button>`;
   }).join("");
 
   $$(".week-day").forEach(b=>b.onclick=()=>{
     selectedDate=parseDate(b.dataset.date);
+    weekCursor=startOfWeek(selectedDate);
     switchView("day");
     renderAll();
   });
@@ -1180,33 +1323,53 @@ function renderCalendar(){
   $("#calendarTitle").textContent=monthName(calendarCursor);
   const first=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth(),1);
   const start=addDays(first,-((first.getDay()+6)%7));
+
   $("#calendarGrid").innerHTML=[...Array(42)].map((_,i)=>{
     const d=addDays(start,i), key=dateKey(d), inMonth=d.getMonth()===calendarCursor.getMonth();
-    const dayTasks=expandedTasksForDate(d);
-    const dots=dayTasks.slice(0,4).map(t=>`<i class="${t.status==="missed"?"red":t.status==="completed"?"green":""}"></i>`).join("");
+    const dayTasks=expandedTasksForDate(d).sort(compareTasksByDate);
+    const taskIndicator=taskCountIndicatorHTML(dayTasks,"calendar");
     const movementMark=movementMarkerForDateKey(key);
 
     return `<button class="calendar-day ${inMonth?"":"muted"} ${key===dateKey(selectedDate)?"selected":""} ${key===dateKey(new Date())?"today":""}" data-caldate="${key}">
       ${d.getDate()}
       ${movementMark?`<span class="calendar-expense-mark">${movementMark}</span>`:""}
-      <span class="calendar-dots">${dots}</span>
+      <span class="calendar-task-indicator">${taskIndicator}</span>
     </button>`;
   }).join("");
+
+  const renderSelectedCalendarDay=()=>{
+    const list=expandedTasksForDate(selectedDate).sort(compareTasksByDate);
+    const pending=list.filter(t=>t.status==="pending");
+    const completed=list.filter(t=>t.status==="completed");
+    const missed=list.filter(t=>t.status==="missed");
+
+    $("#calendarDayHeading").textContent=`Pendientes · ${shortDate(selectedDate)}`;
+    $("#calendarStatsGrid").innerHTML=scopedStatusStatsHTML({
+      pending:pending.length,
+      completed:completed.length,
+      missed:missed.length
+    },"calendar");
+
+    $("#calendarPendingList").innerHTML=listHtml(pending,selectedDate);
+    $("#calendarCompletedList").innerHTML=listHtml(completed,selectedDate);
+    $("#calendarMissedList").innerHTML=listHtml(missed,selectedDate);
+
+    bindScopedStatusButtons($("#calendarView"));
+    bindTaskActions();
+  };
+
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
     selectedDate=parseDate(b.dataset.caldate);
     weekCursor=startOfWeek(selectedDate);
 
-    $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
-    $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate),selectedDate);
-
-    bindTaskActions();
     renderWeekStrip();
+    renderDay();
+    renderWeek();
     renderCalendar();
     renderExpenseSummary();
   });
-  $("#calendarDayHeading").textContent=`Tareas · ${shortDate(selectedDate)}`;
-  $("#calendarDayList").innerHTML=listHtml(expandedTasksForDate(selectedDate).sort(compareTasksByDate),selectedDate);
-  bindTaskActions();
+
+  renderSelectedCalendarDay();
 }
 function renderWeek(){
   const end=addDays(weekCursor,6);
@@ -1216,9 +1379,11 @@ function renderWeek(){
     const d=addDays(weekCursor,i);
     const list=expandedTasksForDate(d).sort(compareTasksByDate);
     return {d,list};
-  }).filter(x=>x.list.length>0);
+  });
 
-  $("#weekBoard").innerHTML=days.length ? days.map(({d,list})=>`
+  const daysWithTasks=days.filter(x=>x.list.length>0);
+
+  $("#weekBoard").innerHTML=daysWithTasks.length ? daysWithTasks.map(({d,list})=>`
     <section class="week-column">
       <h3>${d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"short"})}</h3>
       ${list.map(t=>`<div class="mini-task ${t.highImportance?"high-importance":""}" data-edit="${t.id}" data-edit-date="${dateKey(d)}">
@@ -1228,30 +1393,23 @@ function renderWeek(){
     </section>
   `).join("") : `<div class="empty week-empty">No hay tareas registradas en esta semana.</div>`;
 
-  $$("[data-recurrence-task]").forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    openRecurrenceDialog(btn.dataset.recurrenceTask,btn.dataset.recurrenceDate);
-  });
+  const occurrences=days.flatMap(({d,list})=>list.map(t=>({t,d})));
+  const pending=occurrences.filter(x=>x.t.status==="pending");
+  const completed=occurrences.filter(x=>x.t.status==="completed");
+  const missed=occurrences.filter(x=>x.t.status==="missed");
 
-  $$("[data-comment-task]").forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    openCommentDialog(btn.dataset.commentTask,btn.dataset.commentDate);
-  });
+  $("#weekStatsGrid").innerHTML=scopedStatusStatsHTML({
+    pending:pending.length,
+    completed:completed.length,
+    missed:missed.length
+  },"week");
 
-  $$("[data-task-money]").forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    openTaskMovementDetail(btn.dataset.taskMoney);
-  });
+  $("#weekPendingList").innerHTML=weekOccurrenceListHTML(pending);
+  $("#weekCompletedList").innerHTML=weekOccurrenceListHTML(completed);
+  $("#weekMissedList").innerHTML=weekOccurrenceListHTML(missed);
 
-  $$("[data-emoji-task]").forEach(btn=>btn.onclick=e=>{
-    e.preventDefault();
-    e.stopPropagation();
-    openEmojiOnlyEditor(btn.dataset.emojiTask);
-  });
-  $$("[data-edit]").forEach(b=>b.onclick=()=>openTask(tasks.find(t=>t.id===b.dataset.edit),b.dataset.editDate));
+  bindScopedStatusButtons($("#weekView"));
+  bindTaskActions();
 }
 function renderBoard(){
   const groups={pending:[],in_progress:[],waiting:[],completed:[]};
@@ -1584,6 +1742,7 @@ function openTask(t=null,occurrenceKey=""){
   $("#boardStage").value=t?boardStageOf(t):"pending";
   $("#highImportance").checked=!!t?.highImportance;
   const taskMovement=(t && !editingLaterOccurrence)?findTaskMovement(t.id):null;
+  $("#taskFinanceDetails").open=!!taskMovement;
   $("#taskFinanceType").value=taskMovement?movementType(taskMovement):"expense";
   $("#taskFinanceTitle").value=taskMovement?.title||"";
   $("#taskFinanceDescription").value=taskMovement?.description||"";
@@ -2480,15 +2639,19 @@ function renderViewExpenses(){
 
   const key=$("#viewExpenseDate").value || dateKey(selectedDate);
   const d=parseDate(key);
-  const list=activeExpenses().filter(e=>e.date===key);
+  const list=activeExpenses()
+    .filter(e=>e.date===key)
+    .sort((a,b)=>String(a.createdAt||"").localeCompare(String(b.createdAt||"")));
 
   const dayTotals=expenseTotalsForDate(d);
   $("#viewExpenseDayTotal").textContent=totalsText("Balance del día",dayTotals);
   $("#viewExpenseDayTotal").classList.remove("balance-positive","balance-negative","balance-mixed","balance-neutral");
   $("#viewExpenseDayTotal").classList.add(balanceClassForTotals(dayTotals));
 
-  $("#viewExpensesList").innerHTML=list.length ? list.map(e=>`
-    <article class="expense-card">
+  $("#viewExpensesList").innerHTML=list.length ? list.map(e=>{
+    const linkedTask=e.taskId?tasks.find(t=>t.id===e.taskId):null;
+    return `
+    <article class="expense-card expense-card-menu-card">
       <div class="expense-card-main">
         <div class="movement-card-title">
           <span class="movement-gold-symbol">${movementSymbol(e)}</span>
@@ -2497,21 +2660,26 @@ function renderViewExpenses(){
             <strong>${esc(e.title)}</strong>
           </span>
         </div>
-        <span class="expense-card-amount ${movementType(e)}">${signedMoney(movementSignedAmount(e))} ${e.currency}</span>
-      </div>
-      ${e.description ? `<p>${esc(e.description)}</p>` : ""}
-      <div class="expense-card-actions expense-card-actions-three">
-        <button type="button" class="expense-edit-btn" data-expense-edit="${e.id}">✏ Editar</button>
 
-        <div class="expense-book-move-wrap">
-          <button type="button"
-                  class="expense-book-move-btn"
-                  data-open-expense-book-move="${e.id}">
-            📖 Mover
+        <div class="expense-card-right">
+          <span class="expense-card-amount ${movementType(e)}">${signedMoney(movementSignedAmount(e))} ${e.currency}</span>
+          <button type="button" class="expense-card-menu-btn" data-expense-menu="${e.id}" aria-label="Acciones del movimiento" title="Acciones">
+            <span></span><span></span><span></span>
           </button>
+        </div>
+      </div>
+
+      ${e.description ? `<p>${esc(e.description)}</p>` : ""}
+      ${linkedTask ? `<small class="expense-linked-task">✅ Tarea: ${esc(linkedTask.title)}</small>` : ""}
+
+      <div class="expense-card-popup hidden" data-expense-menu-panel="${e.id}">
+        <button type="button" data-expense-edit="${e.id}">✏ Editar</button>
+
+        <div class="expense-menu-move-wrap">
+          <button type="button" data-open-expense-book-move="${e.id}">📖 Mover</button>
           <select class="expense-book-move-select hidden"
                   data-expense-book-move="${e.id}"
-                  aria-label="Mover gasto a otro libro">
+                  aria-label="Mover movimiento a otro libro">
             <option value="">Selecciona libro</option>
             ${books
               .filter(book=>book.id!==e.bookId)
@@ -2520,13 +2688,26 @@ function renderViewExpenses(){
           </select>
         </div>
 
-        <button type="button" class="expense-delete-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
+        <button type="button" class="expense-delete-menu-btn" data-expense-delete="${e.id}">🗑 Borrar</button>
       </div>
-    </article>
-  `).join("") : `<div class="empty">No hay gastos ni ingresos registrados en este día.</div>`;
+    </article>`;
+  }).join("") : `<div class="empty">No hay gastos ni ingresos registrados en este día.</div>`;
+
+  $$("[data-expense-menu]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const panel=$(`[data-expense-menu-panel="${btn.dataset.expenseMenu}"]`);
+      if(!panel) return;
+      $$("[data-expense-menu-panel]").forEach(other=>{
+        if(other!==panel) other.classList.add("hidden");
+      });
+      panel.classList.toggle("hidden");
+    };
+  });
 
   $$("[data-expense-edit]").forEach(btn=>{
-    btn.onclick=async()=>{
+    btn.onclick=()=>{
       const expense=expenses.find(e=>e.id===btn.dataset.expenseEdit);
       if(!expense) return;
       $("#viewExpensesDialog").close();
@@ -2538,8 +2719,7 @@ function renderViewExpenses(){
     btn.onclick=async e=>{
       e.preventDefault();
       e.stopPropagation();
-      const expenseId=btn.dataset.expenseDelete;
-      await deleteExpenseById(expenseId);
+      await deleteExpenseById(btn.dataset.expenseDelete);
     };
   });
 
@@ -2559,7 +2739,6 @@ function renderViewExpenses(){
 
       const select=$(`[data-expense-book-move="${expense.id}"]`);
       if(!select) return;
-
       select.classList.toggle("hidden");
       if(!select.classList.contains("hidden")) select.focus();
     };
@@ -2569,12 +2748,8 @@ function renderViewExpenses(){
     select.onchange=e=>{
       e.preventDefault();
       e.stopPropagation();
-
-      const expenseId=select.dataset.expenseBookMove;
-      const destinationBookId=select.value;
-      if(!destinationBookId) return;
-
-      moveExpenseToBook(expenseId,destinationBookId);
+      if(!select.value) return;
+      moveExpenseToBook(select.dataset.expenseBookMove,select.value);
     };
   });
 }
@@ -2832,6 +3007,11 @@ $("#dueDate").addEventListener("change",()=>syncDueDependentFields({notify:true}
 $("#startDate").addEventListener("change",()=>syncDueDependentFields({notify:true}));
 
 
+$("#financeLedgerBtn").onclick=openFinanceLedger;
+$("#closeFinanceLedgerDialog").onclick=$("#closeFinanceLedgerBtn").onclick=()=>$("#financeLedgerDialog").close();
+$("#financeLedgerDialog").addEventListener("click",e=>{
+  if(e.target===$("#financeLedgerDialog")) $("#financeLedgerDialog").close();
+});
 $("#viewExpensesBtn").onclick=openViewExpensesDialog;
 $("#closeViewExpensesDialog").onclick=()=>$("#viewExpensesDialog").close();
 $$("[data-view-expense-shift]").forEach(btn=>{

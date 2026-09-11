@@ -3671,3 +3671,457 @@ body{background:radial-gradient(circle at top left,color-mix(in srgb,var(--accen
   opacity:.58;
   font-weight:900;
 }
+
+
+/* =========================================================
+   VERSION 11.7
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   Movimiento de dinero dentro de Nueva / Editar tarea
+   --------------------------------------------------------- */
+.task-finance-details{
+  margin:12px 0 14px;
+  border:1px solid var(--line);
+  border-radius:15px;
+  overflow:hidden;
+  background:var(--panel-2);
+}
+
+.task-finance-details > summary{
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 14px;
+  cursor:pointer;
+  list-style:none;
+  font-weight:800;
+}
+
+.task-finance-details > summary::-webkit-details-marker{
+  display:none;
+}
+
+.task-finance-details > summary::after{
+  content:"⌄";
+  flex:0 0 auto;
+  font-size:1.1rem;
+  transition:transform .18s ease;
+}
+
+.task-finance-details[open] > summary::after{
+  transform:rotate(180deg);
+}
+
+.task-finance-details > summary small{
+  color:var(--muted);
+  font-weight:500;
+  text-align:right;
+}
+
+.task-finance-details .task-finance-section{
+  margin:0 !important;
+  border:0 !important;
+  border-top:1px solid var(--line) !important;
+  border-radius:0 !important;
+}
+
+:root[data-theme="emerald_gold"] .task-finance-details{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.40) !important;
+}
+
+:root[data-theme="emerald_gold"] .task-finance-details .task-finance-section{
+  border-top-color:rgba(190,150,37,.35) !important;
+}
+
+/* ---------------------------------------------------------
+   Estadísticas de Calendario y Semana
+   --------------------------------------------------------- */
+.view-status-stats{
+  margin:14px 0;
+}
+
+.week-status-list{
+  display:grid;
+  gap:16px;
+}
+
+.week-status-day{
+  display:grid;
+  gap:8px;
+}
+
+.week-status-day h4{
+  margin:0;
+  padding:0 2px;
+  text-transform:capitalize;
+  color:var(--muted);
+}
+
+/* ---------------------------------------------------------
+   Indicadores de cantidad de tareas
+   1 = emoji de la tarea
+   2–4 = contador amarillo
+   5+ = contador rojo
+   --------------------------------------------------------- */
+.calendar-task-indicator,
+.week-day-indicators{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+}
+
+.calendar-task-single,
+.week-task-single{
+  width:14px;
+  height:14px;
+  display:inline-grid;
+  place-items:center;
+  font-size:11px;
+  line-height:1;
+  overflow:hidden;
+}
+
+.calendar-task-count,
+.week-task-count{
+  min-width:17px;
+  height:17px;
+  padding:0 4px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  font-size:.68rem;
+  line-height:1;
+  font-weight:900;
+  color:#222;
+}
+
+.calendar-task-count.yellow,
+.week-task-count.yellow{
+  background:#f3c84b;
+  color:#4a3800;
+}
+
+.calendar-task-count.red,
+.week-task-count.red{
+  background:#d9535f;
+  color:#fff;
+}
+
+.calendar-day{
+  position:relative;
+}
+
+.calendar-task-indicator{
+  min-height:17px;
+}
+
+/* ---------------------------------------------------------
+   Balance clicable
+   --------------------------------------------------------- */
+.expense-balance-btn{
+  min-width:0;
+  display:grid;
+  gap:2px;
+  padding:8px 10px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+  border-radius:12px;
+}
+
+.expense-balance-btn:active{
+  transform:scale(.985);
+}
+
+.expense-balance-hint{
+  font-size:.68rem;
+  color:var(--muted);
+}
+
+:root[data-theme="emerald_gold"] .expense-balance-btn{
+  color:#17382b !important;
+}
+
+.finance-ledger-dialog{
+  width:min(94vw,680px);
+  max-height:calc(100dvh - 22px);
+  overflow:auto;
+}
+
+.finance-ledger-list{
+  display:grid;
+  gap:10px;
+  max-height:52vh;
+  overflow:auto;
+  padding-right:2px;
+}
+
+.ledger-movement-card{
+  display:grid;
+  gap:8px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel-2);
+}
+
+.ledger-movement-head{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+}
+
+.ledger-movement-head > div{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+
+.ledger-movement-head strong{
+  overflow-wrap:anywhere;
+}
+
+.ledger-movement-amount{
+  white-space:nowrap;
+  font-weight:900;
+}
+
+.ledger-movement-amount.expense{
+  color:#c64f5d;
+}
+
+.ledger-movement-amount.income{
+  color:#218a54;
+}
+
+.ledger-movement-card p{
+  margin:0;
+  color:var(--muted);
+}
+
+.ledger-movement-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 12px;
+  font-size:.78rem;
+  color:var(--muted);
+}
+
+.finance-ledger-totals{
+  display:grid;
+  gap:10px;
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+}
+
+.finance-ledger-totals h3{
+  margin:0;
+}
+
+.ledger-total-currency{
+  display:grid;
+  gap:6px;
+  padding:11px 12px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel-2);
+}
+
+.ledger-total-currency > div{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.ledger-net{
+  margin-top:3px;
+  padding-top:7px;
+  border-top:1px dashed var(--line);
+}
+
+:root[data-theme="emerald_gold"] .ledger-movement-card,
+:root[data-theme="emerald_gold"] .ledger-total-currency{
+  background:#fffef8 !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+/* ---------------------------------------------------------
+   Menú de tres líneas en tarjetas de gastos / ingresos
+   --------------------------------------------------------- */
+.expense-card-menu-card{
+  position:relative;
+}
+
+.expense-card-right{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.expense-card-menu-btn{
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  display:grid;
+  place-content:center;
+  gap:4px;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel-2);
+  cursor:pointer;
+}
+
+.expense-card-menu-btn span{
+  display:block;
+  width:18px;
+  height:2px;
+  border-radius:999px;
+  background:currentColor;
+}
+
+.expense-card-popup{
+  position:absolute;
+  z-index:12;
+  top:54px;
+  right:12px;
+  width:min(220px,calc(100% - 24px));
+  display:grid;
+  gap:7px;
+  padding:9px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  background:var(--panel);
+  box-shadow:0 12px 28px rgba(0,0,0,.20);
+}
+
+.expense-card-popup.hidden{
+  display:none !important;
+}
+
+.expense-card-popup > button,
+.expense-menu-move-wrap > button{
+  width:100%;
+  min-height:42px;
+  padding:9px 11px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--panel-2);
+  color:var(--text);
+  text-align:left;
+  cursor:pointer;
+}
+
+.expense-menu-move-wrap{
+  display:grid;
+  gap:6px;
+}
+
+.expense-delete-menu-btn{
+  color:#c64f5d !important;
+}
+
+.expense-linked-task{
+  display:inline-flex;
+  margin-top:4px;
+  color:var(--muted);
+}
+
+:root[data-theme="emerald_gold"] .expense-card-menu-btn,
+:root[data-theme="emerald_gold"] .expense-card-popup,
+:root[data-theme="emerald_gold"] .expense-card-popup > button,
+:root[data-theme="emerald_gold"] .expense-menu-move-wrap > button{
+  background:#fffef8 !important;
+  color:#0f5c43 !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+/* ---------------------------------------------------------
+   Versión visible arriba en Ajustes
+   --------------------------------------------------------- */
+.settings-version-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin:0 0 12px;
+  padding:9px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-2);
+  font-size:.82rem;
+}
+
+.settings-version-top strong{
+  font-size:.9rem;
+}
+
+:root[data-theme="emerald_gold"] .settings-version-top{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+/* ---------------------------------------------------------
+   Pantallas chicas
+   --------------------------------------------------------- */
+@media(max-width:430px){
+  .task-finance-details > summary{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .task-finance-details > summary small{
+    text-align:left;
+  }
+
+  .ledger-movement-head{
+    grid-template-columns:auto minmax(0,1fr);
+  }
+
+  .ledger-movement-amount{
+    grid-column:1 / -1;
+    justify-self:end;
+  }
+
+  .expense-card-main{
+    align-items:flex-start !important;
+  }
+
+  .expense-card-right{
+    flex-direction:column-reverse;
+    align-items:flex-end;
+  }
+
+  .expense-card-popup{
+    top:50px;
+    right:8px;
+    width:calc(100% - 16px);
+  }
+
+  .view-status-stats{
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:6px !important;
+  }
+
+  .view-status-stats .stat-card{
+    min-width:0;
+    padding:9px 4px !important;
+  }
+
+  .view-status-stats .stat-card small{
+    font-size:.65rem;
+    overflow-wrap:anywhere;
+  }
+}

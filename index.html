@@ -33,10 +33,11 @@
     </nav>
 
     <section class="expense-summary-bar" id="expenseSummaryBar">
-      <div>
+      <button type="button" id="financeLedgerBtn" class="expense-balance-btn" title="Ver contabilidad completa">
         <strong id="expenseDayTotal">Balance del día: $0.00 MN</strong>
-        <small id="expenseMonthTotal">Acumulado del periodo: $0.00 MN</small>
-      </div>
+        <small id="expenseMonthTotal">Acumulado hasta la fecha: $0.00 MN</small>
+        <span class="expense-balance-hint">Toca para ver todos los movimientos ›</span>
+      </button>
       <div class="expense-actions">
         <button id="viewExpensesBtn" class="expense-eye-btn" title="Ver gastos e ingresos" aria-label="Ver gastos e ingresos">
           <svg class="expense-eye-svg" viewBox="0 0 24 24" aria-hidden="true">
@@ -120,15 +121,38 @@
           </div>
           <div id="calendarGrid" class="calendar-grid"></div>
         </div>
-        <div class="panel">
+
+        <div class="stats-grid view-status-stats" id="calendarStatsGrid"></div>
+
+        <section class="panel" id="calendarPendingSection">
           <div class="panel-head">
             <div>
-              <h3 id="calendarDayHeading">Tareas del día</h3>
-              <p>Toca un día para ver sus tareas.</p>
+              <h3 id="calendarDayHeading">Pendientes del día</h3>
+              <p>Las tareas pendientes de la fecha seleccionada.</p>
             </div>
           </div>
-          <div id="calendarDayList" class="task-list"></div>
-        </div>
+          <div id="calendarPendingList" class="task-list"></div>
+        </section>
+
+        <section class="panel" id="calendarCompletedSection">
+          <div class="panel-head">
+            <div>
+              <h3 class="green">Completadas</h3>
+              <p>Completadas en la fecha seleccionada.</p>
+            </div>
+          </div>
+          <div id="calendarCompletedList" class="task-list"></div>
+        </section>
+
+        <section class="panel" id="calendarMissedSection">
+          <div class="panel-head">
+            <div>
+              <h3 class="red">No completadas</h3>
+              <p>Vencidas o no completadas en la fecha seleccionada.</p>
+            </div>
+          </div>
+          <div id="calendarMissedList" class="task-list"></div>
+        </section>
       </section>
 
       <section id="weekView" class="view">
@@ -141,6 +165,37 @@
           <button id="nextWeek" class="icon-btn">›</button>
         </div>
         <div id="weekBoard" class="week-board"></div>
+        <div class="stats-grid view-status-stats" id="weekStatsGrid"></div>
+
+        <section class="panel" id="weekPendingSection">
+          <div class="panel-head">
+            <div>
+              <h3>Pendientes de la semana</h3>
+              <p>Organizadas por día.</p>
+            </div>
+          </div>
+          <div id="weekPendingList" class="task-list week-status-list"></div>
+        </section>
+
+        <section class="panel" id="weekCompletedSection">
+          <div class="panel-head">
+            <div>
+              <h3 class="green">Completadas</h3>
+              <p>Completadas durante esta semana.</p>
+            </div>
+          </div>
+          <div id="weekCompletedList" class="task-list week-status-list"></div>
+        </section>
+
+        <section class="panel" id="weekMissedSection">
+          <div class="panel-head">
+            <div>
+              <h3 class="red">No completadas</h3>
+              <p>Vencidas o no completadas durante esta semana.</p>
+            </div>
+          </div>
+          <div id="weekMissedList" class="task-list week-status-list"></div>
+        </section>
       </section>
 
       <section id="boardView" class="view">
@@ -234,6 +289,41 @@
       <label>Descripción
         <textarea id="description" rows="4" maxlength="2000" placeholder="Descripción larga de la tarea..."></textarea>
       </label>
+      <details id="taskFinanceDetails" class="task-finance-details">
+        <summary>
+          <span>💰 Movimiento de dinero</span>
+          <small>Opcional · toca para agregar gasto o ingreso</small>
+        </summary>
+        <section class="task-finance-section">
+        <div class="task-finance-head">
+          <div>
+            <strong>Movimiento de dinero <small>(opcional)</small></strong>
+            <small>Déjalo sin monto si esta tarea no tiene gasto ni ingreso.</small>
+          </div>
+          <button type="button" id="taskFinanceTypeBtn" class="movement-type-btn expense">Gasto</button>
+          <input type="hidden" id="taskFinanceType" value="expense" />
+        </div>
+
+        <label><span id="taskFinanceTitleLabel">¿En qué gasté?</span>
+          <input id="taskFinanceTitle" maxlength="120" placeholder="Ej. Material, gasolina, comida..." />
+        </label>
+
+        <label>Descripción
+          <textarea id="taskFinanceDescription" rows="3" maxlength="1000" placeholder="Detalle opcional del movimiento..."></textarea>
+        </label>
+
+        <label>Monto
+          <div class="money-input-wrap money-input-pretty">
+            <span class="money-symbol">$</span>
+            <input id="taskFinanceAmountDisplay" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" />
+            <input id="taskFinanceAmount" type="hidden" />
+            <button type="button" id="taskFinanceCurrencyBtn" class="currency-btn">MN</button>
+          </div>
+          <small class="money-help">Máximo $99,999,999.99</small>
+        </label>
+      </section>
+      </details>
+
 
       <label>Emoticono de la tarea
         <button type="button" id="chooseTaskEmojiBtn" class="emoji-picker-trigger">
@@ -312,37 +402,7 @@
         </div>
         <label class="switch"><input id="highImportance" type="checkbox"><span></span></label>
       </div>
-
-      <section class="task-finance-section">
-        <div class="task-finance-head">
-          <div>
-            <strong>Movimiento de dinero <small>(opcional)</small></strong>
-            <small>Déjalo sin monto si esta tarea no tiene gasto ni ingreso.</small>
-          </div>
-          <button type="button" id="taskFinanceTypeBtn" class="movement-type-btn expense">Gasto</button>
-          <input type="hidden" id="taskFinanceType" value="expense" />
-        </div>
-
-        <label><span id="taskFinanceTitleLabel">¿En qué gasté?</span>
-          <input id="taskFinanceTitle" maxlength="120" placeholder="Ej. Material, gasolina, comida..." />
-        </label>
-
-        <label>Descripción
-          <textarea id="taskFinanceDescription" rows="3" maxlength="1000" placeholder="Detalle opcional del movimiento..."></textarea>
-        </label>
-
-        <label>Monto
-          <div class="money-input-wrap money-input-pretty">
-            <span class="money-symbol">$</span>
-            <input id="taskFinanceAmountDisplay" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" />
-            <input id="taskFinanceAmount" type="hidden" />
-            <button type="button" id="taskFinanceCurrencyBtn" class="currency-btn">MN</button>
-          </div>
-          <small class="money-help">Máximo $99,999,999.99</small>
-        </label>
-      </section>
-
-      <div class="modal-actions">
+<div class="modal-actions">
         <button type="button" id="deleteTaskBtn" class="danger-btn hidden">Eliminar</button>
         <button type="button" id="cancelTaskBtn" class="ghost-btn">Cancelar</button>
         <button type="submit" class="primary-btn">Guardar tarea</button>
@@ -354,6 +414,10 @@
     <div class="modal-head">
       <div><p class="eyebrow">Preferencias y respaldo</p><h2>Ajustes</h2></div>
       <button class="icon-btn" id="closeSettings">✕</button>
+    </div>
+    <div class="settings-version-top">
+      <span>Versión instalada</span>
+      <strong id="settingsVersionTop">11.7</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -404,7 +468,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.6.5</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.7</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -782,6 +846,26 @@
 
     <div class="modal-actions">
       <button type="button" id="cancelRecurrenceDialog" class="ghost-btn">Cancelar</button>
+    </div>
+  </dialog>
+
+  
+  <dialog id="financeLedgerDialog" class="modal finance-ledger-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Contabilidad del libro</p>
+        <h2>Gastos e ingresos</h2>
+        <small id="financeLedgerThroughDate"></small>
+      </div>
+      <button type="button" class="icon-btn" id="closeFinanceLedgerDialog">✕</button>
+    </div>
+
+    <div id="financeLedgerList" class="finance-ledger-list"></div>
+
+    <section id="financeLedgerTotals" class="finance-ledger-totals"></section>
+
+    <div class="modal-actions">
+      <button type="button" id="closeFinanceLedgerBtn" class="primary-btn">Cerrar</button>
     </div>
   </dialog>
 

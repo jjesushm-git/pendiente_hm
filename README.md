@@ -1,53 +1,65 @@
-# Mis Tareas — Versión 11.6.5
+# Mis Tareas — Versión 11.7
 
-Base: Versión 11.6.4 ESTABLE.
+Base: Versión 11.6.5 ESTABLE.
 
-## Edición de tareas recurrentes desde una ocurrencia
+## Formulario de tareas
+- Movimiento de dinero ahora aparece inmediatamente después de Título y Descripción.
+- Permanece oculto dentro de una sección desplegable.
+- Al tocar “Movimiento de dinero” se muestran los campos existentes de Gasto / Ingreso.
+- Si una tarea ya tiene un movimiento asociado, la sección se abre automáticamente al editarla.
 
-Ahora las tareas recurrentes se comportan por tramos.
+## Calendario
+- Se agregan botones de:
+  - Pendientes.
+  - Completadas.
+  - Vencidas.
+- Cada botón desplaza a su sección correspondiente.
+- Debajo del calendario se muestran apartados independientes de Pendientes, Completadas y No completadas para la fecha seleccionada.
 
-Ejemplo:
-- Una tarea recurrente comienza el lunes.
-- El miércoles se edita esa ocurrencia.
-- Lunes y martes conservan la información anterior.
-- Miércoles y las siguientes ocurrencias usan la nueva información.
+## Semana
+- Se agregan botones de Pendientes, Completadas y Vencidas.
+- Se agregan sus tres apartados correspondientes.
+- Las tareas se agrupan por día de la semana.
+- Se conserva la edición por ocurrencia de tareas recurrentes.
 
-La misma lógica se aplica a:
-- Diaria.
-- Semanal.
-- Mensual.
-- Anual.
+## Indicadores de tareas en Calendario y tira semanal
+- 1 tarea: se muestra el emoticono de esa tarea.
+- 2 a 4 tareas: se muestra el número de tareas con fondo amarillo.
+- 5 o más tareas: se muestra el número con fondo rojo.
+- Los indicadores de Gasto ($) e Ingreso ($$) continúan mostrándose.
 
-## Cómo funciona
-- Si se edita la primera ocurrencia de la serie, se actualiza la serie actual.
-- Si se edita una ocurrencia posterior:
-  - el tramo anterior termina el día previo,
-  - se crea un nuevo tramo desde la ocurrencia seleccionada,
-  - las ocurrencias anteriores no cambian.
-- Se usa `recurrenceUntil` para limitar el tramo anterior.
-- Los comentarios por ocurrencia anteriores permanecen en el tramo anterior.
-- Los comentarios desde la fecha de división se trasladan al nuevo tramo.
-- Los movimientos financieros NO se duplican automáticamente al dividir una serie.
-  - Si se captura un nuevo movimiento al editar el nuevo tramo, este pertenece al tramo nuevo.
+## Contabilidad
+- La etiqueta de Balance / Acumulado ahora es clicable.
+- Abre un modal con todos los gastos e ingresos del libro activo desde el más antiguo hasta la fecha seleccionada.
+- Los movimientos se ordenan del más antiguo al más reciente.
+- También se incluyen movimientos que fueron creados desde una tarea.
+- Los movimientos vinculados muestran el nombre de la tarea.
+- Al final se muestran por separado:
+  - Total de Gastos.
+  - Total de Ingresos.
+  - Balance neto.
+- Se calculan MN y DLS por separado.
+- El acumulado mostrado en la barra principal ahora se calcula desde el movimiento más antiguo hasta la fecha seleccionada.
+- La configuración del periodo financiero continúa disponible para Bitácora y exportaciones.
 
-## Cambio directo de recurrencia
-La misma regla se aplica al botón de recurrencia de la tarjeta.
-Si cambias la recurrencia desde una ocurrencia futura:
-- las ocurrencias anteriores conservan la recurrencia anterior,
-- desde la fecha seleccionada se aplica la nueva.
+## Tarjetas de gastos / ingresos
+- Editar, Mover y Borrar dejan de ocupar espacio permanente.
+- A la derecha se muestra un botón con tres líneas horizontales.
+- Al tocarlo se abre un menú con:
+  - Editar.
+  - Mover.
+  - Borrar.
+- Cada acción conserva su funcionalidad de versiones anteriores.
 
-## Vistas
-El contexto de la ocurrencia se conserva al editar desde:
-- Día.
-- Calendario.
-- Semana.
-- Tablero.
+## Ajustes
+- La versión instalada aparece inmediatamente en la parte superior de Ajustes.
+- También continúa apareciendo dentro de Acerca de.
 
-No se modifican Libros, Gastos/Ingresos, Bitácora, Comentarios, selector de hora ni exportación/importación.
-
-
-### Protección de tramos ya divididos
-- Si una serie ya había sido dividida y después editas una ocurrencia de un tramo histórico, se conserva también el límite final de ese tramo.
-- Esto evita que una edición histórica vuelva a extenderse y se empalme con un tramo más nuevo.
-- En Día y Tablero, un tramo recurrente anterior que ya terminó no se muestra como una tarea pendiente duplicada después de su fecha límite.
-- Calendario y Semana siguen conservando los tramos históricos en sus fechas correspondientes.
+## Compatibilidad
+Se conservan:
+- Tareas recurrentes por tramos desde 11.6.5.
+- Selector responsive de hora.
+- Libros y mover tareas/gastos entre libros.
+- Comentarios por ocurrencia.
+- Gastos e ingresos.
+- Bitácora y exportación/importación.
