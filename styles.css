@@ -6398,3 +6398,67 @@ dialog .comic-bubble-tail,
 }
 
 /* No se necesita temporizador ni gesto de pulsación larga. */
+
+
+/* =========================================================
+   VERSION 11.8.1 — FECHA EN TARJETAS COMPACTAS + TIRA SEMANAL
+   ========================================================= */
+
+/* La segunda línea de la tarjeta permanece en un solo renglón.
+   Los metadatos pueden recortarse, pero fecha y comentario quedan visibles. */
+.compact-task-meta-line{
+  width:100%;
+  min-width:0;
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center;
+  gap:4px !important;
+  overflow:hidden;
+  line-height:1.2 !important;
+}
+
+.compact-task-meta-main{
+  min-width:0;
+  flex:1 1 auto;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+
+.compact-task-date{
+  flex:0 0 auto;
+  white-space:nowrap;
+  font-size:.66rem;
+  font-weight:500;
+  color:var(--muted);
+  line-height:1;
+}
+
+.compact-task-meta-line .mini-comment-btn{
+  flex:0 0 auto;
+  margin:0 !important;
+}
+
+/* No se incrementa min-height/padding de la tarjeta compacta. */
+:root[data-theme="emerald_gold"] .compact-task-date{
+  color:var(--eg-secondary,#667a70) !important;
+}
+
+@media(max-width:430px){
+  .compact-task-date{
+    font-size:.61rem;
+  }
+
+  .compact-task-meta-line{
+    gap:3px !important;
+  }
+}
+
+@media(max-width:350px){
+  .compact-task-date{
+    font-size:.58rem;
+  }
+}

@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.8";
+const APP_VERSION = "11.8.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -157,11 +157,16 @@ function compactTaskCardHTML(t,occurrenceDate=selectedDate,scope="compact"){
 
         <span class="compact-task-copy">
           <strong>${esc(t.title)}</strong>
-          <small>
-            ${formatTimeMeta(t)} · ${statusLabel(t.status)}
-            ${t.status==="pending"?` · ${boardStageLabel(boardStageOf(t))}`:""}
-            · ${recurrenceButtonHTML(t,true,occurrenceDate)}
-            ${taskMovementIndicatorHTML(t)} ·
+          <small class="compact-task-meta-line">
+            <span class="compact-task-meta-main">
+              ${formatTimeMeta(t)} · ${statusLabel(t.status)}
+              ${t.status==="pending"?` · ${boardStageLabel(boardStageOf(t))}`:""}
+              · ${recurrenceButtonHTML(t,true,occurrenceDate)}
+              ${taskMovementIndicatorHTML(t)}
+            </span>
+            <span class="compact-task-date" title="${shortDate(parseDate(occurrenceKey))}">
+              📅 ${shortDate(parseDate(occurrenceKey))}
+            </span>
             <button type="button"
                     class="mini-comment-btn ${comment?"has-comment":"no-comment"}"
                     data-comment-task="${t.id}"
@@ -1102,9 +1107,19 @@ function renderWeekStrip(){
   }).join("");
 
   $$(".week-day").forEach(b=>b.onclick=()=>{
-    selectedDate=parseDate(b.dataset.date);
+    const clickedKey=b.dataset.date;
+    const alreadySelected=clickedKey===dateKey(selectedDate);
+
+    if(alreadySelected){
+      openCalendarQuickAdd(clickedKey);
+      return;
+    }
+
+    selectedDate=parseDate(clickedKey);
+    calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
     weekCursor=startOfWeek(selectedDate);
-    switchView("day");
+
+    /* Permanecer en la pestaña actual; solo cambia el día seleccionado. */
     renderAll();
   });
 }
