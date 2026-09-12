@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.8.2.1";
+const APP_VERSION = "11.8.2.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -2677,41 +2677,62 @@ function comicConfirm(message,{title="Confirmar",okText="Sí, continuar",cancelT
       cancel.removeEventListener("click",onCancel);
       dialog.removeEventListener("cancel",onCancel);
       dialog.removeEventListener("click",onBackdrop);
-      dialog.removeEventListener("close",onClose);
+      dialog.removeEventListener("close",onUnexpectedClose);
     };
 
     const finish=value=>{
       if(finished) return;
       finished=true;
       cleanup();
-      if(dialog.open) dialog.close();
-      resolve(value);
+
+      /* Importante:
+         la promesa se resuelve DESPUÉS de que el dialog terminó
+         realmente su evento "close". Así una segunda confirmación
+         consecutiva no recibe el cierre de la anterior. */
+      if(dialog.open){
+        dialog.addEventListener("close",()=>resolve(value),{once:true});
+        dialog.close();
+      }else{
+        resolve(value);
+      }
     };
 
     const onOk=()=>finish(true);
+
     const onCancel=e=>{
       if(e) e.preventDefault();
       finish(false);
     };
+
     const onBackdrop=e=>{
       if(e.target===dialog) finish(false);
     };
-    const onClose=()=>{
-      if(!finished){
-        finished=true;
-        cleanup();
-        resolve(false);
-      }
+
+    const onUnexpectedClose=()=>{
+      if(finished) return;
+      finished=true;
+      cleanup();
+      resolve(false);
     };
 
     ok.addEventListener("click",onOk);
     cancel.addEventListener("click",onCancel);
     dialog.addEventListener("cancel",onCancel);
     dialog.addEventListener("click",onBackdrop);
-    dialog.addEventListener("close",onClose);
+    dialog.addEventListener("close",onUnexpectedClose);
 
-    if(dialog.open) dialog.close();
-    dialog.showModal();
+    const show=()=>{
+      if(!finished && !dialog.open) dialog.showModal();
+    };
+
+    /* Si por alguna razón el mismo modal seguía abierto,
+       esperamos su cierre antes de reutilizarlo. */
+    if(dialog.open){
+      dialog.addEventListener("close",show,{once:true});
+      dialog.close();
+    }else{
+      show();
+    }
   });
 }
 
