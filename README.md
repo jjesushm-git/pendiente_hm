@@ -1,54 +1,66 @@
-# Mis Tareas — Versión 11.8.1
+# Mis Tareas — Versión 11.8.2
 
-Base: Versión 11.8 ESTABLE.
+Base utilizada: Versión 11.8.1 ESTABLE.
 
-## Fecha en tarjetas compactas
-Todas las tarjetas compactas de tareas ahora muestran la fecha de la ocurrencia.
+## Borrar una tarea que tiene movimiento financiero
+La eliminación ahora tiene validación cruzada.
 
-Se aplica en:
-- Día.
-- Calendario.
-- Semana.
-- Tablero.
-- Pendientes.
-- Completadas.
-- No completadas.
+Flujo:
+1. Se confirma que quieres eliminar la tarea.
+2. La tarea se enviará a Papelera por 24 horas, igual que antes.
+3. Si la tarea tiene un gasto o ingreso vinculado, aparece una segunda confirmación con:
+   - Borrar ambos.
+   - Conservar movimiento.
 
-La fecha aparece en la misma línea de metadatos, inmediatamente antes del botón de comentario:
+Si eliges Conservar movimiento:
+- la tarea va a Papelera,
+- el gasto/ingreso permanece registrado.
 
-`... · 📅 DD/MM/AAAA · 💬`
+Si eliges Borrar ambos:
+- la tarea va a Papelera,
+- el movimiento financiero se elimina.
 
-Para no aumentar el tamaño de la tarjeta:
-- no se cambia su altura mínima,
-- no se cambia su padding,
-- la línea no se parte,
-- los metadatos anteriores pueden reducirse visualmente si falta espacio,
-- la fecha y el botón de comentario permanecen visibles.
+Esta lógica se aplica tanto al botón Eliminar de la tarjeta expandida como al botón Eliminar dentro de Editar tarea.
 
-## Tira semanal superior
-Los botones de la semana superior ahora usan la misma lógica del Calendario.
+## Borrar un movimiento financiero que pertenece a una tarea
+Al eliminar desde Movimientos registrados:
 
-### Primer toque
-- selecciona el día,
-- actualiza la información de la fecha,
-- permanece en la pestaña actual.
+1. Se confirma que quieres borrar el movimiento.
+2. Si ese movimiento tiene una tarea vinculada, aparece una segunda confirmación con:
+   - Borrar ambos.
+   - Conservar tarea.
 
-### Segundo toque sobre el mismo día
-Abre el menú rápido con:
-- Agregar tarea.
-- Agregar gasto.
+Si eliges Conservar tarea:
+- se elimina solamente el movimiento,
+- la tarea permanece.
 
-La fecha seleccionada se transmite automáticamente al formulario correspondiente.
+Si eliges Borrar ambos:
+- se elimina el movimiento,
+- la tarea vinculada se envía a Papelera por 24 horas.
 
-### Fechas futuras
-- Agregar tarea sigue disponible.
-- Agregar gasto queda deshabilitado porque no se permiten movimientos financieros futuros.
+## Mensajes
+Los mensajes finales indican claramente qué ocurrió:
+- solo tarea,
+- tarea + movimiento,
+- solo movimiento,
+- movimiento + tarea.
 
-No importa si estás en Día, Calendario, Semana o Tablero: usar la tira semanal no te cambia automáticamente de pestaña.
+## Conservado
+No se modificó la lógica de:
+- Calendario,
+- Día,
+- Semana,
+- Tablero,
+- recurrencias,
+- libros,
+- periodos financieros,
+- comentarios,
+- restauración de Papelera.
 
 ## Validación
-- JavaScript sin errores.
+- JavaScript sin errores de sintaxis.
 - CSS sin errores.
 - Sin IDs HTML duplicados.
-- Sin referencias JavaScript inexistentes.
-- Se conservan Calendario, Día, Semana, Tablero, Libros, Movimientos, Comentarios, recurrencias y periodos financieros.
+- Sin referencias JavaScript a elementos inexistentes.
+- Todas las rutas existentes de borrado de tarea utilizan la validación cruzada.
+- La ruta de borrado de movimientos utiliza la validación cruzada.

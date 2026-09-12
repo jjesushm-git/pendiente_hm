@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.8.1";
+const APP_VERSION = "11.8.2";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -912,6 +912,58 @@ function purgeExpiredTrash(){
   trash=trash.filter(t=>!t.deletedAt || (now-new Date(t.deletedAt).getTime()) < TRASH_TTL);
   if(trash.length!==before) saveTrash();
 }
+
+async function deleteTaskWithLinkedMovementPrompt(taskId){
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task){
+    toast("No se encontró la tarea seleccionada.");
+    return false;
+  }
+
+  const movement=findTaskMovement(task.id);
+
+  const ok=await comicConfirm(
+    `¿Eliminar "${task.title}"? Se moverá a la papelera y podrás restaurarla durante 24 horas.`,
+    {
+      title:"Eliminar tarea",
+      okText:"🗑 Eliminar tarea",
+      cancelText:"Cancelar"
+    }
+  );
+
+  if(!ok) return false;
+
+  let deleteMovement=false;
+
+  if(movement){
+    deleteMovement=await comicConfirm(
+      `Esta tarea tiene un ${movementTypeLabel(movement).toLowerCase()} vinculado: "${movement.title}" por ${signedMoney(movementSignedAmount(movement))} ${movement.currency}. ¿También quieres borrar ese movimiento financiero?`,
+      {
+        title:"Movimiento financiero vinculado",
+        okText:"🗑 Borrar ambos",
+        cancelText:"Conservar movimiento"
+      }
+    );
+  }
+
+  if(deleteMovement && movement){
+    expenses=expenses.filter(e=>e.id!==movement.id);
+    saveExpenses();
+  }
+
+  moveToTrash(task.id);
+
+  if(deleteMovement && movement){
+    toast("Tarea enviada a la papelera y movimiento financiero borrado.");
+  }else if(movement){
+    toast("Tarea enviada a la papelera. El movimiento financiero se conservó.");
+  }else{
+    toast("Tarea movida a la papelera.");
+  }
+
+  return true;
+}
+
 function moveToTrash(id){
   const idx=tasks.findIndex(t=>t.id===id);
   if(idx<0) return;
@@ -1852,17 +1904,7 @@ function bindTaskActions(root=document){
     btn.onclick=async e=>{
       e.preventDefault();
       e.stopPropagation();
-
-      const t=tasks.find(x=>x.id===btn.dataset.delete);
-      if(!t) return;
-
-      if(await comicConfirm(`¿Eliminar "${t.title}"? Se moverá a la papelera y podrás restaurarla durante 24 horas.`,{
-        title:"Eliminar tarea",
-        okText:"🗑 Eliminar"
-      })){
-        moveToTrash(t.id);
-        toast("Tarea movida a la papelera.");
-      }
+      await deleteTaskWithLinkedMovementPrompt(btn.dataset.delete);
     };
   });
 }
@@ -2598,7 +2640,7 @@ async function requestNotifications(){
   toast(p==="granted"?"Notificaciones activadas.":"Permiso de notificaciones no concedido.");
   scheduleNotifications();
 }
-function comicConfirm(message,{title="Confirmar",okText="Sí, continuar"}={}){
+function comicConfirm(message,{title="Confirmar",okText="Sí, continuar",cancelText="Cancelar"}={}){
   return new Promise(resolve=>{
     const dialog=$("#comicConfirmDialog");
     const titleEl=$("#comicConfirmTitle");
@@ -2614,6 +2656,7 @@ function comicConfirm(message,{title="Confirmar",okText="Sí, continuar"}={}){
     titleEl.textContent=title;
     messageEl.textContent=message;
     ok.textContent=okText;
+    cancel.textContent=cancelText;
 
     let finished=false;
 
@@ -3088,18 +3131,50 @@ async function deleteExpenseById(expenseId){
   }
 
   const expense=expenses[index];
+  const linkedTask=expense.taskId ? tasks.find(t=>t.id===expense.taskId) : null;
+
   const ok=await comicConfirm(
     `¿Borrar "${expense.title}" por ${signedMoney(movementSignedAmount(expense))} ${expense.currency}?`,
-    {title:"Borrar movimiento",okText:"🗑 Borrar"}
+    {
+      title:"Borrar movimiento",
+      okText:"🗑 Borrar movimiento",
+      cancelText:"Cancelar"
+    }
   );
 
   if(!ok) return false;
 
+  let deleteTask=false;
+
+  if(linkedTask){
+    deleteTask=await comicConfirm(
+      `Este movimiento financiero pertenece a la tarea "${linkedTask.title}". ¿También quieres borrar la tarea?`,
+      {
+        title:"Tarea vinculada",
+        okText:"🗑 Borrar ambos",
+        cancelText:"Conservar tarea"
+      }
+    );
+  }
+
   expenses.splice(index,1);
   saveExpenses();
-  renderViewExpenses();
-  renderAll();
-  toast("Movimiento borrado.");
+
+  if(deleteTask && linkedTask){
+    moveToTrash(linkedTask.id);
+  }else{
+    renderViewExpenses();
+    renderAll();
+  }
+
+  if(deleteTask && linkedTask){
+    toast("Movimiento financiero borrado y tarea enviada a la papelera.");
+  }else if(linkedTask){
+    toast("Movimiento financiero borrado. La tarea se conservó.");
+  }else{
+    toast("Movimiento borrado.");
+  }
+
   return true;
 }
 
@@ -3472,13 +3547,10 @@ $("#taskForm").addEventListener("submit",e=>{
 $("#deleteTaskBtn").onclick=async()=>{
   const id=$("#taskId").value;
   if(!id) return;
-  if(await comicConfirm("¿Mover esta tarea a la papelera? Podrás recuperarla durante 24 horas.",{
-    title:"Eliminar tarea",
-    okText:"🗑 Eliminar"
-  })){
-    moveToTrash(id);
+
+  const deleted=await deleteTaskWithLinkedMovementPrompt(id);
+  if(deleted){
     $("#taskDialog").close();
-    toast("Tarea movida a la papelera.");
   }
 };
 $("#closeTaskDialog").onclick=$("#cancelTaskBtn").onclick=()=>$("#taskDialog").close();
