@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.8.2";
+const APP_VERSION = "11.8.2.1";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -34,6 +34,9 @@ function startOfWeek(d){ const x=startOfDay(d); const day=(x.getDay()+6)%7; retu
 function monthName(d){ return d.toLocaleDateString("es-MX",{month:"long",year:"numeric"}); }
 function longDate(d){ return d.toLocaleDateString("es-MX",{weekday:"long",day:"numeric",month:"long",year:"numeric"}); }
 function shortDate(d){ return d.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit",year:"numeric"}); }
+function compactTaskDate(d){
+  return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)}`;
+}
 function dotDate(d){ return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`; }
 function money(n){ return Number(n||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function formatMoneyInput(raw){
@@ -164,14 +167,16 @@ function compactTaskCardHTML(t,occurrenceDate=selectedDate,scope="compact"){
               · ${recurrenceButtonHTML(t,true,occurrenceDate)}
               ${taskMovementIndicatorHTML(t)}
             </span>
-            <span class="compact-task-date" title="${shortDate(parseDate(occurrenceKey))}">
-              📅 ${shortDate(parseDate(occurrenceKey))}
-            </span>
             <button type="button"
                     class="mini-comment-btn ${comment?"has-comment":"no-comment"}"
                     data-comment-task="${t.id}"
                     data-comment-date="${occurrenceKey}">${comment?"💬":"💬＋"}</button>
           </small>
+        </span>
+
+        <span class="compact-task-date"
+              title="Fecha: ${shortDate(parseDate(occurrenceKey))}">
+          📅 ${compactTaskDate(parseDate(occurrenceKey))}
         </span>
       </div>
     </div>`;
@@ -1416,12 +1421,19 @@ function listHtml(list,occurrenceDate=selectedDate){
 function recurrenceButtonHTML(t,compact=false,occurrenceDate=selectedDate){
   const value=t?.recurrence||"none";
   const label=recurrenceLabel(value);
+  const compactLabel=({
+    none:"Sin rec.",
+    daily:"Diaria",
+    weekly:"Semanal",
+    monthly:"Mensual",
+    yearly:"Anual"
+  })[value]||"Sin rec.";
   const occurrenceKey=occurrenceEditKey(t,occurrenceDate);
   return `<button type="button"
                   class="${compact?"mini-recurrence-btn":"recur-pill recur-edit-btn"}"
                   data-recurrence-task="${t.id}"
                   data-recurrence-date="${occurrenceKey}"
-                  title="Cambiar recurrencia">↻ ${label}</button>`;
+                  title="${compact?`Recurrencia: ${label}`:"Cambiar recurrencia"}">↻ ${compact?compactLabel:label}</button>`;
 }
 
 function openTaskCopyDialog(taskId,occurrenceKey){

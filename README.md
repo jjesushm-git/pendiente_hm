@@ -1,66 +1,49 @@
-# Mis Tareas — Versión 11.8.2
+# Mis Tareas — Versión 11.8.2.1
 
-Base utilizada: Versión 11.8.1 ESTABLE.
+Base: Versión 11.8.2 ESTABLE.
 
-## Borrar una tarea que tiene movimiento financiero
-La eliminación ahora tiene validación cruzada.
+## Corrección visual de tarjetas compactas
+Se corrigió únicamente la distribución visual de las tarjetas compactas.
 
-Flujo:
-1. Se confirma que quieres eliminar la tarea.
-2. La tarea se enviará a Papelera por 24 horas, igual que antes.
-3. Si la tarea tiene un gasto o ingreso vinculado, aparece una segunda confirmación con:
-   - Borrar ambos.
-   - Conservar movimiento.
+El problema era una regla responsive antigua que cambiaba el botón de recurrencia a `white-space: normal`, permitiendo que “Sin recurrencia” se partiera en dos líneas. Esto empujaba la fecha y el botón de comentario y hacía que la tarjeta se viera encimada.
 
-Si eliges Conservar movimiento:
-- la tarea va a Papelera,
-- el gasto/ingreso permanece registrado.
+### Cambios
+- La recurrencia compacta ya no puede partirse en dos líneas.
+- En tarjetas compactas “Sin recurrencia” se muestra como `Sin rec.`.
+- Las recurrencias Diaria, Semanal, Mensual y Anual conservan sus nombres.
+- El botón sigue siendo clicable y abre exactamente el mismo editor de recurrencia.
+- La fecha compacta se muestra como `📅 DD/MM/AA`.
+- El título emergente conserva la fecha completa.
+- Fecha y comentario tienen espacio reservado.
+- Los metadatos anteriores se recortan con puntos suspensivos si el teléfono no tiene suficiente ancho.
 
-Si eliges Borrar ambos:
-- la tarea va a Papelera,
-- el movimiento financiero se elimina.
-
-Esta lógica se aplica tanto al botón Eliminar de la tarjeta expandida como al botón Eliminar dentro de Editar tarea.
-
-## Borrar un movimiento financiero que pertenece a una tarea
-Al eliminar desde Movimientos registrados:
-
-1. Se confirma que quieres borrar el movimiento.
-2. Si ese movimiento tiene una tarea vinculada, aparece una segunda confirmación con:
-   - Borrar ambos.
-   - Conservar tarea.
-
-Si eliges Conservar tarea:
-- se elimina solamente el movimiento,
-- la tarea permanece.
-
-Si eliges Borrar ambos:
-- se elimina el movimiento,
-- la tarea vinculada se envía a Papelera por 24 horas.
-
-## Mensajes
-Los mensajes finales indican claramente qué ocurrió:
-- solo tarea,
-- tarea + movimiento,
-- solo movimiento,
-- movimiento + tarea.
-
-## Conservado
-No se modificó la lógica de:
-- Calendario,
-- Día,
-- Semana,
-- Tablero,
+## Sin cambios funcionales
+No se modificó:
+- altura mínima de tarjetas compactas,
+- padding de tarjetas,
+- tareas,
 - recurrencias,
-- libros,
-- periodos financieros,
 - comentarios,
-- restauración de Papelera.
+- calendario,
+- tira semanal,
+- gastos e ingresos,
+- borrado cruzado tarea/movimiento de la 11.8.2,
+- libros,
+- papelera,
+- periodos financieros.
 
 ## Validación
-- JavaScript sin errores de sintaxis.
-- CSS sin errores.
-- Sin IDs HTML duplicados.
-- Sin referencias JavaScript a elementos inexistentes.
-- Todas las rutas existentes de borrado de tarea utilizan la validación cruzada.
-- La ruta de borrado de movimientos utiliza la validación cruzada.
+Se validan sintaxis JavaScript/CSS, IDs, referencias DOM y una representación móvil a 360 px.
+
+
+## Ajuste final de fecha en tarjeta compacta
+La fecha ahora aparece fija en la esquina inferior derecha de la tarjeta compacta:
+
+`📅 DD/MM/AA`
+
+- No crea una línea nueva.
+- No aumenta la altura de la tarjeta.
+- No modifica el padding ni `min-height` existente.
+- La línea de hora / estado / recurrencia sigue en una sola línea.
+- El comentario permanece clicable.
+- Se aplica automáticamente en todos los lugares que usan tarjetas compactas.

@@ -6462,3 +6462,213 @@ dialog .comic-bubble-tail,
     font-size:.58rem;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.8.2.1 — REPARACIÓN VISUAL TARJETAS COMPACTAS
+   ========================================================= */
+
+/* Causa corregida:
+   una regla responsive antigua permitía partir "Sin recurrencia"
+   en varias líneas. La tarjeta compacta vuelve a tener una sola
+   línea de metadatos sin aumentar su altura. */
+
+.compact-task-copy{
+  flex:1 1 0 !important;
+  width:0 !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+
+.compact-task-meta-line{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto auto !important;
+  align-items:center !important;
+  column-gap:4px !important;
+  width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  line-height:1.1 !important;
+}
+
+.compact-task-meta-main{
+  display:block !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  text-overflow:ellipsis !important;
+}
+
+.compact-task-meta-main .mini-recurrence-btn,
+.compact-task-card .mini-recurrence-btn{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-height:22px !important;
+  max-height:22px !important;
+  max-width:76px !important;
+  padding:2px 5px !important;
+  margin:0 1px !important;
+  gap:2px !important;
+  border-radius:999px !important;
+  font-size:.62rem !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+  text-align:center !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  vertical-align:middle !important;
+}
+
+.compact-task-meta-main .mini-recurrence-btn::after,
+.compact-task-card .mini-recurrence-btn::after{
+  margin-left:1px !important;
+}
+
+.compact-task-date{
+  display:inline-block !important;
+  min-width:max-content !important;
+  white-space:nowrap !important;
+  font-size:.62rem !important;
+  font-weight:500 !important;
+  line-height:1 !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+
+.compact-task-meta-line .mini-comment-btn{
+  display:inline-grid !important;
+  flex:0 0 auto !important;
+  margin:0 !important;
+}
+
+/* No se modifica min-height, padding ni estructura de la tarjeta. */
+@media(max-width:430px){
+  .compact-task-meta-line{
+    column-gap:3px !important;
+  }
+
+  .compact-task-meta-main .mini-recurrence-btn,
+  .compact-task-card .mini-recurrence-btn{
+    max-width:69px !important;
+    min-height:21px !important;
+    max-height:21px !important;
+    padding:2px 4px !important;
+    font-size:.59rem !important;
+  }
+
+  .compact-task-date{
+    font-size:.59rem !important;
+  }
+}
+
+@media(max-width:350px){
+  .compact-task-meta-main .mini-recurrence-btn,
+  .compact-task-card .mini-recurrence-btn{
+    max-width:64px !important;
+    font-size:.56rem !important;
+  }
+
+  .compact-task-date{
+    font-size:.56rem !important;
+  }
+}
+
+
+/* =========================================================
+   VERSION 11.8.2.1 — FECHA ABAJO A LA DERECHA
+   ========================================================= */
+
+/* La fecha deja de competir con la línea de metadatos.
+   Se posiciona dentro de la tarjeta, abajo a la derecha,
+   sin crear una fila adicional ni aumentar la altura. */
+.compact-task-card{
+  position:relative !important;
+}
+
+.compact-task-copy{
+  flex:1 1 0 !important;
+  width:0 !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+}
+
+.compact-task-meta-line{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  column-gap:4px !important;
+  width:100% !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  line-height:1.1 !important;
+  padding-right:64px !important;
+  box-sizing:border-box !important;
+}
+
+.compact-task-meta-main{
+  display:block !important;
+  min-width:0 !important;
+  overflow:hidden !important;
+  white-space:nowrap !important;
+  text-overflow:ellipsis !important;
+}
+
+.compact-task-date{
+  position:absolute !important;
+  right:9px !important;
+  bottom:7px !important;
+  z-index:2 !important;
+  display:block !important;
+  min-width:max-content !important;
+  max-width:64px !important;
+  margin:0 !important;
+  padding:0 !important;
+  white-space:nowrap !important;
+  font-size:.59rem !important;
+  font-weight:600 !important;
+  line-height:1 !important;
+  visibility:visible !important;
+  opacity:.88 !important;
+  pointer-events:none !important;
+}
+
+.compact-task-meta-line .mini-comment-btn{
+  display:inline-grid !important;
+  margin:0 !important;
+  flex:0 0 auto !important;
+}
+
+/* El botón de recurrencia compacto nunca se divide en dos líneas. */
+.compact-task-card .mini-recurrence-btn{
+  white-space:nowrap !important;
+}
+
+/* No se modifica min-height ni padding de .compact-task-card. */
+@media(max-width:430px){
+  .compact-task-meta-line{
+    padding-right:60px !important;
+    column-gap:3px !important;
+  }
+
+  .compact-task-date{
+    right:8px !important;
+    bottom:6px !important;
+    max-width:60px !important;
+    font-size:.56rem !important;
+  }
+}
+
+@media(max-width:350px){
+  .compact-task-meta-line{
+    padding-right:56px !important;
+  }
+
+  .compact-task-date{
+    right:7px !important;
+    max-width:56px !important;
+    font-size:.53rem !important;
+  }
+}
