@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.8.2";
+const APP_VERSION = "11.7.9";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1851,6 +1851,76 @@ function bindTaskActions(root=document){
     };
   });
 }
+
+function openCalendarQuickAdd(dateValue){
+  const d=parseDate(dateValue);
+  const future=isFutureDate(d);
+
+  $("#calendarQuickAddDate").value=dateValue;
+  $("#calendarQuickAddDateLabel").textContent=shortDate(d);
+  $("#calendarQuickAddTitle").textContent=`Agregar · ${shortDate(d)}`;
+
+  $("#calendarQuickExpenseBtn").disabled=future;
+  $("#calendarQuickExpenseBtn").classList.toggle("disabled",future);
+  $("#calendarQuickExpenseNote").classList.toggle("hidden",!future);
+
+  $("#calendarQuickAddDialog").showModal();
+}
+
+function bindCalendarLongPress(){
+  $$("[data-caldate]").forEach(day=>{
+    let timer=null;
+    let startX=0;
+    let startY=0;
+    let triggered=false;
+
+    const clear=()=>{
+      if(timer){
+        clearTimeout(timer);
+        timer=null;
+      }
+    };
+
+    day.onpointerdown=e=>{
+      if(e.button!==undefined && e.button!==0) return;
+      triggered=false;
+      startX=e.clientX||0;
+      startY=e.clientY||0;
+      clear();
+
+      timer=setTimeout(()=>{
+        triggered=true;
+        day.dataset.longPressTriggered="1";
+        selectedDate=parseDate(day.dataset.caldate);
+        calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+        weekCursor=startOfWeek(selectedDate);
+        openCalendarQuickAdd(day.dataset.caldate);
+      },3000);
+    };
+
+    day.onpointermove=e=>{
+      if(!timer) return;
+      if(Math.abs((e.clientX||0)-startX)>12 || Math.abs((e.clientY||0)-startY)>12){
+        clear();
+      }
+    };
+
+    day.onpointerup=clear;
+    day.onpointercancel=clear;
+    day.onpointerleave=clear;
+    day.oncontextmenu=e=>e.preventDefault();
+
+    day.addEventListener("click",e=>{
+      if(day.dataset.longPressTriggered==="1" || triggered){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        day.dataset.longPressTriggered="";
+        triggered=false;
+      }
+    },true);
+  });
+}
+
 function renderCalendar(){
   $("#calendarTitle").textContent=monthName(calendarCursor);
   const year=calendarCursor.getFullYear();
@@ -1904,6 +1974,7 @@ function renderCalendar(){
     renderGlobalStatusStrip();
   });
 
+  bindCalendarLongPress();
   renderSelectedCalendarDay();
 }
 function renderWeek(){
@@ -2851,6 +2922,8 @@ function updateExpenseTypeUI(){
     ? (income ? "Editar ingreso" : "Editar gasto")
     : (income ? "Agregar ingreso" : "Agregar gasto");
   $("#saveExpenseBtn").textContent=income ? "Guardar ingreso" : "Guardar gasto";
+  $("#saveAndAddExpenseBtn").textContent=income ? "Agregar ingreso+" : "Agregar gasto+";
+  $("#saveAndAddExpenseBtn").classList.toggle("hidden",editing);
 }
 
 function openExpenseDialog(expense=null){
@@ -2860,7 +2933,7 @@ function openExpenseDialog(expense=null){
   const d=expense?.date ? parseDate(expense.date) : clampExpenseDateToToday(selectedDate);
   $("#expenseDate").max=dateKey(new Date());
   $("#expenseDate").value=dateKey(d);
-  $("#expenseDateLabel").textContent=dotDate(d);
+  $("#expenseDateLabel").textContent=shortDate(d);
   $("#expenseTitle").value=expense?.title||"";
   $("#expenseDescription").value=expense?.description||"";
   const amountValue=expense ? Number(expense.amount||0).toFixed(2) : "";
@@ -3076,6 +3149,65 @@ function moveExpenseToBook(expenseId,destinationBookId){
   return true;
 }
 
+
+
+function openExpenseCopyDialog(expenseId){
+  const source=expenses.find(e=>e.id===expenseId);
+  if(!source) return;
+
+  const today=startOfDay(new Date());
+  const minDate=addDays(today,1);
+  const sourceDate=parseDate(source.date);
+  const suggested=sourceDate>=today ? addDays(sourceDate,1) : minDate;
+
+  $("#copyExpenseId").value=source.id;
+  $("#copyExpenseDate").min=dateKey(minDate);
+  $("#copyExpenseDate").value=dateKey(suggested<minDate?minDate:suggested);
+  $("#expenseCopyDialogTitle").textContent=`Copiar: ${source.title}`;
+  $("#copyExpensePreview").innerHTML=`
+    <strong>${esc(source.title)}</strong>
+    <small>${movementTypeLabel(source)} · ${signedMoney(movementSignedAmount(source))} ${esc(source.currency||"MN")}</small>
+    <small>La copia será un movimiento independiente.</small>`;
+
+  if($("#expenseDetailDialog").open) $("#expenseDetailDialog").close();
+  $("#expenseCopyDialog").showModal();
+}
+
+function saveExpenseCopy(){
+  const source=expenses.find(e=>e.id===$("#copyExpenseId").value);
+  const raw=$("#copyExpenseDate").value;
+  if(!source || !raw) return;
+
+  const copyDate=parseDate(raw);
+  const today=startOfDay(new Date());
+
+  if(copyDate<=today){
+    toast("La copia solo puede guardarse en una fecha futura.");
+    return;
+  }
+
+  const clone={
+    ...source,
+    id:uid(),
+    date:dateKey(copyDate),
+    bookId:source.bookId||activeBookId,
+    cycleDay:getBookExpenseCycleDayForDate(
+      books.find(b=>b.id===(source.bookId||activeBookId))||activeBook(),
+      copyDate
+    ),
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString(),
+    copiedFromExpenseId:source.id
+  };
+
+  delete clone.taskId;
+
+  expenses.push(clone);
+  saveExpenses();
+  $("#expenseCopyDialog").close();
+  renderAll();
+  toast(`Movimiento copiado al ${shortDate(copyDate)}.`);
+}
 
 function openExpenseDetailDialog(expenseId){
   const expense=expenses.find(e=>e.id===expenseId);
@@ -3489,6 +3621,53 @@ $("#financeLedgerDialog").addEventListener("click",e=>{
   if(e.target===$("#financeLedgerDialog")) $("#financeLedgerDialog").close();
 });
 
+
+$("#expenseDetailCopyBtn").onclick=()=>{
+  const expenseId=$("#expenseDetailId").value;
+  if(expenseId) openExpenseCopyDialog(expenseId);
+};
+
+$("#closeExpenseCopyDialog").onclick=$("#cancelExpenseCopyBtn").onclick=()=>$("#expenseCopyDialog").close();
+$("#saveExpenseCopyBtn").onclick=saveExpenseCopy;
+$("#expenseCopyDialog").addEventListener("click",e=>{
+  if(e.target===$("#expenseCopyDialog")) $("#expenseCopyDialog").close();
+});
+
+$("#closeCalendarQuickAddDialog").onclick=()=>$("#calendarQuickAddDialog").close();
+$("#calendarQuickAddDialog").addEventListener("click",e=>{
+  if(e.target===$("#calendarQuickAddDialog")) $("#calendarQuickAddDialog").close();
+});
+
+$("#calendarQuickTaskBtn").onclick=()=>{
+  const raw=$("#calendarQuickAddDate").value;
+  if(!raw) return;
+
+  selectedDate=parseDate(raw);
+  calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  weekCursor=startOfWeek(selectedDate);
+
+  $("#calendarQuickAddDialog").close();
+  openTask(null);
+};
+
+$("#calendarQuickExpenseBtn").onclick=()=>{
+  const raw=$("#calendarQuickAddDate").value;
+  if(!raw) return;
+
+  const d=parseDate(raw);
+  if(isFutureDate(d)){
+    toast("No puedes registrar movimientos en una fecha futura.");
+    return;
+  }
+
+  selectedDate=d;
+  calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
+  weekCursor=startOfWeek(selectedDate);
+
+  $("#calendarQuickAddDialog").close();
+  openExpenseDialog(null);
+};
+
 $("#closeExpenseDetailDialog").onclick=()=>$("#expenseDetailDialog").close();
 
 $("#expenseDetailDialog").addEventListener("click",e=>{
@@ -3664,9 +3843,7 @@ $("#taskFinanceAmountDisplay").addEventListener("blur",e=>{
 $("#expenseCurrencyBtn").onclick=()=>{
   $("#expenseCurrencyBtn").textContent=$("#expenseCurrencyBtn").textContent==="MN"?"DLS":"MN";
 };
-$("#expenseForm").addEventListener("submit",e=>{
-  e.preventDefault();
-
+function saveExpenseFromForm({reopen=false}={}){
   const type=$("#expenseType").value==="income" ? "income" : "expense";
   const title=$("#expenseTitle").value.trim();
   const amount=parseMoneyInput($("#expenseAmountDisplay").value);
@@ -3674,24 +3851,24 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   if(!expenseDateRaw){
     toast("Selecciona la fecha del movimiento.");
-    return;
+    return false;
   }
 
   const expenseDateValue=parseDate(expenseDateRaw);
 
   if(isFutureDate(expenseDateValue)){
     toast("No puedes registrar movimientos en una fecha futura.");
-    return;
+    return false;
   }
 
   if(!title){
     toast(type==="income" ? "Escribe cómo ganaste el ingreso." : "Escribe en qué gastaste.");
-    return;
+    return false;
   }
 
   if(amount<=0 || amount>99999999.99){
     toast("El monto debe estar entre $0.01 y $99,999,999.99.");
-    return;
+    return false;
   }
 
   const id=$("#expenseId").value;
@@ -3708,7 +3885,13 @@ $("#expenseForm").addEventListener("submit",e=>{
     const i=expenses.findIndex(x=>x.id===id);
     if(i>=0) expenses[i]={...expenses[i],...data,updatedAt:new Date().toISOString()};
   }else{
-    expenses.push({id:uid(),bookId:activeBookId,cycleDay:getActiveBookExpenseCycleDay(),...data,createdAt:new Date().toISOString()});
+    expenses.push({
+      id:uid(),
+      bookId:activeBookId,
+      cycleDay:getActiveBookExpenseCycleDay(),
+      ...data,
+      createdAt:new Date().toISOString()
+    });
   }
 
   selectedDate=parseDate(data.date);
@@ -3727,7 +3910,24 @@ $("#expenseForm").addEventListener("submit",e=>{
 
   const label=type==="income" ? "Ingreso" : "Gasto";
   toast(id ? `${label} actualizado.` : `${label} guardado.`);
+
+  if(reopen && !id){
+    setTimeout(()=>{
+      openExpenseDialog(null);
+    },80);
+  }
+
+  return true;
+}
+
+$("#expenseForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  saveExpenseFromForm();
 });
+
+$("#saveAndAddExpenseBtn").onclick=()=>{
+  saveExpenseFromForm({reopen:true});
+};
 
 
 

@@ -6298,3 +6298,82 @@ dialog .comic-bubble-tail,
     font-size:12.5px !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.7.9 — REGISTRO CONTINUO + COPIAR + PULSACIÓN LARGA
+   ========================================================= */
+
+/* Guardar y continuar agregando movimientos */
+.expense-save-actions{
+  grid-template-columns:auto 1fr 1fr !important;
+}
+
+#saveAndAddExpenseBtn{
+  white-space:normal;
+  font-weight:800;
+}
+
+/* Copiar movimiento */
+.expense-copy-dialog{
+  width:min(92vw,500px);
+  max-width:calc(100vw - 16px) !important;
+}
+
+.expense-copy-dialog .copy-task-preview{
+  margin-top:12px;
+}
+
+/* Pulsación larga del calendario */
+.calendar-day{
+  -webkit-touch-callout:none;
+  user-select:none;
+}
+
+.calendar-quick-add-dialog{
+  width:min(92vw,460px);
+  max-width:calc(100vw - 16px) !important;
+}
+
+.calendar-quick-actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:6px;
+}
+
+.calendar-quick-actions button{
+  min-height:52px;
+}
+
+.calendar-quick-actions button.disabled,
+.calendar-quick-actions button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.calendar-quick-note{
+  display:block;
+  margin-top:10px;
+  color:var(--muted);
+  text-align:center;
+}
+
+/* La fecha elegida por pulsación larga se mantiene visible en el calendario. */
+.calendar-day:active{
+  transition:transform .1s ease;
+}
+
+@media(max-width:430px){
+  .expense-save-actions{
+    grid-template-columns:1fr !important;
+  }
+
+  .expense-save-actions button{
+    width:100% !important;
+  }
+
+  .calendar-quick-actions{
+    grid-template-columns:1fr;
+  }
+}
