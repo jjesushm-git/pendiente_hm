@@ -1,59 +1,45 @@
-# Mis Tareas — Versión 11.7.9
+# Mis Tareas — Versión 11.8
 
-Base: Versión 11.7.8.2 ESTABLE.
+Base: Versión 11.7.9 ESTABLE.
 
-## Agregar gasto+
-En Agregar gasto / ingreso se agregó un botón nuevo:
+## Calendario: acción rápida con clic
+Se eliminó la pulsación larga de 3 segundos.
 
-- Agregar gasto+
-- Si el tipo es Ingreso cambia a Agregar ingreso+.
+Ahora funciona así:
 
-Al tocarlo:
-1. valida los mismos campos que Guardar,
-2. guarda el gasto o ingreso,
-3. conserva la fecha seleccionada,
-4. vuelve a abrir inmediatamente el formulario vacío,
-5. permite capturar otro movimiento sin regresar al menú anterior.
+1. Primer clic sobre un día:
+   - selecciona ese día,
+   - actualiza las tareas, balance y semana correspondientes.
 
-El botón se oculta al editar un movimiento existente; se usa únicamente para altas nuevas.
+2. Si vuelves a tocar el mismo día que ya está seleccionado:
+   - abre el modal de acción rápida.
 
-## Copiar movimiento
-En Movimientos registrados, dentro del botón de tres líneas y el modal de detalle, se agregó:
-
-- ⧉ Copiar
-
-Al tocarlo:
-- abre un selector de fecha,
-- solo permite fechas posteriores al día actual,
-- copia tipo, título, descripción, monto, moneda y libro,
-- crea un movimiento independiente,
-- no liga la copia a la tarea original aunque el movimiento fuente haya nacido desde una tarea.
-
-## Pulsación larga en Calendario
-Mantener pulsado un día durante 3 segundos abre un modal con:
-
+El modal permite:
 - Agregar tarea.
 - Agregar gasto.
 
-La fecha del día pulsado se utiliza automáticamente.
+## Agregar tarea
+- Usa automáticamente como Fecha de inicio el día seleccionado.
+- Puede abrirse desde cualquier día seleccionado del calendario.
+- Al guardar, la aplicación permanece en Calendario.
+- La tarea aparece inmediatamente en ese día.
 
-### Agregar tarea
-- abre Nueva tarea,
-- Fecha de inicio usa el día pulsado,
-- al guardar vuelve al Calendario,
-- la tarea aparece ya registrada en ese día.
+## Agregar gasto / ingreso
+- Usa automáticamente la fecha seleccionada.
+- Solo está disponible si el día seleccionado no es posterior al día actual.
+- En una fecha futura el botón Agregar gasto queda deshabilitado y se muestra el aviso correspondiente.
+- Al guardar, la aplicación permanece en Calendario y se actualizan los indicadores financieros del día.
 
-### Agregar gasto
-- abre Agregar gasto/ingreso,
-- usa exactamente el día pulsado,
-- al guardar vuelve al Calendario,
-- el movimiento aparece en los indicadores del día.
-
-Los gastos no se pueden registrar en fechas futuras. Si se mantiene pulsado un día futuro, Agregar gasto aparece deshabilitado y se muestra el aviso correspondiente.
+## Cambio de mes
+Si se toca un día visible que pertenece al mes anterior o siguiente:
+- ese día queda seleccionado,
+- el Calendario cambia al mes correspondiente,
+- un segundo clic sobre ese día abre las acciones rápidas.
 
 ## Validación
 - JavaScript sin errores.
 - CSS sin errores.
 - Sin IDs HTML duplicados.
-- Sin referencias JavaScript inexistentes.
+- Sin referencias JavaScript a elementos inexistentes.
+- Se eliminó la función de pulsación larga.
 - Se conservan Calendario, Día, Semana, Tablero, Libros, Movimientos, Comentarios, recurrencias y periodos financieros.

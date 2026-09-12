@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.7.9";
+const APP_VERSION = "11.8";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -1867,59 +1867,7 @@ function openCalendarQuickAdd(dateValue){
   $("#calendarQuickAddDialog").showModal();
 }
 
-function bindCalendarLongPress(){
-  $$("[data-caldate]").forEach(day=>{
-    let timer=null;
-    let startX=0;
-    let startY=0;
-    let triggered=false;
 
-    const clear=()=>{
-      if(timer){
-        clearTimeout(timer);
-        timer=null;
-      }
-    };
-
-    day.onpointerdown=e=>{
-      if(e.button!==undefined && e.button!==0) return;
-      triggered=false;
-      startX=e.clientX||0;
-      startY=e.clientY||0;
-      clear();
-
-      timer=setTimeout(()=>{
-        triggered=true;
-        day.dataset.longPressTriggered="1";
-        selectedDate=parseDate(day.dataset.caldate);
-        calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
-        weekCursor=startOfWeek(selectedDate);
-        openCalendarQuickAdd(day.dataset.caldate);
-      },3000);
-    };
-
-    day.onpointermove=e=>{
-      if(!timer) return;
-      if(Math.abs((e.clientX||0)-startX)>12 || Math.abs((e.clientY||0)-startY)>12){
-        clear();
-      }
-    };
-
-    day.onpointerup=clear;
-    day.onpointercancel=clear;
-    day.onpointerleave=clear;
-    day.oncontextmenu=e=>e.preventDefault();
-
-    day.addEventListener("click",e=>{
-      if(day.dataset.longPressTriggered==="1" || triggered){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        day.dataset.longPressTriggered="";
-        triggered=false;
-      }
-    },true);
-  });
-}
 
 function renderCalendar(){
   $("#calendarTitle").textContent=monthName(calendarCursor);
@@ -1963,7 +1911,16 @@ function renderCalendar(){
   };
 
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
-    selectedDate=parseDate(b.dataset.caldate);
+    const clickedKey=b.dataset.caldate;
+    const alreadySelected=clickedKey===dateKey(selectedDate);
+
+    if(alreadySelected){
+      openCalendarQuickAdd(clickedKey);
+      return;
+    }
+
+    selectedDate=parseDate(clickedKey);
+    calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
     weekCursor=startOfWeek(selectedDate);
 
     renderWeekStrip();
@@ -1974,7 +1931,6 @@ function renderCalendar(){
     renderGlobalStatusStrip();
   });
 
-  bindCalendarLongPress();
   renderSelectedCalendarDay();
 }
 function renderWeek(){

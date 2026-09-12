@@ -6377,3 +6377,24 @@ dialog .comic-bubble-tail,
     grid-template-columns:1fr;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.8 — ACCIÓN RÁPIDA CON CLIC EN CALENDARIO
+   ========================================================= */
+
+/* El día se selecciona con un clic.
+   Un segundo clic sobre el mismo día abre las acciones rápidas. */
+.calendar-day{
+  cursor:pointer;
+  -webkit-touch-callout:default !important;
+  user-select:auto !important;
+}
+
+/* Mantener visible la selección para dejar claro qué día
+   recibirá la tarea o el gasto. */
+.calendar-day.selected{
+  position:relative;
+}
+
+/* No se necesita temporizador ni gesto de pulsación larga. */
