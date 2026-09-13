@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.8.2.2";
+const APP_VERSION = "11.8.3";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -336,6 +336,27 @@ function movementsThroughDate(d){
 }
 
 
+function financialBreakdownForRange(start,end){
+  const rangeStart=startOfDay(start);
+  const rangeEnd=startOfDay(end);
+  const list=expensesInRange(rangeStart,rangeEnd);
+
+  const out={
+    MN:{expenses:0,income:0,balance:0},
+    DLS:{expenses:0,income:0,balance:0}
+  };
+
+  list.forEach(e=>{
+    const cur=e.currency==="DLS"?"DLS":"MN";
+    const amount=Math.abs(Number(e.amount||0));
+    if(movementType(e)==="income") out[cur].income+=amount;
+    else out[cur].expenses+=amount;
+    out[cur].balance+=movementSignedAmount(e);
+  });
+
+  return {list,start:rangeStart,end:rangeEnd,...out};
+}
+
 function financialBreakdownForPeriod(d){
   const ref=startOfDay(d);
   const period=expenseCycleRange(ref);
@@ -441,6 +462,110 @@ function renderFinanceLedger(){
       ${totalBlock("DLS","Dólares")}
     </details>
   `;
+}
+
+function customBalanceAllowedPeriod(){
+  return expenseCycleRange(startOfDay(selectedDate||new Date()));
+}
+
+function openCustomBalance(){
+  const period=customBalanceAllowedPeriod();
+  const ref=startOfDay(selectedDate||new Date());
+  const defaultEnd=ref<period.start ? period.start : (ref>period.end ? period.end : ref);
+
+  const min=dateKey(period.start);
+  const max=dateKey(period.end);
+
+  $("#customBalanceStart").min=min;
+  $("#customBalanceStart").max=max;
+  $("#customBalanceEnd").min=min;
+  $("#customBalanceEnd").max=max;
+  $("#customBalanceStart").value=min;
+  $("#customBalanceEnd").value=dateKey(defaultEnd);
+  $("#customBalancePeriodLabel").textContent=`Periodo permitido: ${shortDate(period.start)} – ${shortDate(period.end)} · ${activeBook()?.name||"Libro"}`;
+  $("#customBalanceResult").classList.add("hidden");
+  $("#customBalanceList").innerHTML="";
+  $("#customBalanceTotals").innerHTML="";
+  $("#customBalanceDialog").showModal();
+}
+
+function validateCustomBalanceRange(){
+  const period=customBalanceAllowedPeriod();
+  const startRaw=$("#customBalanceStart").value;
+  const endRaw=$("#customBalanceEnd").value;
+
+  if(!startRaw || !endRaw){
+    toast("Selecciona fecha de inicio y fecha fin.");
+    return null;
+  }
+
+  const start=parseDate(startRaw);
+  const end=parseDate(endRaw);
+
+  if(start<period.start || start>period.end || end<period.start || end>period.end){
+    toast(`Las fechas deben estar dentro de ${shortDate(period.start)} – ${shortDate(period.end)}.`);
+    return null;
+  }
+
+  if(start>end){
+    toast("La fecha de inicio no puede ser posterior a la fecha fin.");
+    return null;
+  }
+
+  return {start,end,period};
+}
+
+function renderCustomBalance(){
+  const range=validateCustomBalanceRange();
+  if(!range) return false;
+
+  const data=financialBreakdownForRange(range.start,range.end);
+  $("#customBalanceRangeLabel").textContent=`Balance personalizado · ${shortDate(range.start)} – ${shortDate(range.end)}`;
+
+  $("#customBalanceList").innerHTML=data.list.length ? data.list.map(e=>{
+    const linkedTask=e.taskId?tasks.find(t=>t.id===e.taskId):null;
+    const type=movementType(e);
+    return `
+      <article class="ledger-movement-card ${type}">
+        <div class="ledger-movement-head">
+          <span class="movement-gold-symbol">${movementSymbol(e)}</span>
+          <div>
+            <small class="movement-type-label ${type}">${movementTypeLabel(e)}</small>
+            <strong>${esc(e.title)}</strong>
+          </div>
+          <span class="ledger-movement-amount ${type}">${signedMoney(movementSignedAmount(e))} ${esc(e.currency||"MN")}</span>
+        </div>
+        ${e.description?`<p>${esc(e.description)}</p>`:""}
+        <div class="ledger-movement-meta">
+          <span>📅 ${shortDate(parseDate(e.date))}</span>
+          ${linkedTask?`<span>✅ Tarea: ${esc(linkedTask.title)}</span>`:""}
+        </div>
+      </article>`;
+  }).join("") : `<div class="empty">No hay gastos ni ingresos registrados entre estas fechas.</div>`;
+
+  const totalBlock=(currency,label)=>`
+    <div class="ledger-total-currency">
+      <strong>${label}</strong>
+      <div><span>Gastos</span><b class="balance-negative">-$${money(data[currency].expenses)} ${currency}</b></div>
+      <div><span>Ingresos</span><b class="balance-positive">+$${money(data[currency].income)} ${currency}</b></div>
+      <div class="ledger-net"><span>Balance</span><b class="${data[currency].balance>0?"balance-positive":data[currency].balance<0?"balance-negative":"balance-neutral"}">${signedMoney(data[currency].balance)} ${currency}</b></div>
+    </div>`;
+
+  $("#customBalanceTotals").innerHTML=`
+    <div class="finance-ledger-period-summary">
+      <span>Fecha inicio</span><strong>${shortDate(range.start)}</strong>
+      <span>Fecha fin</span><strong>${shortDate(range.end)}</strong>
+      <span>Movimientos</span><strong>${data.list.length}</strong>
+    </div>
+    <h3>Totales del balance personalizado</h3>
+    ${totalBlock("MN","Moneda nacional")}
+    <details class="ledger-dls-details">
+      <summary>💵 Dólares (DLS) · tocar para ver</summary>
+      ${totalBlock("DLS","Dólares")}
+    </details>`;
+
+  $("#customBalanceResult").classList.remove("hidden");
+  return true;
 }
 
 function openFinanceLedger(){
@@ -3690,6 +3815,29 @@ function syncDueDependentFields({notify=false}={}){
 $("#dueDate").addEventListener("change",()=>syncDueDependentFields({notify:true}));
 $("#startDate").addEventListener("change",()=>syncDueDependentFields({notify:true}));
 
+
+$("#customBalanceBtn").onclick=openCustomBalance;
+$("#calculateCustomBalanceBtn").onclick=renderCustomBalance;
+$("#closeCustomBalanceDialog").onclick=$("#closeCustomBalanceBtn").onclick=()=>$("#customBalanceDialog").close();
+$("#customBalanceDialog").addEventListener("click",e=>{
+  if(e.target===$("#customBalanceDialog")) $("#customBalanceDialog").close();
+});
+
+$("#customBalanceStart").addEventListener("change",()=>{
+  const start=$("#customBalanceStart").value;
+  if(start && $("#customBalanceEnd").value && $("#customBalanceEnd").value<start){
+    $("#customBalanceEnd").value=start;
+  }
+  $("#customBalanceResult").classList.add("hidden");
+});
+
+$("#customBalanceEnd").addEventListener("change",()=>{
+  const end=$("#customBalanceEnd").value;
+  if(end && $("#customBalanceStart").value && $("#customBalanceStart").value>end){
+    $("#customBalanceStart").value=end;
+  }
+  $("#customBalanceResult").classList.add("hidden");
+});
 
 $("#financeLedgerBtn").onclick=openFinanceLedger;
 $("#closeFinanceLedgerDialog").onclick=$("#closeFinanceLedgerBtn").onclick=()=>$("#financeLedgerDialog").close();

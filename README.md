@@ -1,43 +1,56 @@
-# Mis Tareas — Versión 11.8.2.2
+# Mis Tareas — Versión 11.8.3
 
-Base: Versión 11.8.2.1 ESTABLE.
+Base: Versión 11.8.2.2 ESTABLE.
 
-## Corrección: botón “Borrar ambos”
-Se corrigió el ciclo del modal de confirmación utilizado cuando existen dos confirmaciones consecutivas.
+## Balance personalizado
+Debajo del Balance del día se agregó el botón **Personalizado**.
 
-### Problema detectado
-Al confirmar primero “Eliminar tarea” o “Borrar movimiento”, el mismo cuadro de confirmación se reutilizaba inmediatamente para preguntar si también debía borrarse el elemento vinculado.
+### Flujo
+1. Toca **Personalizado**.
+2. Se abre el modal **Balance personalizado**.
+3. El modal muestra el periodo financiero permitido del libro activo.
+4. Selecciona **Fecha inicio**.
+5. Selecciona **Fecha fin**.
+6. Toca **Ver balance**.
+7. Se muestran todos los gastos e ingresos registrados dentro de ese rango y los totales correspondientes.
 
-El evento `close` del primer cuadro podía llegar cuando la segunda confirmación ya estaba activa. Eso hacía que la segunda confirmación se interpretara como cancelada y el botón “Borrar ambos” no ejecutara la acción.
+## Restricción de fechas
+Las fechas personalizadas solo pueden elegirse dentro del periodo financiero que se está mostrando.
 
-### Solución
-La confirmación ahora:
-- espera a que el cuadro termine realmente de cerrarse;
-- solo después resuelve la primera decisión;
-- la segunda confirmación se abre en un ciclo nuevo;
-- un evento `close` anterior ya no puede cancelar el siguiente cuadro.
+Ejemplo:
+- Periodo financiero visible: 14/08/2026 – 13/09/2026.
+- Puedes consultar 20/08/2026 – 05/09/2026.
+- No puedes elegir 13/08/2026 ni 14/09/2026 desde ese periodo.
 
-## Comportamiento esperado
-### Borrar tarea con movimiento
-- Eliminar tarea → segunda pregunta.
-- Borrar ambos → tarea a Papelera + movimiento eliminado.
-- Conservar movimiento → tarea a Papelera + movimiento permanece.
+Si Fecha inicio queda después de Fecha fin, la interfaz corrige el otro campo para mantener un rango válido.
 
-### Borrar movimiento vinculado
-- Borrar movimiento → segunda pregunta.
-- Borrar ambos → movimiento eliminado + tarea a Papelera.
-- Conservar tarea → movimiento eliminado + tarea permanece.
+## Resultado
+El título del modal es **Balance personalizado** y muestra:
+- Fecha inicio.
+- Fecha fin.
+- Número de movimientos encontrados.
+- Todos los gastos e ingresos del rango.
+- Concepto.
+- Descripción, cuando existe.
+- Fecha del movimiento.
+- Tarea relacionada, cuando existe.
+- Gastos MN.
+- Ingresos MN.
+- Balance MN.
+- Gastos/Ingresos/Balance DLS en su sección desplegable.
 
-No se modificaron las tarjetas compactas ni las demás funciones de la versión 11.8.2.1.
+El cálculo usa únicamente el libro activo.
 
+## Sin cambios en funciones existentes
+Se conservan intactos:
+- Balance normal por periodo financiero.
+- Movimientos registrados.
+- Bitácora.
+- Tareas y recurrencias.
+- Calendario y Semana.
+- Libros.
+- Papelera.
+- Borrado cruzado tarea/movimiento de v11.8.2.2.
 
-## Prueba funcional realizada
-Se probó el comportamiento con un cierre de modal asíncrono, que reproduce el problema de dos confirmaciones consecutivas.
-
-Resultados:
-- Tarea + Borrar ambos → tarea a Papelera y movimiento eliminado.
-- Tarea + Conservar movimiento → tarea a Papelera y movimiento permanece.
-- Movimiento + Borrar ambos → movimiento eliminado y tarea a Papelera.
-- Movimiento + Conservar tarea → movimiento eliminado y tarea permanece.
-
-Los cuatro escenarios finalizaron correctamente.
+## Validación
+Se validan JavaScript, CSS, IDs, referencias DOM y el cálculo de rangos personalizados.

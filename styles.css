@@ -6672,3 +6672,110 @@ dialog .comic-bubble-tail,
     font-size:.53rem !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.8.3 — BALANCE PERSONALIZADO
+   ========================================================= */
+
+/* Botón debajo del balance del día */
+.expense-custom-balance-btn{
+  grid-column:1 / -1;
+  justify-self:start;
+  min-height:28px;
+  margin:0 0 1px 7px;
+  padding:4px 10px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:var(--panel-2);
+  color:var(--text);
+  font:inherit;
+  font-size:.65rem;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.expense-custom-balance-btn:active{
+  transform:scale(.97);
+}
+
+:root[data-theme="emerald_gold"] .expense-custom-balance-btn{
+  background:#fffef8 !important;
+  color:#176549 !important;
+  border-color:rgba(190,150,37,.42) !important;
+}
+
+.custom-balance-dialog{
+  width:min(94vw,680px);
+  max-height:calc(100dvh - 22px);
+  overflow:auto;
+}
+
+.custom-balance-range{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:4px;
+}
+
+.custom-balance-range label{
+  min-width:0;
+}
+
+.custom-balance-range input{
+  width:100%;
+}
+
+.custom-balance-help{
+  display:block;
+  margin:8px 0 10px;
+  color:var(--muted);
+  line-height:1.35;
+}
+
+.custom-balance-calculate-btn{
+  width:100%;
+  min-height:42px;
+  margin-bottom:12px;
+}
+
+.custom-balance-result{
+  display:grid;
+  gap:12px;
+}
+
+.custom-balance-range-label{
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-2);
+  font-weight:800;
+}
+
+.custom-balance-list{
+  max-height:42vh;
+}
+
+:root[data-theme="emerald_gold"] .custom-balance-range-label{
+  background:#fffef8 !important;
+  color:#245443 !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+
+@media(max-width:430px){
+  .expense-custom-balance-btn{
+    margin-left:5px;
+    font-size:.61rem;
+    min-height:26px;
+    padding:3px 9px;
+  }
+
+  .custom-balance-range{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+
+  .custom-balance-list{
+    max-height:38vh;
+  }
+}
