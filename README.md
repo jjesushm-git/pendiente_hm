@@ -1,40 +1,27 @@
-# Mis Tareas — Versión 11.5.6
+# Mis Tareas — Versión 11.8.3.1
 
-Base: Versión 11.5.5 ESTABLE.
+Base: Versión 11.8.3 ESTABLE.
 
-Correcciones y cambios:
+## Cambio de ubicación de Balance personalizado
+El botón que antes aparecía debajo del Balance del día ya no se muestra en la barra financiera principal.
 
-## Borrar gasto
-- Se corrigió el botón Borrar de cada tarjeta de gasto.
-- Ahora toma el ID exacto de la tarjeta seleccionada.
-- Abre el modal de confirmación estilo aplicación.
-- Al confirmar, elimina únicamente ese gasto.
-- Actualiza inmediatamente:
-  - lista de gastos,
-  - total del día,
-  - total del periodo,
-  - calendario,
-  - demás vistas relacionadas.
+Ahora el flujo es:
+1. Tocar el Balance del día.
+2. Se abre el modal “Gastos e ingresos”.
+3. Justo debajo del encabezado aparece el botón “⚖ Balance personalizado”.
+4. Al tocarlo se abre la selección de Fecha inicio y Fecha fin.
+5. Ambas fechas están limitadas al periodo financiero que se está mostrando.
+6. Al tocar “Ver balance” se muestran todos los gastos e ingresos del intervalo seleccionado, junto con los totales y balance en MN y DLS.
 
-También se restauró la función `comicConfirm`, ya que el modal existía pero faltaba su función JavaScript.
+## Balance principal más visible
+Se aumentó el tamaño de letra de “Balance del día” y de sus datos secundarios para que sea más fácil de identificar y tocar desde el menú principal.
 
-## Mover gasto a otro libro
-- Cada tarjeta de gasto ahora muestra:
-  - Editar
-  - 📖 Mover
-  - Borrar
-- Al tocar Mover aparece un selector con los demás libros disponibles.
-- El libro actual no se muestra como destino.
-- Al elegir otro libro:
-  - el gasto cambia de libro,
-  - desaparece de la consulta del libro actual,
-  - aparece en el libro destino,
-  - se actualizan totales y calendario.
-- Si no existe otro libro, muestra “No hay otro libro disponible”.
+## Funcionalidad conservada
+No se modificó la lógica de cálculo del Balance personalizado de la 11.8.3:
+- rango inclusivo de Fecha inicio a Fecha fin,
+- solo movimientos del libro activo,
+- límites dentro del periodo financiero actual,
+- separación de MN y DLS,
+- gastos, ingresos y balance final.
 
-Validaciones:
-- JavaScript sin errores.
-- CSS sin errores.
-- Sin IDs HTML duplicados.
-- Sin referencias JavaScript a IDs inexistentes.
-- Calendario, Día, Semana, Tablero, Libros, Gastos y Comentarios presentes.
+Tampoco se modificaron tareas, calendario, semana, tablero, libros, papelera, recurrencias, tarjetas compactas ni borrado cruzado tarea/movimiento.
