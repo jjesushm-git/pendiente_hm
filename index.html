@@ -10,17 +10,16 @@
 </head>
 <body>
   <div class="app-shell">
-    <header class="topbar topbar-v1173">
-      <p class="eyebrow topbar-eyebrow">Organizador personal</p>
-      <div class="topbar-main-row">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Organizador personal</p>
         <h1 id="appTitle">Mis Tareas</h1>
-        <div class="top-actions">
-          <label class="active-book-select-wrap active-book-ticker-wrap" title="Cambiar libro">
-            <span id="activeBookDisplay" class="active-book-display" aria-hidden="true"><span id="activeBookTicker" class="active-book-ticker">📖 Libro</span></span>
-            <select id="activeBookSelect" class="active-book-select active-book-native-select" aria-label="Libro activo"></select>
-          </label>
-          <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
-        </div>
+      </div>
+      <div class="top-actions">
+        <label class="active-book-select-wrap" title="Cambiar libro">
+          <select id="activeBookSelect" class="active-book-select" aria-label="Libro activo"></select>
+        </label>
+        <button id="settingsBtnTop" class="icon-btn" title="Ajustes">⚙</button>
       </div>
     </header>
 
@@ -33,29 +32,20 @@
       <button data-view="board" class="view-tab">Tablero</button>
     </nav>
 
-    <section id="globalStatusStrip" class="global-status-strip" aria-label="Resumen de tareas">
-      <span class="global-status-item pending"><i></i><b id="globalPendingCount">0</b><small>Pendientes</small></span>
-      <span class="global-status-item completed"><i></i><b id="globalCompletedCount">0</b><small>Completadas</small></span>
-      <span class="global-status-item missed"><i></i><b id="globalMissedCount">0</b><small>Vencidas</small></span>
-    </section>
-
     <section class="expense-summary-bar" id="expenseSummaryBar">
-      <button type="button" id="financeLedgerBtn" class="expense-balance-btn" title="Ver contabilidad completa">
-        <strong id="expenseDayTotal">Balance del día: $0.00 MN</strong>
-        <small id="expenseBalanceRange">Desde --/--/---- hasta --/--/----</small>
-        <small id="expenseMonthTotal">Acumulado hasta la fecha: $0.00 MN</small>
-        <span class="expense-balance-hint">Toca para ver todos los movimientos ›</span>
-      </button>
+      <div>
+        <strong id="expenseDayTotal">Gastos del día: $0.00 MN</strong>
+        <small id="expenseMonthTotal">Total del mes: $0.00 MN</small>
+      </div>
       <div class="expense-actions">
-        <button id="viewExpensesBtn" class="expense-eye-btn" title="Ver gastos e ingresos" aria-label="Ver gastos e ingresos">
+        <button id="viewExpensesBtn" class="expense-eye-btn" title="Ver gastos registrados" aria-label="Ver gastos registrados">
           <svg class="expense-eye-svg" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M2.5 12s3.4-5.5 9.5-5.5S21.5 12 21.5 12 18.1 17.5 12 17.5 2.5 12 2.5 12Z"></path>
             <circle cx="12" cy="12" r="2.6"></circle>
           </svg>
         </button>
-        <button id="addExpenseBtn" class="expense-add-btn" title="Agregar gasto o ingreso">+$</button>
+        <button id="addExpenseBtn" class="expense-add-btn" title="Agregar gasto">+$</button>
       </div>
-          <button type="button" id="customBalanceBtn" class="expense-custom-balance-btn">⚖ Personalizado</button>
     </section>
 
     <main>
@@ -130,38 +120,15 @@
           </div>
           <div id="calendarGrid" class="calendar-grid"></div>
         </div>
-
-        <div class="stats-grid view-status-stats" id="calendarStatsGrid"></div>
-
-        <section class="panel" id="calendarPendingSection">
+        <div class="panel">
           <div class="panel-head">
             <div>
-              <h3 id="calendarDayHeading">Pendientes del día</h3>
-              <p>Las tareas pendientes de la fecha seleccionada.</p>
+              <h3 id="calendarDayHeading">Tareas del día</h3>
+              <p>Toca un día para ver sus tareas.</p>
             </div>
           </div>
-          <div id="calendarPendingList" class="task-list"></div>
-        </section>
-
-        <section class="panel" id="calendarCompletedSection">
-          <div class="panel-head">
-            <div>
-              <h3 class="green">Completadas</h3>
-              <p>Completadas en la fecha seleccionada.</p>
-            </div>
-          </div>
-          <div id="calendarCompletedList" class="task-list"></div>
-        </section>
-
-        <section class="panel" id="calendarMissedSection">
-          <div class="panel-head">
-            <div>
-              <h3 class="red">No completadas</h3>
-              <p>Vencidas o no completadas en la fecha seleccionada.</p>
-            </div>
-          </div>
-          <div id="calendarMissedList" class="task-list"></div>
-        </section>
+          <div id="calendarDayList" class="task-list"></div>
+        </div>
       </section>
 
       <section id="weekView" class="view">
@@ -174,26 +141,6 @@
           <button id="nextWeek" class="icon-btn">›</button>
         </div>
         <div id="weekBoard" class="week-board"></div>
-        <div class="stats-grid view-status-stats" id="weekStatsGrid"></div>
-<section class="panel" id="weekCompletedSection">
-          <div class="panel-head">
-            <div>
-              <h3 class="green">Completadas</h3>
-              <p>Completadas durante esta semana.</p>
-            </div>
-          </div>
-          <div id="weekCompletedList" class="task-list week-status-list"></div>
-        </section>
-
-        <section class="panel" id="weekMissedSection">
-          <div class="panel-head">
-            <div>
-              <h3 class="red">No completadas</h3>
-              <p>Vencidas o no completadas durante esta semana.</p>
-            </div>
-          </div>
-          <div id="weekMissedList" class="task-list week-status-list"></div>
-        </section>
       </section>
 
       <section id="boardView" class="view">
@@ -203,7 +150,10 @@
             <h2>Tablero de actividades</h2>
           </div>
         </div>
-<div class="board-scroll">
+
+        <div id="boardStats" class="board-stats"></div>
+
+        <div class="board-scroll">
           <section class="board-column" data-board-column="pending">
             <div class="board-column-head">
               <h3>Pendientes</h3><span id="boardCountPending">0</span>
@@ -265,7 +215,7 @@
   </div>
 
   <dialog id="taskDialog" class="modal">
-    <form id="taskForm" method="dialog" novalidate>
+    <form id="taskForm" method="dialog">
       <div class="modal-head">
         <div>
           <p class="eyebrow">Nueva / editar</p>
@@ -275,7 +225,6 @@
       </div>
 
       <input type="hidden" id="taskId" />
-      <input type="hidden" id="editOccurrenceDate" />
 
       <label>Título *
         <input id="title" maxlength="120" required placeholder="Ej. Enviar reporte semanal" />
@@ -284,41 +233,6 @@
       <label>Descripción
         <textarea id="description" rows="4" maxlength="2000" placeholder="Descripción larga de la tarea..."></textarea>
       </label>
-      <details id="taskFinanceDetails" class="task-finance-details">
-        <summary>
-          <span>💰 Movimiento de dinero</span>
-          <small>Opcional · toca para agregar gasto o ingreso</small>
-        </summary>
-        <section class="task-finance-section">
-        <div class="task-finance-head">
-          <div>
-            <strong>Movimiento de dinero <small>(opcional)</small></strong>
-            <small>Déjalo sin monto si esta tarea no tiene gasto ni ingreso.</small>
-          </div>
-          <button type="button" id="taskFinanceTypeBtn" class="movement-type-btn expense">Gasto</button>
-          <input type="hidden" id="taskFinanceType" value="expense" />
-        </div>
-
-        <label><span id="taskFinanceTitleLabel">¿En qué gasté?</span>
-          <input id="taskFinanceTitle" maxlength="120" placeholder="Ej. Material, gasolina, comida..." />
-        </label>
-
-        <label>Descripción
-          <textarea id="taskFinanceDescription" rows="3" maxlength="1000" placeholder="Detalle opcional del movimiento..."></textarea>
-        </label>
-
-        <label>Monto
-          <div class="money-input-wrap money-input-pretty">
-            <span class="money-symbol">$</span>
-            <input id="taskFinanceAmountDisplay" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" />
-            <input id="taskFinanceAmount" type="hidden" />
-            <button type="button" id="taskFinanceCurrencyBtn" class="currency-btn">MN</button>
-          </div>
-          <small class="money-help">Máximo $99,999,999.99</small>
-        </label>
-      </section>
-      </details>
-
 
       <label>Emoticono de la tarea
         <button type="button" id="chooseTaskEmojiBtn" class="emoji-picker-trigger">
@@ -347,19 +261,10 @@
 
       <div id="timeFields" class="two-cols hidden">
         <label>Hora inicio
-          <button type="button" id="startTimeBtn" class="time-picker-trigger" data-time-target="startTime">
-            <span id="startTimeDisplay">9:00 A.M.</span>
-            <span aria-hidden="true">🕒</span>
-          </button>
-          <input id="startTime" type="hidden" value="09:00" />
+          <input id="startTime" type="time" />
         </label>
-
         <label>Hora vencimiento
-          <button type="button" id="dueTimeBtn" class="time-picker-trigger" data-time-target="dueTime">
-            <span id="dueTimeDisplay">10:00 A.M.</span>
-            <span aria-hidden="true">🕒</span>
-          </button>
-          <input id="dueTime" type="hidden" value="10:00" />
+          <input id="dueTime" type="time" />
         </label>
       </div>
 
@@ -371,7 +276,6 @@
             <option value="weekly">Semanal</option>
             <option value="monthly">Mensual</option>
             <option value="yearly">Anual</option>
-            <option id="recurrenceCopyOption" value="copy" hidden disabled>Copiar a otra fecha…</option>
           </select>
         </label>
         <label>Estado
@@ -411,10 +315,6 @@
       <div><p class="eyebrow">Preferencias y respaldo</p><h2>Ajustes</h2></div>
       <button class="icon-btn" id="closeSettings">✕</button>
     </div>
-    <div class="settings-version-top">
-      <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.8.3</strong>
-    </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
         <summary><span>🎨 Visual</span><small>Tema, título y vista</small></summary>
@@ -432,7 +332,7 @@
               <option value="all">Todas</option><option value="today">Hoy</option><option value="upcoming">Próximas</option><option value="recurring">Recurrentes</option>
             </select>
           </label>
-          <label>Título principal
+          <label>Título de la aplicación
             <input id="customAppTitle" type="text" maxlength="18" placeholder="Mis Tareas" autocomplete="off" />
             <small>Máximo 18 caracteres.</small>
           </label>
@@ -440,9 +340,9 @@
       </details>
 
       <details class="settings-group" id="settingsExpenseGroup">
-        <summary><span>💰 Gastos e ingresos</span><small>Configuración del libro activo</small></summary>
+        <summary><span>💰 Gastos</span><small>Configuración del libro activo</small></summary>
         <div class="settings-group-body">
-          <label>Día de inicio del periodo financiero
+          <label>Día de inicio para sumar gastos del mes
             <select id="expenseCycleDay"></select>
             <small>Este valor se guarda de forma independiente para el libro activo.</small>
           </label>
@@ -452,8 +352,8 @@
       <details class="settings-group" id="settingsTransferGroup">
         <summary><span>⇅ Exportar / importar</span><small>Respaldos y archivos</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar movimientos TXT</strong><small>Exporta gastos e ingresos del periodo en curso del libro activo.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
-          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar movimientos CSV</strong><small>Exporta gastos e ingresos del periodo en curso del libro activo.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar gastos TXT</strong><small>Exporta únicamente el periodo de gastos en curso del libro activo.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar gastos CSV</strong><small>Exporta únicamente el periodo de gastos en curso del libro activo.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
           <button id="exportBtn" class="settings-item"><span>⬇️</span><div><strong>Exportar respaldo de tareas</strong><small>Descarga tus tareas en formato JSON.</small><small id="lastExportBackup" class="last-export-mark">Nunca descargado</small></div></button>
           <button id="importBtn" class="settings-item"><span>⬆️</span><div><strong>Importar</strong><small>Elige si deseas importar tareas o gastos.</small></div></button>
           <input id="importInput" type="file" accept=".json,application/json" hidden />
@@ -464,14 +364,14 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.8.3</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.5.6</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
 
       <button id="saveSettingsBtn" class="primary-btn" type="button">Guardar cambios</button>
       <div id="settingsSavedMessage" class="saved-message hidden">Los cambios han sido guardados.</div>
-      <button id="clearBtn" class="settings-item danger-outline"><span>🗑️</span><div><strong>Borrar todos los datos</strong><small>Elimina tareas, papelera y movimientos financieros guardados en este dispositivo.</small></div></button>
+      <button id="clearBtn" class="settings-item danger-outline"><span>🗑️</span><div><strong>Borrar todos los datos</strong><small>Elimina tareas, papelera y gastos guardados en este dispositivo.</small></div></button>
     </div>
   </dialog>
 
@@ -480,33 +380,26 @@
     <form id="expenseForm" method="dialog">
       <div class="modal-head">
         <div>
-          <p class="eyebrow">Registro financiero</p>
-          <h2 id="expenseDialogTitle">Agregar gasto</h2>
+          <p class="eyebrow">Registro de gasto</p>
+          <h2>Agregar gasto</h2>
         </div>
         <button type="button" class="icon-btn" id="closeExpenseDialog">✕</button>
       </div>
 
-      <div class="expense-date-nav expense-date-nav-simple expense-entry-date-nav">
-        <button type="button" data-expense-shift="-day" title="Día anterior" aria-label="Día anterior">‹</button>
-
-        <label class="expense-entry-date-control" title="Seleccionar fecha">
-          <span aria-hidden="true">📅</span>
-          <span id="expenseDateLabel">--/--/----</span>
-          <span aria-hidden="true">⌄</span>
-          <input id="expenseDate" type="date" aria-label="Seleccionar fecha del movimiento" />
-        </label>
-
-        <button type="button" data-expense-shift="+day" title="Día siguiente" aria-label="Día siguiente">›</button>
+      <div class="expense-date-nav">
+        <button type="button" data-expense-shift="-month" title="Mes anterior">&lt;&lt;&lt;</button>
+        <button type="button" data-expense-shift="-week" title="Semana anterior">&lt;&lt;</button>
+        <button type="button" data-expense-shift="-day" title="Día anterior">&lt;</button>
+        <strong id="expenseDateLabel">08.09.2026</strong>
+        <button type="button" data-expense-shift="+day" title="Día siguiente">&gt;</button>
+        <button type="button" data-expense-shift="+week" title="Semana siguiente">&gt;&gt;</button>
+        <button type="button" data-expense-shift="+month" title="Mes siguiente">&gt;&gt;&gt;</button>
       </div>
+
+      <input id="expenseDate" type="hidden" />
       <input id="expenseId" type="hidden" />
 
-      <div class="movement-type-row">
-        <span>Tipo de movimiento</span>
-        <button type="button" id="expenseTypeBtn" class="movement-type-btn expense">Gasto</button>
-        <input id="expenseType" type="hidden" value="expense" />
-      </div>
-
-      <label><span id="expenseTitleLabel">¿En qué gasté?</span> *
+      <label>¿En qué gasté? *
         <input id="expenseTitle" maxlength="120" required placeholder="Ej. Comida, gasolina, farmacia..." />
       </label>
 
@@ -528,10 +421,9 @@
         <button type="button" id="expenseLogBtn" class="ghost-btn expense-log-btn">📚 Bitácora</button>
       </div>
 
-      <div class="modal-actions expense-save-actions">
+      <div class="modal-actions">
         <button type="button" id="cancelExpenseBtn" class="ghost-btn">Cancelar</button>
-        <button type="button" id="saveAndAddExpenseBtn" class="ghost-btn">Agregar gasto+</button>
-        <button type="submit" id="saveExpenseBtn" class="primary-btn">Guardar gasto</button>
+        <button type="submit" class="primary-btn">Guardar gasto</button>
       </div>
     </form>
   </dialog>
@@ -539,28 +431,26 @@
   <div id="toast" class="toast"></div>
 
 
-  <dialog id="viewExpensesDialog" class="modal view-expenses-dialog">
+  <dialog id="viewExpensesDialog" class="modal">
     <div class="modal-head">
       <div>
-        <p class="eyebrow">Consulta financiera</p>
-        <h2>Movimientos registrados</h2>
+        <p class="eyebrow">Consulta de gastos</p>
+        <h2>Gastos registrados</h2>
       </div>
       <button type="button" class="icon-btn" id="closeViewExpensesDialog">✕</button>
     </div>
 
-    <div class="expense-date-nav expense-date-nav-simple view-expense-date-nav">
-      <button type="button" data-view-expense-shift="-day" title="Día anterior" aria-label="Día anterior">‹</button>
-
-      <label class="view-expense-date-control" title="Seleccionar fecha">
-        <span aria-hidden="true">📅</span>
-        <span id="viewExpenseDateLabel">--/--/----</span>
-        <span aria-hidden="true">⌄</span>
-        <input id="viewExpenseDate" type="date" aria-label="Seleccionar fecha" />
-      </label>
-
-      <button type="button" data-view-expense-shift="+day" title="Día siguiente" aria-label="Día siguiente">›</button>
-      <button type="button" id="viewExpenseTodayBtn" class="view-expense-today-btn">Hoy</button>
+    <div class="expense-date-nav expense-date-nav-one-line">
+      <button type="button" data-view-expense-shift="-month">&lt;&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-week">&lt;&lt;</button>
+      <button type="button" data-view-expense-shift="-day">&lt;</button>
+      <strong id="viewExpenseDateLabel"></strong>
+      <button type="button" data-view-expense-shift="+day">&gt;</button>
+      <button type="button" data-view-expense-shift="+week">&gt;&gt;</button>
+      <button type="button" data-view-expense-shift="+month">&gt;&gt;&gt;</button>
     </div>
+
+    <input id="viewExpenseDate" type="hidden" />
     <div id="viewExpenseDayTotal" class="expense-view-total"></div>
     <div id="viewExpensesList" class="expense-list"></div>
   </dialog>
@@ -569,7 +459,7 @@
   
   <dialog id="comicConfirmDialog" class="comic-confirm-dialog">
     <div class="comic-bubble">
-      
+      <div class="comic-bubble-tail"></div>
       <div class="comic-confirm-icon">!</div>
       <h3 id="comicConfirmTitle">Confirmar</h3>
       <p id="comicConfirmMessage">¿Deseas continuar?</p>
@@ -648,32 +538,19 @@
         <input id="bookNameInput" type="text" maxlength="20" placeholder="Máximo 20 caracteres" autocomplete="off" />
       </label>
 
-      <details id="bookAppearanceDetails" class="book-appearance-details">
-        <summary>
-          <span>🎨 Icono y color</span>
-          <small>Opcional · toca para personalizar</small>
-        </summary>
-
-        <div class="book-appearance-body">
-          <div class="book-optional-actions">
-            <button type="button" id="clearBookIconBtn" class="ghost-btn">Sin icono</button>
-            <button type="button" id="clearBookColorBtn" class="ghost-btn">Sin color</button>
-          </div>
-
-          <div class="book-customize-grid">
-            <div>
-              <small class="book-customize-label">Icono</small>
-              <div id="bookIconPicker" class="book-icon-picker"></div>
-            </div>
-            <div>
-              <small class="book-customize-label">Color</small>
-              <div id="bookColorPicker" class="book-color-picker"></div>
-            </div>
-          </div>
+      <div class="book-customize-grid">
+        <div>
+          <small class="book-customize-label">Icono</small>
+          <div id="bookIconPicker" class="book-icon-picker"></div>
         </div>
-      </details>
-      <input id="bookIconInput" type="hidden" value="" />
-      <input id="bookColorInput" type="hidden" value="" />
+        <div>
+          <small class="book-customize-label">Color</small>
+          <div id="bookColorPicker" class="book-color-picker"></div>
+        </div>
+      </div>
+
+      <input id="bookIconInput" type="hidden" value="📖" />
+      <input id="bookColorInput" type="hidden" value="#725cff" />
 
       <div class="book-form-actions">
         <button id="deleteBookBtn" type="button" class="danger-btn hidden">🗑 Borrar libro</button>
@@ -731,8 +608,8 @@
       </button>
       <button type="button" id="chooseImportExpensesBtn" class="import-choice-card">
         <span>💰</span>
-        <strong>Gastos / Ingresos</strong>
-        <small>Importar movimientos CSV, TXT o JSON al libro activo.</small>
+        <strong>Gastos</strong>
+        <small>Importar gastos CSV, TXT o JSON al libro activo.</small>
       </button>
     </div>
 
@@ -744,7 +621,7 @@
   <dialog id="expenseLogDialog" class="modal expense-log-dialog">
     <div class="modal-head">
       <div>
-        <p class="eyebrow">Historial financiero</p>
+        <p class="eyebrow">Historial de gastos</p>
         <h2>Bitácora</h2>
       </div>
       <button type="button" class="icon-btn" id="closeExpenseLogDialog">✕</button>
@@ -757,273 +634,6 @@
       <button type="button" id="cancelExpenseLogBtn" class="ghost-btn">Cancelar</button>
       <button type="button" id="exportExpenseLogBtn" class="primary-btn">Exportar seleccionados</button>
     </div>
-  </dialog>
-
-  
-  <dialog id="taskMovementDialog" class="modal task-movement-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Movimiento de la tarea</p>
-        <h2 id="taskMovementDialogTitle">Detalle</h2>
-      </div>
-      <button type="button" class="icon-btn" id="closeTaskMovementDialog">✕</button>
-    </div>
-
-    <div id="taskMovementDetailBody" class="task-movement-detail-body"></div>
-
-    <div class="modal-actions">
-      <button type="button" id="closeTaskMovementDetailBtn" class="ghost-btn">Cerrar</button>
-    </div>
-  </dialog>
-
-  
-  <dialog id="timePickerDialog" class="modal time-picker-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Seleccionar hora</p>
-        <h2 id="timePickerTitle">Hora</h2>
-      </div>
-      <button type="button" class="icon-btn" id="closeTimePickerDialog">✕</button>
-    </div>
-
-    <div id="timePickerPreview" class="time-picker-preview">9:00 A.M.</div>
-
-    <div class="time-picker-controls">
-      <label>Hora
-        <select id="timePickerHour" class="time-picker-select"></select>
-      </label>
-
-      <span class="time-picker-colon">:</span>
-
-      <label>Minutos
-        <select id="timePickerMinute" class="time-picker-select"></select>
-      </label>
-    </div>
-
-    <div class="time-picker-period">
-      <button type="button" id="timePickerAM" class="time-period-btn active" data-period="AM">A.M.</button>
-      <button type="button" id="timePickerPM" class="time-period-btn" data-period="PM">P.M.</button>
-    </div>
-
-    <div class="time-picker-actions">
-      <button type="button" id="clearTimePickerBtn" class="ghost-btn">Borrar</button>
-      <button type="button" id="cancelTimePickerBtn" class="ghost-btn">Cancelar</button>
-      <button type="button" id="applyTimePickerBtn" class="primary-btn">Establecer</button>
-    </div>
-  </dialog>
-
-  
-  <dialog id="recurrenceDialog" class="modal recurrence-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Repetición de tarea</p>
-        <h2 id="recurrenceDialogTitle">Cambiar recurrencia</h2>
-      </div>
-      <button type="button" class="icon-btn" id="closeRecurrenceDialog">✕</button>
-    </div>
-
-    <input type="hidden" id="recurrenceTaskId" />
-    <input type="hidden" id="recurrenceOccurrenceDate" />
-
-    <div class="recurrence-options">
-      <button type="button" class="recurrence-option" data-recurrence-value="none">
-        <span>○</span>
-        <strong>Sin recurrencia</strong>
-        <small>La tarea no se repite.</small>
-      </button>
-
-      <button type="button" class="recurrence-option" data-recurrence-value="daily">
-        <span>↻</span>
-        <strong>Diaria</strong>
-        <small>Se repite todos los días.</small>
-      </button>
-
-      <button type="button" class="recurrence-option" data-recurrence-value="weekly">
-        <span>7</span>
-        <strong>Semanal</strong>
-        <small>Se repite cada semana.</small>
-      </button>
-
-      <button type="button" class="recurrence-option" data-recurrence-value="monthly">
-        <span>30</span>
-        <strong>Mensual</strong>
-        <small>Se repite cada mes.</small>
-      </button>
-
-      <button type="button" class="recurrence-option" data-recurrence-value="yearly">
-        <span>12</span>
-        <strong>Anual</strong>
-        <small>Se repite cada año.</small>
-      </button>
-
-      <button type="button" class="recurrence-option recurrence-copy-option" id="recurrenceCopyBtn">
-        <span>⧉</span>
-        <strong>Copiar</strong>
-        <small>Crea una copia de esta tarea en otra fecha futura.</small>
-      </button>
-    </div>
-
-    <div class="modal-actions">
-      <button type="button" id="cancelRecurrenceDialog" class="ghost-btn">Cancelar</button>
-    </div>
-  </dialog>
-
-  
-  <dialog id="financeLedgerDialog" class="modal finance-ledger-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Contabilidad del libro</p>
-        <h2>Gastos e ingresos</h2>
-        <small id="financeLedgerThroughDate"></small>
-      </div>
-      <button type="button" class="icon-btn" id="closeFinanceLedgerDialog">✕</button>
-    </div>
-
-    <div id="financeLedgerList" class="finance-ledger-list"></div>
-
-    <section id="financeLedgerTotals" class="finance-ledger-totals"></section>
-
-    <div class="modal-actions">
-      <button type="button" id="closeFinanceLedgerBtn" class="primary-btn">Cerrar</button>
-    </div>
-  </dialog>
-
-  
-  
-
-  <dialog id="customBalanceDialog" class="modal custom-balance-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Consulta financiera</p>
-        <h2>Balance personalizado</h2>
-        <small id="customBalancePeriodLabel">Periodo disponible</small>
-      </div>
-      <button type="button" class="icon-btn" id="closeCustomBalanceDialog">✕</button>
-    </div>
-
-    <div class="custom-balance-range">
-      <label>Fecha inicio
-        <input id="customBalanceStart" type="date" />
-      </label>
-      <label>Fecha fin
-        <input id="customBalanceEnd" type="date" />
-      </label>
-    </div>
-
-    <small class="custom-balance-help">Las dos fechas deben estar dentro del periodo financiero que se está mostrando.</small>
-
-    <button type="button" id="calculateCustomBalanceBtn" class="primary-btn custom-balance-calculate-btn">Ver balance</button>
-
-    <section id="customBalanceResult" class="custom-balance-result hidden">
-      <div id="customBalanceRangeLabel" class="custom-balance-range-label"></div>
-      <div id="customBalanceList" class="finance-ledger-list custom-balance-list"></div>
-      <section id="customBalanceTotals" class="finance-ledger-totals"></section>
-    </section>
-
-    <div class="modal-actions">
-      <button type="button" id="closeCustomBalanceBtn" class="ghost-btn">Cerrar</button>
-    </div>
-  </dialog>
-
-  <dialog id="taskCopyDialog" class="modal task-copy-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Copiar tarea</p>
-        <h2 id="taskCopyDialogTitle">Elegir fecha futura</h2>
-      </div>
-      <button type="button" class="icon-btn" id="closeTaskCopyDialog">✕</button>
-    </div>
-
-    <input type="hidden" id="copyTaskId" />
-    <input type="hidden" id="copyTaskOccurrenceDate" />
-
-    <label>Fecha para la copia
-      <input id="copyTaskDate" type="date" />
-      <small>Solo se permiten fechas futuras.</small>
-    </label>
-
-    <div class="copy-task-preview" id="copyTaskPreview"></div>
-
-    <div class="modal-actions">
-      <button type="button" id="cancelTaskCopyBtn" class="ghost-btn">Cancelar</button>
-      <button type="button" id="saveTaskCopyBtn" class="primary-btn">Guardar copia</button>
-    </div>
-  </dialog>
-
-  
-  <dialog id="expenseDetailDialog" class="modal expense-detail-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Detalle del movimiento</p>
-        <h2 id="expenseDetailTitle">Movimiento</h2>
-      </div>
-      <button type="button" class="icon-btn" id="closeExpenseDetailDialog">✕</button>
-    </div>
-
-    <input id="expenseDetailId" type="hidden" />
-    <div id="expenseDetailBody" class="expense-detail-body"></div>
-
-    <div class="expense-detail-actions">
-      <button type="button" id="expenseDetailEditBtn" class="ghost-btn">✏ Editar</button>
-      <button type="button" id="expenseDetailCopyBtn" class="ghost-btn">⧉ Copiar</button>
-
-      <div class="expense-detail-move">
-        <button type="button" id="expenseDetailMoveBtn" class="ghost-btn">📖 Mover</button>
-        <select id="expenseDetailBookSelect" class="hidden" aria-label="Mover movimiento a otro libro">
-          <option value="">Selecciona libro</option>
-        </select>
-      </div>
-
-      <button type="button" id="expenseDetailDeleteBtn" class="danger-btn">🗑 Borrar</button>
-    </div>
-  </dialog>
-
-  
-  <dialog id="expenseCopyDialog" class="modal expense-copy-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Copiar movimiento</p>
-        <h2 id="expenseCopyDialogTitle">Elegir fecha futura</h2>
-      </div>
-      <button type="button" class="icon-btn" id="closeExpenseCopyDialog">✕</button>
-    </div>
-
-    <input type="hidden" id="copyExpenseId" />
-
-    <label>Fecha para la copia
-      <input id="copyExpenseDate" type="date" />
-      <small>Solo se permiten fechas futuras.</small>
-    </label>
-
-    <div class="copy-task-preview" id="copyExpensePreview"></div>
-
-    <div class="modal-actions">
-      <button type="button" id="cancelExpenseCopyBtn" class="ghost-btn">Cancelar</button>
-      <button type="button" id="saveExpenseCopyBtn" class="primary-btn">Guardar copia</button>
-    </div>
-  </dialog>
-
-
-  <dialog id="calendarQuickAddDialog" class="modal calendar-quick-add-dialog">
-    <div class="modal-head">
-      <div>
-        <p class="eyebrow">Día seleccionado</p>
-        <h2 id="calendarQuickAddTitle">Agregar en fecha</h2>
-        <small id="calendarQuickAddDateLabel"></small>
-      </div>
-      <button type="button" class="icon-btn" id="closeCalendarQuickAddDialog">✕</button>
-    </div>
-
-    <input id="calendarQuickAddDate" type="hidden" />
-
-    <div class="calendar-quick-actions">
-      <button type="button" id="calendarQuickTaskBtn" class="primary-btn">＋ Agregar tarea</button>
-      <button type="button" id="calendarQuickExpenseBtn" class="ghost-btn">💰 Agregar gasto</button>
-    </div>
-
-    <small id="calendarQuickExpenseNote" class="calendar-quick-note hidden">
-      Los gastos e ingresos no se pueden registrar en fechas futuras.
-    </small>
   </dialog>
 
   <script src="app.js" defer></script>
