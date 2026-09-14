@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.9.1";
+const APP_VERSION = "11.9.1.2";
 const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
 const CLOUD_BITACORA_FOLDER_DEFAULT = "Mis_Tareas_respaldo/bitacora";
 const CLOUD_EXPENSES_FOLDER_DEFAULT = "Mis_Tareas_respaldo/gastos/personal";
@@ -3084,6 +3084,78 @@ function normalizeCloudFolderPath(value,fallback=CLOUD_BACKUP_FOLDER_DEFAULT){
   const clean=String(value||"").split("/").map(x=>x.trim()).filter(Boolean).join("/");
   return clean||fallback;
 }
+
+function normalizeAppsScriptUrl(value){
+  const raw=String(value||"").trim();
+  if(!raw) return "";
+
+  /* Extrae la primera URL /exec válida incluso si el usuario pegó
+     accidentalmente la misma URL dos veces seguidas. */
+  const match=raw.match(/https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec/i);
+  return match ? match[0] : raw;
+}
+
+function setCloudConnectionStatus(state,message){
+  const box=$("#cloudConnectionStatus");
+  const text=$("#cloudConnectionStatusText");
+  if(!box||!text) return;
+
+  box.classList.remove("is-waiting","is-checking","is-ok","is-pending");
+  box.classList.add(`is-${state}`);
+  text.textContent=message;
+}
+
+function resetCloudConnectionStatus(){
+  setCloudConnectionStatus("waiting","⏳ En espera. Pulsa “Probar conexión”.");
+}
+
+function probeAppsScriptPublicAccess(){
+  return new Promise((resolve,reject)=>{
+    const url=normalizeAppsScriptUrl($("#cloudBackupUrl")?.value||settings.cloudBackupUrl||"");
+    if(!url){
+      reject(new Error("Falta la URL de Google Apps Script."));
+      return;
+    }
+
+    const callbackName=`__misTareasProbe_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script=document.createElement("script");
+    let settled=false;
+
+    const cleanup=()=>{
+      clearTimeout(timer);
+      try{ delete window[callbackName]; }catch{ window[callbackName]=undefined; }
+      script.remove();
+    };
+
+    const finish=(ok,value)=>{
+      if(settled) return;
+      settled=true;
+      cleanup();
+      ok?resolve(value):reject(value instanceof Error?value:new Error(String(value||"No se pudo comprobar Apps Script.")));
+    };
+
+    window[callbackName]=data=>{
+      if(data && data.source==="mis-tareas-cloud" && data.ok){
+        finish(true,data);
+      }else{
+        finish(false,new Error(data?.error||"Apps Script respondió con un formato no reconocido."));
+      }
+    };
+
+    script.onerror=()=>finish(false,new Error(
+      "La URL no respondió como servicio público. Revisa que la implementación permita acceso a “Cualquier persona”."
+    ));
+
+    script.src=`${url}${url.includes("?")?"&":"?"}action=probe&callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
+
+    const timer=setTimeout(()=>finish(false,new Error(
+      "La URL no respondió como servicio público. Es posible que Google esté solicitando inicio de sesión."
+    )),7000);
+
+    document.head.appendChild(script);
+  });
+}
+
 function cloudBackupConfigured(){ return !!(String(settings.cloudBackupUrl||"").trim()&&String(settings.cloudBackupSecret||"").trim()); }
 function generateCloudSecret(){ const bytes=new Uint8Array(24); crypto.getRandomValues(bytes); return [...bytes].map(b=>b.toString(16).padStart(2,"0")).join(""); }
 function formatCloudBackupStamp(iso){ if(!iso) return "Nunca"; const d=new Date(iso); return `${d.toLocaleDateString("es-MX")} ${d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}`; }
@@ -3095,36 +3167,265 @@ function renderCloudBackupStatus(){
   if(settings.lastCloudBackupError){ status.textContent=`Pendiente · ${settings.lastCloudBackupError}`; return; }
   status.textContent=settings.cloudBackupEnabled?`Pendiente de respaldo automático para hoy. Último: ${formatCloudBackupStamp(settings.lastCloudBackupAt)}`:`Automático desactivado. Último respaldo en nube: ${formatCloudBackupStamp(settings.lastCloudBackupAt)}`;
 }
+function cloudJsonpStatus(requestId){
+  return new Promise((resolve,reject)=>{
+    const url=String(settings.cloudBackupUrl||"").trim();
+    if(!url){
+      reject(new Error("Falta la URL de Google Apps Script."));
+      return;
+    }
+
+    const callbackName=`__misTareasCloud_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script=document.createElement("script");
+    let settled=false;
+
+    const cleanup=()=>{
+      clearTimeout(timer);
+      try{ delete window[callbackName]; }catch{ window[callbackName]=undefined; }
+      script.remove();
+    };
+
+    const finish=(ok,value)=>{
+      if(settled) return;
+      settled=true;
+      cleanup();
+      ok?resolve(value):reject(value instanceof Error?value:new Error(String(value||"No se pudo consultar Apps Script.")));
+    };
+
+    window[callbackName]=data=>finish(true,data);
+
+    script.onerror=()=>finish(false,new Error("No se pudo consultar la respuesta de Google Apps Script."));
+    script.src=`${url}${url.includes("?")?"&":"?"}action=status&requestId=${encodeURIComponent(requestId)}&callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
+
+    const timer=setTimeout(
+      ()=>finish(false,new Error("Google Apps Script no respondió a la consulta de estado.")),
+      10000
+    );
+
+    document.head.appendChild(script);
+  });
+}
+
 function cloudBridgeRequest(action,{folderPath="",fileName="",content="",kind="manual",maxBackups=30,mimeType="application/json"}={}){
   return new Promise((resolve,reject)=>{
-    const url=String(settings.cloudBackupUrl||"").trim(), secret=String(settings.cloudBackupSecret||"").trim();
-    if(!url||!secret){ reject(new Error("Configura primero la URL y la clave privada del respaldo en nube.")); return; }
+    const url=String(settings.cloudBackupUrl||"").trim();
+    const secret=String(settings.cloudBackupSecret||"").trim();
+
+    if(!url||!secret){
+      reject(new Error("Configura primero la URL y la clave privada del respaldo en nube."));
+      return;
+    }
+
     const requestId=`cb_${uid()}_${Date.now()}`;
-    const iframe=document.createElement("iframe"); const frameName=`cloud_backup_${requestId.replace(/[^a-zA-Z0-9_]/g,"")}`;
-    iframe.name=frameName; iframe.className="cloud-backup-frame"; iframe.setAttribute("aria-hidden","true");
-    const form=document.createElement("form"); form.method="POST"; form.action=url; form.target=frameName; form.acceptCharset="UTF-8"; form.className="cloud-backup-form";
-    const input=document.createElement("input"); input.type="hidden"; input.name="payload";
-    input.value=JSON.stringify({source:"mis-tareas",requestId,action,secret,folderPath:normalizeCloudFolderPath(folderPath),fileName,content,kind,maxBackups:Number(maxBackups||30),mimeType,appVersion:APP_VERSION,sentAt:new Date().toISOString()});
-    form.appendChild(input); document.body.appendChild(iframe); document.body.appendChild(form);
+    const iframe=document.createElement("iframe");
+    const frameName=`cloud_backup_${requestId.replace(/[^a-zA-Z0-9_]/g,"")}`;
+
+    iframe.name=frameName;
+    iframe.className="cloud-backup-frame";
+    iframe.setAttribute("aria-hidden","true");
+
+    const form=document.createElement("form");
+    form.method="POST";
+    form.action=url;
+    form.target=frameName;
+    form.acceptCharset="UTF-8";
+    form.className="cloud-backup-form";
+
+    const input=document.createElement("input");
+    input.type="hidden";
+    input.name="payload";
+    input.value=JSON.stringify({
+      source:"mis-tareas",
+      requestId,
+      action,
+      secret,
+      folderPath:normalizeCloudFolderPath(folderPath),
+      fileName,
+      content,
+      kind,
+      maxBackups:Number(maxBackups||30),
+      mimeType,
+      appVersion:APP_VERSION,
+      sentAt:new Date().toISOString()
+    });
+
+    form.appendChild(input);
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+
     let settled=false;
-    const cleanup=()=>{ window.removeEventListener("message",onMessage); clearTimeout(timer); setTimeout(()=>{form.remove();iframe.remove();},40); };
-    const finish=(ok,value)=>{ if(settled)return; settled=true; cleanup(); ok?resolve(value):reject(value instanceof Error?value:new Error(String(value||"No se pudo completar el respaldo."))); };
-    const onMessage=e=>{ const data=e.data; if(!data||data.source!=="mis-tareas-cloud"||data.requestId!==requestId)return; data.ok?finish(true,data):finish(false,new Error(data.error||"Google Drive rechazó el respaldo.")); };
+    let pollTimer=null;
+    let postMessageReceived=false;
+    const started=Date.now();
+
+    const cleanup=()=>{
+      window.removeEventListener("message",onMessage);
+      clearTimeout(timeoutTimer);
+      clearTimeout(pollTimer);
+      setTimeout(()=>{
+        form.remove();
+        iframe.remove();
+      },80);
+    };
+
+    const finish=(ok,value)=>{
+      if(settled) return;
+      settled=true;
+      cleanup();
+      ok
+        ? resolve(value)
+        : reject(value instanceof Error ? value : new Error(String(value||"No se pudo completar la operación en Google Drive.")));
+    };
+
+    /* Vía rápida: si Apps Script logra enviar postMessage hasta GitHub Pages. */
+    const onMessage=e=>{
+      const data=e.data;
+      if(!data || data.source!=="mis-tareas-cloud" || data.requestId!==requestId) return;
+      postMessageReceived=true;
+      data.ok ? finish(true,data) : finish(false,new Error(data.error||"Google Drive rechazó la operación."));
+    };
+
     window.addEventListener("message",onMessage);
-    const timer=setTimeout(()=>finish(false,new Error("No hubo respuesta de Google Drive. Revisa la URL, la clave y la publicación de Apps Script.")),45000);
-    try{ form.submit(); }catch(err){ finish(false,err); }
+
+    /* Vía robusta: el servidor guarda el resultado por requestId.
+       La app lo consulta por JSONP, evitando CORS y el iframe interno de Apps Script. */
+    const poll=async()=>{
+      if(settled) return;
+
+      try{
+        const data=await cloudJsonpStatus(requestId);
+
+        if(data && data.source==="mis-tareas-cloud" && data.requestId===requestId){
+          if(data.pending){
+            pollTimer=setTimeout(poll,700);
+            return;
+          }
+
+          if(data.ok){
+            finish(true,data);
+            return;
+          }
+
+          if(data.error){
+            finish(false,new Error(data.error));
+            return;
+          }
+        }
+      }catch{
+        /* El POST puede seguir procesándose; reintentamos hasta el timeout general. */
+      }
+
+      if(!settled && Date.now()-started<45000){
+        pollTimer=setTimeout(poll,900);
+      }
+    };
+
+    const timeoutTimer=setTimeout(()=>{
+      finish(false,new Error(
+        postMessageReceived
+          ? "Apps Script respondió, pero no pudo confirmarse la operación."
+          : "No se pudo confirmar la respuesta de Google Apps Script. Verifica que hayas publicado la NUEVA versión del archivo .gs y que la URL termine en /exec."
+      ));
+    },45000);
+
+    try{
+      form.submit();
+      pollTimer=setTimeout(poll,600);
+    }catch(err){
+      finish(false,err);
+    }
   });
 }
 async function testCloudBackupConnection(){
-  settings.cloudBackupUrl=$("#cloudBackupUrl")?.value.trim()||settings.cloudBackupUrl||"";
+  const btn=$("#testCloudBackupBtn");
+
+  settings.cloudBackupUrl=normalizeAppsScriptUrl(
+    $("#cloudBackupUrl")?.value.trim()||settings.cloudBackupUrl||""
+  );
   settings.cloudBackupSecret=$("#cloudBackupSecret")?.value.trim()||settings.cloudBackupSecret||"";
-  settings.cloudBackupFolder=normalizeCloudFolderPath($("#cloudBackupFolder")?.value||settings.cloudBackupFolder,CLOUD_BACKUP_FOLDER_DEFAULT);
-  settings.cloudBitacoraFolder=normalizeCloudFolderPath($("#cloudBitacoraFolder")?.value||settings.cloudBitacoraFolder,CLOUD_BITACORA_FOLDER_DEFAULT);
-  settings.cloudExpensesFolder=normalizeCloudFolderPath($("#cloudExpensesFolder")?.value||settings.cloudExpensesFolder,CLOUD_EXPENSES_FOLDER_DEFAULT);
+  settings.cloudBackupFolder=normalizeCloudFolderPath(
+    $("#cloudBackupFolder")?.value||settings.cloudBackupFolder,
+    CLOUD_BACKUP_FOLDER_DEFAULT
+  );
+  settings.cloudBitacoraFolder=normalizeCloudFolderPath(
+    $("#cloudBitacoraFolder")?.value||settings.cloudBitacoraFolder,
+    CLOUD_BITACORA_FOLDER_DEFAULT
+  );
+  settings.cloudExpensesFolder=normalizeCloudFolderPath(
+    $("#cloudExpensesFolder")?.value||settings.cloudExpensesFolder,
+    CLOUD_EXPENSES_FOLDER_DEFAULT
+  );
+
+  if($("#cloudBackupUrl")) $("#cloudBackupUrl").value=settings.cloudBackupUrl;
   saveSettings();
-  if(!cloudBackupConfigured()){ toast("Completa la URL y la clave privada."); renderCloudBackupStatus(); return false; }
-  try{ toast("Probando conexión con Google Drive..."); const result=await cloudBridgeRequest("ping",{folderPath:settings.cloudBackupFolder}); settings.lastCloudBackupError=""; saveSettings(); renderCloudBackupStatus(); toast(`Conexión correcta · ${result.folderPath||settings.cloudBackupFolder}`); return true; }
-  catch(err){ settings.lastCloudBackupError=err.message||"No se pudo conectar."; saveSettings(); renderCloudBackupStatus(); toast(settings.lastCloudBackupError); return false; }
+
+  if(btn){
+    btn.disabled=true;
+    btn.dataset.originalText=btn.dataset.originalText||btn.textContent;
+    btn.textContent="⏳ Verificando...";
+  }
+
+  setCloudConnectionStatus("checking","⏳ Verificando conexión con Google Apps Script...");
+
+  if(!settings.cloudBackupUrl){
+    setCloudConnectionStatus("pending","⚠️ Pendiente: falta la URL de Google Apps Script.");
+    if(btn){ btn.disabled=false; btn.textContent=btn.dataset.originalText||"☁ Probar conexión"; }
+    return false;
+  }
+
+  if(!settings.cloudBackupSecret){
+    setCloudConnectionStatus("pending","⚠️ Pendiente: falta la clave privada.");
+    if(btn){ btn.disabled=false; btn.textContent=btn.dataset.originalText||"☁ Probar conexión"; }
+    return false;
+  }
+
+  try{
+    /* Primero comprobamos que /exec sea público.
+       Esto permite distinguir un problema de despliegue de un problema de clave. */
+    await probeAppsScriptPublicAccess();
+
+    /* Después comprobamos la clave y el acceso real a Drive. */
+    const result=await cloudBridgeRequest("ping",{
+      folderPath:settings.cloudBackupFolder
+    });
+
+    settings.lastCloudBackupError="";
+    saveSettings();
+    renderCloudBackupStatus();
+
+    setCloudConnectionStatus(
+      "ok",
+      `✅ Conexión correcta · ${result.folderPath||settings.cloudBackupFolder}`
+    );
+    toast("Conexión con Google Drive correcta.");
+    return true;
+
+  }catch(err){
+    const msg=String(err?.message||"No se pudo conectar.");
+    settings.lastCloudBackupError=msg;
+    saveSettings();
+    renderCloudBackupStatus();
+
+    let friendly=msg;
+
+    if(/servicio público|inicio de sesión/i.test(msg)){
+      friendly="La aplicación web no está accesible públicamente. En Apps Script publica como Aplicación web, Ejecutar como: Yo, acceso: Cualquier persona, y crea una nueva versión.";
+    }else if(/clave privada incorrecta/i.test(msg)){
+      friendly="La URL funciona, pero la clave privada no coincide con BACKUP_SECRET.";
+    }else if(/nueva versión|confirmar la respuesta/i.test(msg)){
+      friendly="La URL responde, pero falta publicar la versión nueva del archivo .gs.";
+    }
+
+    setCloudConnectionStatus("pending",`⚠️ Pendiente: ${friendly}`);
+    toast(`Pendiente: ${friendly}`);
+    return false;
+
+  }finally{
+    if(btn){
+      btn.disabled=false;
+      btn.textContent=btn.dataset.originalText||"☁ Probar conexión";
+    }
+  }
 }
 async function uploadBackupToCloud({folderPath,fileName,kind="manual",silent=false}={}){
   if(cloudBackupInProgress) throw new Error("Ya hay un respaldo en proceso."); cloudBackupInProgress=true;
@@ -3167,7 +3468,10 @@ function populateSettings(){
   $("#customAppTitle").value=settings.appTitle||"Mis Tareas";
   if($("#themeSelect")) $("#themeSelect").value=settings.theme||"emerald_gold";
   if($("#cloudBackupEnabled")) $("#cloudBackupEnabled").checked=!!settings.cloudBackupEnabled;
-  if($("#cloudBackupUrl")) $("#cloudBackupUrl").value=settings.cloudBackupUrl||"";
+  if($("#cloudBackupUrl")){
+    settings.cloudBackupUrl=normalizeAppsScriptUrl(settings.cloudBackupUrl||"");
+    $("#cloudBackupUrl").value=settings.cloudBackupUrl;
+  }
   if($("#cloudBackupSecret")) $("#cloudBackupSecret").value=settings.cloudBackupSecret||"";
   if($("#cloudBackupFolder")) $("#cloudBackupFolder").value=settings.cloudBackupFolder||CLOUD_BACKUP_FOLDER_DEFAULT;
   if($("#cloudBitacoraFolder")) $("#cloudBitacoraFolder").value=settings.cloudBitacoraFolder||CLOUD_BITACORA_FOLDER_DEFAULT;
@@ -3175,6 +3479,7 @@ function populateSettings(){
   if($("#cloudBackupMaxBackups")) $("#cloudBackupMaxBackups").value=String(settings.cloudBackupMaxBackups||30);
   renderExportMarks();
   renderCloudBackupStatus();
+  resetCloudConnectionStatus();
 }
 function applyTheme(theme){
   const valid=["emerald_gold","midnight_violet","ocean_blue","graphite"];
@@ -3197,7 +3502,7 @@ function saveSettingsFromDialog(){
   settings.appTitle=title;
   settings.theme=$("#themeSelect")?.value||"emerald_gold";
   settings.cloudBackupEnabled=!!$("#cloudBackupEnabled")?.checked;
-  settings.cloudBackupUrl=$("#cloudBackupUrl")?.value.trim()||"";
+  settings.cloudBackupUrl=normalizeAppsScriptUrl($("#cloudBackupUrl")?.value||"");
   settings.cloudBackupSecret=$("#cloudBackupSecret")?.value.trim()||"";
   settings.cloudBackupFolder=normalizeCloudFolderPath($("#cloudBackupFolder")?.value,CLOUD_BACKUP_FOLDER_DEFAULT);
   settings.cloudBitacoraFolder=normalizeCloudFolderPath($("#cloudBitacoraFolder")?.value,CLOUD_BITACORA_FOLDER_DEFAULT);
@@ -4548,6 +4853,21 @@ $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
 $("#exportExpensesCsvBtn").onclick=exportExpensesCsv;
 $("#exportBtn").onclick=openBackupDestinationDialog;
+
+if($("#cloudBackupUrl")){
+  $("#cloudBackupUrl").addEventListener("blur",()=>{
+    const clean=normalizeAppsScriptUrl($("#cloudBackupUrl").value);
+    $("#cloudBackupUrl").value=clean;
+    settings.cloudBackupUrl=clean;
+    saveSettings();
+    resetCloudConnectionStatus();
+  });
+  $("#cloudBackupUrl").addEventListener("input",resetCloudConnectionStatus);
+}
+if($("#cloudBackupSecret")){
+  $("#cloudBackupSecret").addEventListener("input",resetCloudConnectionStatus);
+}
+
 $("#generateCloudSecretBtn").onclick=()=>{ const secret=generateCloudSecret(); $("#cloudBackupSecret").value=secret; toast("Clave generada. Copia esta misma clave en el código de Apps Script."); };
 $("#testCloudBackupBtn").onclick=testCloudBackupConnection;
 $("#backupNowBtn").onclick=openBackupDestinationDialog;

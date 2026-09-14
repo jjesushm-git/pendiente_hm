@@ -6909,3 +6909,27 @@ dialog .comic-bubble-tail,
   color:#17382b !important;
   border-color:rgba(190,150,37,.38) !important;
 }
+
+
+/* =========================================================
+   VERSION 11.9.1.2 — ESTADO DE PRUEBA DE CONEXIÓN
+   ========================================================= */
+.cloud-connection-status{
+  transition:border-color .2s ease, background .2s ease;
+}
+.cloud-connection-status.is-waiting{
+  opacity:.92;
+}
+.cloud-connection-status.is-checking{
+  border-style:dashed;
+}
+.cloud-connection-status.is-ok{
+  border-color:rgba(42,135,78,.5) !important;
+}
+.cloud-connection-status.is-pending{
+  border-color:rgba(177,118,24,.55) !important;
+}
+#testCloudBackupBtn:disabled{
+  opacity:.7;
+  cursor:wait;
+}
