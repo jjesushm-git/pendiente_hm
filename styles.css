@@ -6856,3 +6856,56 @@ dialog .comic-bubble-tail,
     font-size:.73rem !important;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.9 — RESPALDO AUTOMÁTICO EN GOOGLE DRIVE
+   ========================================================= */
+.cloud-backup-intro{display:grid;gap:4px;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--panel-2)}
+.cloud-backup-intro small{color:var(--muted);line-height:1.4}
+.cloud-secret-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.cloud-secret-row button{min-height:44px}
+.cloud-backup-buttons{display:grid;grid-template-columns:1fr 1fr;gap:9px}.cloud-backup-buttons button{min-height:46px}
+.cloud-backup-status{display:grid;gap:4px;padding:11px 12px;border:1px solid var(--line);border-radius:13px;background:var(--panel-2)}
+.cloud-backup-status small{color:var(--muted);line-height:1.4}
+.cloud-backup-frame,.cloud-backup-form{position:fixed!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;left:-10000px!important;top:-10000px!important;border:0!important}
+.backup-destination-dialog{width:min(92vw,540px);max-width:calc(100vw - 16px)!important}
+.backup-content-note{display:grid;gap:4px;margin:10px 0 2px;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--panel-2)}
+.backup-content-note small{color:var(--muted);line-height:1.4}
+.checkbox-line{display:flex!important;align-items:flex-start;gap:9px}.checkbox-line input{width:18px!important;height:18px!important;margin-top:2px;flex:0 0 auto}.checkbox-line span{line-height:1.35}
+:root[data-theme="emerald_gold"] .cloud-backup-intro,:root[data-theme="emerald_gold"] .cloud-backup-status,:root[data-theme="emerald_gold"] .backup-content-note{background:#fffef8!important;color:#17382b!important;border-color:rgba(190,150,37,.38)!important}
+:root[data-theme="emerald_gold"] .cloud-backup-intro small,:root[data-theme="emerald_gold"] .cloud-backup-status small,:root[data-theme="emerald_gold"] .backup-content-note small{color:#667a70!important}
+@media(max-width:430px){.cloud-secret-row,.cloud-backup-buttons{grid-template-columns:1fr}}
+
+
+/* =========================================================
+   VERSION 11.9.1 — RUTAS GOOGLE DRIVE DEL USUARIO
+   ========================================================= */
+.cloud-folder-map{
+  display:grid;
+  gap:3px;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:var(--panel-2);
+}
+.cloud-folder-map small{
+  color:var(--muted);
+  line-height:1.35;
+}
+
+.financial-export-dialog{
+  width:min(92vw,540px);
+  max-width:calc(100vw - 16px) !important;
+}
+.financial-export-hint{
+  display:block;
+  margin-top:5px;
+  color:var(--muted);
+  overflow-wrap:anywhere;
+}
+
+:root[data-theme="emerald_gold"] .cloud-folder-map{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}

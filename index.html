@@ -413,7 +413,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.8.3.1</strong>
+      <strong id="settingsVersionTop">11.9.1</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -449,12 +449,65 @@
         </div>
       </details>
 
+      
+      <details class="settings-group" id="settingsCloudBackupGroup">
+        <summary><span>☁️ Respaldo en nube</span><small>Google Drive · automático diario</small></summary>
+        <div class="settings-group-body">
+          <div class="cloud-backup-intro">
+            <strong>Respaldo completo en Google Drive</strong>
+            <small>La primera vez que abras la app cada día se intentará guardar un respaldo automático. Solo se marca como realizado cuando Drive confirma que recibió el archivo.</small>
+          </div>
+          <div class="switch-row cloud-backup-switch">
+            <div><strong>Respaldo automático diario</strong><small>Un respaldo por día, en la primera apertura disponible.</small></div>
+            <label class="switch"><input id="cloudBackupEnabled" type="checkbox" /><span></span></label>
+          </div>
+          <label>URL de Google Apps Script
+            <input id="cloudBackupUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off" />
+            <small>Se obtiene al publicar el script de respaldo como Aplicación web.</small>
+          </label>
+          <label>Clave privada de respaldo
+            <div class="cloud-secret-row">
+              <input id="cloudBackupSecret" type="password" maxlength="120" placeholder="Clave que también colocarás en Apps Script" autocomplete="new-password" />
+              <button type="button" id="generateCloudSecretBtn" class="ghost-btn">Generar</button>
+            </div>
+            <small>Esta clave se guarda únicamente en este dispositivo y no se incluye dentro de los respaldos.</small>
+          </label>
+          <div class="cloud-folder-map">
+            <strong>Carpetas de tu Google Drive</strong>
+            <small>Las rutas empiezan desde “Mi unidad”. No escribas “raiz/”.</small>
+          </div>
+
+          <label>Carpeta de respaldos
+            <input id="cloudBackupFolder" type="text" maxlength="180" value="Mis_Tareas_respaldo/respaldos" placeholder="Mis_Tareas_respaldo/respaldos" />
+            <small>Se usa para respaldos automáticos y manuales.</small>
+          </label>
+
+          <label>Carpeta de Bitácora
+            <input id="cloudBitacoraFolder" type="text" maxlength="180" value="Mis_Tareas_respaldo/bitacora" placeholder="Mis_Tareas_respaldo/bitacora" />
+            <small>Se usa cuando exportas periodos desde Bitácora a Google Drive.</small>
+          </label>
+
+          <label>Carpeta de gastos
+            <input id="cloudExpensesFolder" type="text" maxlength="180" value="Mis_Tareas_respaldo/gastos/personal" placeholder="Mis_Tareas_respaldo/gastos/personal" />
+            <small>Se usa para exportar TXT/CSV del libro Personal a Google Drive.</small>
+          </label>
+          <label>Respaldos automáticos a conservar
+            <select id="cloudBackupMaxBackups"><option value="7">7 días</option><option value="15">15 días</option><option value="30">30 días</option><option value="60">60 días</option><option value="90">90 días</option></select>
+          </label>
+          <div class="cloud-backup-buttons">
+            <button type="button" id="testCloudBackupBtn" class="ghost-btn">☁ Probar conexión</button>
+            <button type="button" id="backupNowBtn" class="primary-btn">💾 Respaldar ahora</button>
+          </div>
+          <div id="cloudBackupStatus" class="cloud-backup-status"><strong>Estado del respaldo</strong><small id="cloudBackupStatusText">No configurado.</small></div>
+        </div>
+      </details>
+
       <details class="settings-group" id="settingsTransferGroup">
         <summary><span>⇅ Exportar / importar</span><small>Respaldos y archivos</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar movimientos TXT</strong><small>Exporta gastos e ingresos del periodo en curso del libro activo.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
-          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar movimientos CSV</strong><small>Exporta gastos e ingresos del periodo en curso del libro activo.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
-          <button id="exportBtn" class="settings-item"><span>⬇️</span><div><strong>Exportar respaldo de tareas</strong><small>Descarga tus tareas en formato JSON.</small><small id="lastExportBackup" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesTxtBtn" class="settings-item"><span>📄</span><div><strong>Exportar movimientos TXT</strong><small>Elige Google Drive, dispositivo o ambos. Drive usa la carpeta de gastos configurada.</small><small id="lastExportTxt" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportExpensesCsvBtn" class="settings-item"><span>📊</span><div><strong>Exportar movimientos CSV</strong><small>Elige Google Drive, dispositivo o ambos. Drive usa la carpeta de gastos configurada.</small><small id="lastExportCsv" class="last-export-mark">Nunca descargado</small></div></button>
+          <button id="exportBtn" class="settings-item"><span>💾</span><div><strong>Crear respaldo completo</strong><small>Elige si deseas guardarlo en Google Drive, descargarlo o hacer ambas cosas.</small><small id="lastExportBackup" class="last-export-mark">Nunca generado</small></div></button>
           <button id="importBtn" class="settings-item"><span>⬆️</span><div><strong>Importar</strong><small>Elige si deseas importar tareas o gastos.</small></div></button>
           <input id="importInput" type="file" accept=".json,application/json" hidden />
           <input id="importExpensesInput" type="file" accept=".csv,.txt,.json,text/csv,text/plain,application/json" hidden />
@@ -464,7 +517,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.8.3.1</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.9.1</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -755,7 +808,7 @@
 
     <div class="modal-actions expense-log-actions">
       <button type="button" id="cancelExpenseLogBtn" class="ghost-btn">Cancelar</button>
-      <button type="button" id="exportExpenseLogBtn" class="primary-btn">Exportar seleccionados</button>
+      <button type="button" id="exportExpenseLogBtn" class="primary-btn">Exportar / Drive</button>
     </div>
   </dialog>
 
@@ -1031,6 +1084,60 @@
       Los gastos e ingresos no se pueden registrar en fechas futuras.
     </small>
   </dialog>
+
+  
+  <dialog id="backupDestinationDialog" class="modal backup-destination-dialog">
+    <div class="modal-head"><div><p class="eyebrow">Respaldo completo</p><h2>¿Dónde quieres guardarlo?</h2></div><button type="button" class="icon-btn" id="closeBackupDestinationDialog">✕</button></div>
+    <label>Destino
+      <select id="backupDestinationSelect"><option value="cloud">☁ Google Drive</option><option value="device">⬇ Descargar al dispositivo</option><option value="both">☁⬇ Drive + dispositivo</option></select>
+    </label>
+    <div id="manualCloudFolderWrap">
+      <label>Carpeta en Google Drive<input id="manualCloudFolder" type="text" maxlength="180" placeholder="Mis_Tareas_respaldo/respaldos" /></label>
+      <label class="checkbox-line backup-default-folder-line"><input id="saveManualFolderAsDefault" type="checkbox" /><span>Usar esta carpeta también para los respaldos automáticos</span></label>
+    </div>
+    <div class="backup-content-note"><strong>¿Qué incluye?</strong><small>Tareas, estados, recurrencias, comentarios, libros, gastos, ingresos, papelera, configuración financiera y preferencias. La clave privada de la nube nunca se copia al respaldo.</small></div>
+    <div class="modal-actions"><button type="button" id="cancelBackupDestinationBtn" class="ghost-btn">Cancelar</button><button type="button" id="runManualBackupBtn" class="primary-btn">Crear respaldo</button></div>
+  </dialog>
+
+
+  
+  <dialog id="financialExportDialog" class="modal financial-export-dialog">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Exportación financiera</p>
+        <h2 id="financialExportDialogTitle">Guardar archivo</h2>
+      </div>
+      <button type="button" class="icon-btn" id="closeFinancialExportDialog">✕</button>
+    </div>
+
+    <input id="financialExportKind" type="hidden" />
+
+    <label>Destino
+      <select id="financialExportDestination">
+        <option value="cloud">☁ Google Drive</option>
+        <option value="device">⬇ Descargar al dispositivo</option>
+        <option value="both">☁⬇ Drive + dispositivo</option>
+      </select>
+    </label>
+
+    <div id="financialCloudFolderWrap">
+      <label>Carpeta en Google Drive
+        <input id="financialCloudFolder" type="text" maxlength="180" />
+      </label>
+      <small id="financialExportHint" class="financial-export-hint"></small>
+    </div>
+
+    <div class="backup-content-note">
+      <strong id="financialExportFileName">Archivo</strong>
+      <small>La exportación respeta el libro y el periodo seleccionados.</small>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" id="cancelFinancialExportBtn" class="ghost-btn">Cancelar</button>
+      <button type="button" id="runFinancialExportBtn" class="primary-btn">Guardar archivo</button>
+    </div>
+  </dialog>
+
 
   <script src="app.js" defer></script>
 </body>

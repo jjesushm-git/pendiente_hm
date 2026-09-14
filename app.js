@@ -6,7 +6,10 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.8.3.1";
+const APP_VERSION = "11.9.1";
+const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
+const CLOUD_BITACORA_FOLDER_DEFAULT = "Mis_Tareas_respaldo/bitacora";
+const CLOUD_EXPENSES_FOLDER_DEFAULT = "Mis_Tareas_respaldo/gastos/personal";
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -779,19 +782,51 @@ function esc(s=""){ return s.replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":
 function loadTasks(){ try{return JSON.parse(localStorage.getItem(STORAGE_KEY))||[]}catch{return []} }
 function loadTrash(){ try{return JSON.parse(localStorage.getItem(TRASH_KEY))||[]}catch{return []} }
 function loadSettings(){
+  const defaults={
+    defaultPendingFilter:"upcoming",
+    expenseCycleDay:1,
+    appTitle:"Mis Tareas",
+    lastExportTxt:"",
+    lastExportCsv:"",
+    lastExportBackup:"",
+    theme:"emerald_gold",
+    cloudBackupEnabled:false,
+    cloudBackupUrl:"",
+    cloudBackupSecret:"",
+    cloudBackupFolder:CLOUD_BACKUP_FOLDER_DEFAULT,
+    cloudBitacoraFolder:CLOUD_BITACORA_FOLDER_DEFAULT,
+    cloudExpensesFolder:CLOUD_EXPENSES_FOLDER_DEFAULT,
+    cloudBackupMaxBackups:30,
+    lastCloudBackupDate:"",
+    lastCloudBackupAt:"",
+    lastCloudBackupError:""
+  };
+
   try{
-    return {
-      defaultPendingFilter:"upcoming",
-      expenseCycleDay:1,
-      appTitle:"Mis Tareas",
-      lastExportTxt:"",
-      lastExportCsv:"",
-      lastExportBackup:"",
-      theme:"emerald_gold",
-      ...(JSON.parse(localStorage.getItem(SETTINGS_KEY))||{})
-    };
+    const saved=JSON.parse(localStorage.getItem(SETTINGS_KEY))||{};
+    const merged={...defaults,...saved};
+
+    /* Migración de la ruta predeterminada usada por v11.9.
+       Si el usuario ya había escrito una ruta propia, se conserva. */
+    if(
+      !merged.cloudBackupFolder ||
+      merged.cloudBackupFolder==="Mis Tareas/Respaldos automáticos" ||
+      merged.cloudBackupFolder==="Mis Tareas/Respaldos manuales"
+    ){
+      merged.cloudBackupFolder=CLOUD_BACKUP_FOLDER_DEFAULT;
+    }
+
+    if(!merged.cloudBitacoraFolder){
+      merged.cloudBitacoraFolder=CLOUD_BITACORA_FOLDER_DEFAULT;
+    }
+
+    if(!merged.cloudExpensesFolder){
+      merged.cloudExpensesFolder=CLOUD_EXPENSES_FOLDER_DEFAULT;
+    }
+
+    return merged;
   }catch{
-    return {defaultPendingFilter:"upcoming",expenseCycleDay:1,appTitle:"Mis Tareas",lastExportTxt:"",lastExportCsv:"",lastExportBackup:"",theme:"emerald_gold"};
+    return defaults;
   }
 }
 function saveSettings(){
@@ -2888,15 +2923,40 @@ function scheduleNotifications(){
   });
 }
 
-function exportData(){
-  const blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),tasks,trash},null,2)],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=`mis_tareas_${dateKey(new Date())}.json`; a.click(); URL.revokeObjectURL(a.href);
-  markExport("backup");
+function backupSafeSettings(){
+  const safe={...settings};
+  ["cloudBackupUrl","cloudBackupSecret","lastCloudBackupDate","lastCloudBackupAt","lastCloudBackupError"].forEach(key=>delete safe[key]);
+  return safe;
 }
+function buildFullBackupObject(){
+  return {backupFormat:3,appVersion:APP_VERSION,exportedAt:new Date().toISOString(),tasks,trash,expenses,books,activeBookId,settings:backupSafeSettings()};
+}
+function backupJsonText(){ return JSON.stringify(buildFullBackupObject(),null,2); }
+function manualBackupFileName(){ const now=new Date(); return `Mis_Tareas_Manual_${dateKey(now)}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`; }
+function automaticBackupFileName(){ return `Mis_Tareas_Auto_${dateKey(new Date())}.json`; }
+function downloadFullBackup(fileName=manualBackupFileName()){
+  const blob=new Blob([backupJsonText()],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fileName; a.click(); URL.revokeObjectURL(a.href); markExport("backup"); return fileName;
+}
+function exportData(){ openBackupDestinationDialog(); }
 async function importData(file){
   try{
-    const data=JSON.parse(await file.text()); const arr=Array.isArray(data)?data:data.tasks;
-    if(!Array.isArray(arr)) throw 0; tasks=arr; trash=Array.isArray(data.trash)?data.trash:[]; ensureBookMigration(); migrateTaskCommentsV1155(); migrateMovementsV116(); saveTrash(); saveTasks(); toast("Respaldo importado.");
+    const data=JSON.parse(await file.text());
+    if(Array.isArray(data)){ tasks=data; trash=[]; }
+    else{
+      const arr=data.tasks; if(!Array.isArray(arr)) throw 0;
+      tasks=arr; trash=Array.isArray(data.trash)?data.trash:[];
+      if(Array.isArray(data.expenses)) expenses=data.expenses;
+      if(Array.isArray(data.books)&&data.books.length) books=data.books;
+      if(data.settings&&typeof data.settings==="object"){
+        const incoming={...data.settings};
+        ["cloudBackupUrl","cloudBackupSecret","lastCloudBackupDate","lastCloudBackupAt","lastCloudBackupError"].forEach(key=>delete incoming[key]);
+        settings={...settings,...incoming}; saveSettings();
+      }
+      if(data.activeBookId&&books.some(b=>b.id===data.activeBookId)){ activeBookId=data.activeBookId; localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId); }
+    }
+    ensureBookMigration(); migrateTaskCommentsV1155(); migrateMovementsV116();
+    saveTrash(); localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses)); localStorage.setItem(BOOKS_KEY,JSON.stringify(books)); saveSettings(); saveTasks(); populateSettings(); applySettings(); toast("Respaldo completo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 function parseCsvRows(text){
@@ -3017,13 +3077,104 @@ async function importExpensesData(file){
 
 
 
+
+let cloudBackupInProgress=false;
+let cloudBackupLastAttemptMs=0;
+function normalizeCloudFolderPath(value,fallback=CLOUD_BACKUP_FOLDER_DEFAULT){
+  const clean=String(value||"").split("/").map(x=>x.trim()).filter(Boolean).join("/");
+  return clean||fallback;
+}
+function cloudBackupConfigured(){ return !!(String(settings.cloudBackupUrl||"").trim()&&String(settings.cloudBackupSecret||"").trim()); }
+function generateCloudSecret(){ const bytes=new Uint8Array(24); crypto.getRandomValues(bytes); return [...bytes].map(b=>b.toString(16).padStart(2,"0")).join(""); }
+function formatCloudBackupStamp(iso){ if(!iso) return "Nunca"; const d=new Date(iso); return `${d.toLocaleDateString("es-MX")} ${d.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})}`; }
+function renderCloudBackupStatus(){
+  const status=$("#cloudBackupStatusText"); if(!status) return;
+  if(!cloudBackupConfigured()){ status.textContent="No configurado. Agrega la URL de Apps Script y la clave privada."; return; }
+  const today=dateKey(new Date());
+  if(settings.lastCloudBackupDate===today&&settings.lastCloudBackupAt){ status.textContent=`Respaldo de hoy confirmado · ${formatCloudBackupStamp(settings.lastCloudBackupAt)} · ${settings.cloudBackupFolder||"Drive"}`; return; }
+  if(settings.lastCloudBackupError){ status.textContent=`Pendiente · ${settings.lastCloudBackupError}`; return; }
+  status.textContent=settings.cloudBackupEnabled?`Pendiente de respaldo automático para hoy. Último: ${formatCloudBackupStamp(settings.lastCloudBackupAt)}`:`Automático desactivado. Último respaldo en nube: ${formatCloudBackupStamp(settings.lastCloudBackupAt)}`;
+}
+function cloudBridgeRequest(action,{folderPath="",fileName="",content="",kind="manual",maxBackups=30,mimeType="application/json"}={}){
+  return new Promise((resolve,reject)=>{
+    const url=String(settings.cloudBackupUrl||"").trim(), secret=String(settings.cloudBackupSecret||"").trim();
+    if(!url||!secret){ reject(new Error("Configura primero la URL y la clave privada del respaldo en nube.")); return; }
+    const requestId=`cb_${uid()}_${Date.now()}`;
+    const iframe=document.createElement("iframe"); const frameName=`cloud_backup_${requestId.replace(/[^a-zA-Z0-9_]/g,"")}`;
+    iframe.name=frameName; iframe.className="cloud-backup-frame"; iframe.setAttribute("aria-hidden","true");
+    const form=document.createElement("form"); form.method="POST"; form.action=url; form.target=frameName; form.acceptCharset="UTF-8"; form.className="cloud-backup-form";
+    const input=document.createElement("input"); input.type="hidden"; input.name="payload";
+    input.value=JSON.stringify({source:"mis-tareas",requestId,action,secret,folderPath:normalizeCloudFolderPath(folderPath),fileName,content,kind,maxBackups:Number(maxBackups||30),mimeType,appVersion:APP_VERSION,sentAt:new Date().toISOString()});
+    form.appendChild(input); document.body.appendChild(iframe); document.body.appendChild(form);
+    let settled=false;
+    const cleanup=()=>{ window.removeEventListener("message",onMessage); clearTimeout(timer); setTimeout(()=>{form.remove();iframe.remove();},40); };
+    const finish=(ok,value)=>{ if(settled)return; settled=true; cleanup(); ok?resolve(value):reject(value instanceof Error?value:new Error(String(value||"No se pudo completar el respaldo."))); };
+    const onMessage=e=>{ const data=e.data; if(!data||data.source!=="mis-tareas-cloud"||data.requestId!==requestId)return; data.ok?finish(true,data):finish(false,new Error(data.error||"Google Drive rechazó el respaldo.")); };
+    window.addEventListener("message",onMessage);
+    const timer=setTimeout(()=>finish(false,new Error("No hubo respuesta de Google Drive. Revisa la URL, la clave y la publicación de Apps Script.")),45000);
+    try{ form.submit(); }catch(err){ finish(false,err); }
+  });
+}
+async function testCloudBackupConnection(){
+  settings.cloudBackupUrl=$("#cloudBackupUrl")?.value.trim()||settings.cloudBackupUrl||"";
+  settings.cloudBackupSecret=$("#cloudBackupSecret")?.value.trim()||settings.cloudBackupSecret||"";
+  settings.cloudBackupFolder=normalizeCloudFolderPath($("#cloudBackupFolder")?.value||settings.cloudBackupFolder,CLOUD_BACKUP_FOLDER_DEFAULT);
+  settings.cloudBitacoraFolder=normalizeCloudFolderPath($("#cloudBitacoraFolder")?.value||settings.cloudBitacoraFolder,CLOUD_BITACORA_FOLDER_DEFAULT);
+  settings.cloudExpensesFolder=normalizeCloudFolderPath($("#cloudExpensesFolder")?.value||settings.cloudExpensesFolder,CLOUD_EXPENSES_FOLDER_DEFAULT);
+  saveSettings();
+  if(!cloudBackupConfigured()){ toast("Completa la URL y la clave privada."); renderCloudBackupStatus(); return false; }
+  try{ toast("Probando conexión con Google Drive..."); const result=await cloudBridgeRequest("ping",{folderPath:settings.cloudBackupFolder}); settings.lastCloudBackupError=""; saveSettings(); renderCloudBackupStatus(); toast(`Conexión correcta · ${result.folderPath||settings.cloudBackupFolder}`); return true; }
+  catch(err){ settings.lastCloudBackupError=err.message||"No se pudo conectar."; saveSettings(); renderCloudBackupStatus(); toast(settings.lastCloudBackupError); return false; }
+}
+async function uploadBackupToCloud({folderPath,fileName,kind="manual",silent=false}={}){
+  if(cloudBackupInProgress) throw new Error("Ya hay un respaldo en proceso."); cloudBackupInProgress=true;
+  try{
+    const result=await cloudBridgeRequest("backup",{folderPath:normalizeCloudFolderPath(folderPath||settings.cloudBackupFolder),fileName:fileName||(kind==="auto"?automaticBackupFileName():manualBackupFileName()),content:backupJsonText(),kind,maxBackups:Number(settings.cloudBackupMaxBackups||30)});
+    settings.lastCloudBackupAt=new Date().toISOString(); settings.lastCloudBackupError=""; if(kind==="auto") settings.lastCloudBackupDate=dateKey(new Date()); saveSettings(); renderCloudBackupStatus(); if(!silent)toast(`☁ Respaldo guardado en Drive · ${result.folderPath||folderPath}`); return result;
+  }catch(err){ settings.lastCloudBackupError=err.message||"No se pudo guardar el respaldo."; saveSettings(); renderCloudBackupStatus(); if(!silent)toast(settings.lastCloudBackupError); throw err; }
+  finally{ cloudBackupInProgress=false; }
+}
+async function maybeDailyCloudBackup({silent=true,forceRetry=false}={}){
+  if(!settings.cloudBackupEnabled||!cloudBackupConfigured()) return false;
+  const today=dateKey(new Date()); if(settings.lastCloudBackupDate===today)return true;
+  if(!navigator.onLine){ settings.lastCloudBackupError="Sin conexión. Se volverá a intentar al recuperar Internet."; saveSettings(); renderCloudBackupStatus(); return false; }
+  const now=Date.now(); if(!forceRetry&&now-cloudBackupLastAttemptMs<60000)return false; cloudBackupLastAttemptMs=now;
+  try{ await uploadBackupToCloud({folderPath:settings.cloudBackupFolder,fileName:automaticBackupFileName(),kind:"auto",silent}); if(silent)toast("☁ Respaldo automático diario guardado en Google Drive."); return true; }catch{return false;}
+}
+function openBackupDestinationDialog(){
+  const configured=cloudBackupConfigured(); $("#backupDestinationSelect").value=configured?"cloud":"device";
+  $("#manualCloudFolder").value=normalizeCloudFolderPath(settings.cloudBackupFolder,CLOUD_BACKUP_FOLDER_DEFAULT);
+  $("#saveManualFolderAsDefault").checked=false; updateManualBackupDestinationUI(); $("#backupDestinationDialog").showModal();
+}
+function updateManualBackupDestinationUI(){ $("#manualCloudFolderWrap").classList.toggle("hidden",$("#backupDestinationSelect").value==="device"); }
+async function runManualBackup(){
+  const destination=$("#backupDestinationSelect").value, needsCloud=destination==="cloud"||destination==="both", folder=normalizeCloudFolderPath($("#manualCloudFolder").value,CLOUD_BACKUP_FOLDER_DEFAULT), fileName=manualBackupFileName();
+  if(needsCloud&&!cloudBackupConfigured()){toast("Primero configura la conexión con Google Drive en Ajustes.");return;}
+  $("#runManualBackupBtn").disabled=true;
+  try{
+    if(destination==="device"||destination==="both")downloadFullBackup(fileName);
+    if(needsCloud)await uploadBackupToCloud({folderPath:folder,fileName,kind:"manual",silent:false});
+    if($("#saveManualFolderAsDefault").checked&&needsCloud){settings.cloudBackupFolder=folder;saveSettings();if($("#cloudBackupFolder"))$("#cloudBackupFolder").value=folder;}
+    markExport("backup"); $("#backupDestinationDialog").close();
+    if(destination==="device")toast("Respaldo descargado al dispositivo."); else if(destination==="both")toast("Respaldo guardado en Drive y descargado al dispositivo.");
+  }catch{}finally{$("#runManualBackupBtn").disabled=false;}
+}
+
 function populateSettings(){
   $("#defaultPendingFilter").value=settings.defaultPendingFilter||"upcoming";
   $("#expenseCycleDay").innerHTML=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
   $("#expenseCycleDay").value=String(getActiveBookExpenseCycleDay());
   $("#customAppTitle").value=settings.appTitle||"Mis Tareas";
   if($("#themeSelect")) $("#themeSelect").value=settings.theme||"emerald_gold";
+  if($("#cloudBackupEnabled")) $("#cloudBackupEnabled").checked=!!settings.cloudBackupEnabled;
+  if($("#cloudBackupUrl")) $("#cloudBackupUrl").value=settings.cloudBackupUrl||"";
+  if($("#cloudBackupSecret")) $("#cloudBackupSecret").value=settings.cloudBackupSecret||"";
+  if($("#cloudBackupFolder")) $("#cloudBackupFolder").value=settings.cloudBackupFolder||CLOUD_BACKUP_FOLDER_DEFAULT;
+  if($("#cloudBitacoraFolder")) $("#cloudBitacoraFolder").value=settings.cloudBitacoraFolder||CLOUD_BITACORA_FOLDER_DEFAULT;
+  if($("#cloudExpensesFolder")) $("#cloudExpensesFolder").value=settings.cloudExpensesFolder||CLOUD_EXPENSES_FOLDER_DEFAULT;
+  if($("#cloudBackupMaxBackups")) $("#cloudBackupMaxBackups").value=String(settings.cloudBackupMaxBackups||30);
   renderExportMarks();
+  renderCloudBackupStatus();
 }
 function applyTheme(theme){
   const valid=["emerald_gold","midnight_violet","ocean_blue","graphite"];
@@ -3045,6 +3196,13 @@ function saveSettingsFromDialog(){
   setActiveBookExpenseCycleDay($("#expenseCycleDay").value);
   settings.appTitle=title;
   settings.theme=$("#themeSelect")?.value||"emerald_gold";
+  settings.cloudBackupEnabled=!!$("#cloudBackupEnabled")?.checked;
+  settings.cloudBackupUrl=$("#cloudBackupUrl")?.value.trim()||"";
+  settings.cloudBackupSecret=$("#cloudBackupSecret")?.value.trim()||"";
+  settings.cloudBackupFolder=normalizeCloudFolderPath($("#cloudBackupFolder")?.value,CLOUD_BACKUP_FOLDER_DEFAULT);
+  settings.cloudBitacoraFolder=normalizeCloudFolderPath($("#cloudBitacoraFolder")?.value,CLOUD_BITACORA_FOLDER_DEFAULT);
+  settings.cloudExpensesFolder=normalizeCloudFolderPath($("#cloudExpensesFolder")?.value,CLOUD_EXPENSES_FOLDER_DEFAULT);
+  settings.cloudBackupMaxBackups=Math.max(1,Math.min(365,Number($("#cloudBackupMaxBackups")?.value||30)));
   saveSettings();
   applySettings();
   renderAll();
@@ -3053,6 +3211,8 @@ function saveSettingsFromDialog(){
   clearTimeout(m._t);
   m._t=setTimeout(()=>m.classList.add("hidden"),2600);
   toast("Los cambios han sido guardados.");
+  renderCloudBackupStatus();
+  setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),250);
 }
 
 function isFutureDate(d){
@@ -3239,11 +3399,110 @@ function openExpenseLog(){
   $("#expenseLogDialog").showModal();
 }
 
-function exportSelectedExpensePeriods(){
+
+let pendingFinancialExport=null;
+
+function openFinancialExportDialog(payload){
+  pendingFinancialExport=payload;
+  $("#financialExportKind").value=payload.kind||"finance";
+  $("#financialExportDialogTitle").textContent=payload.title||"Guardar archivo";
+  $("#financialExportFileName").textContent=payload.fileName;
+  $("#financialCloudFolder").value=normalizeCloudFolderPath(payload.folderPath||CLOUD_EXPENSES_FOLDER_DEFAULT);
+  $("#financialExportHint").textContent=`Ruta desde Mi unidad: ${normalizeCloudFolderPath(payload.folderPath||CLOUD_EXPENSES_FOLDER_DEFAULT)}`;
+  $("#financialExportDestination").value=cloudBackupConfigured()?"cloud":"device";
+  updateFinancialExportDestinationUI();
+  $("#financialExportDialog").showModal();
+}
+
+function updateFinancialExportDestinationUI(){
+  const destination=$("#financialExportDestination").value;
+  $("#financialCloudFolderWrap").classList.toggle("hidden",destination==="device");
+}
+
+async function saveFinancialExportToCloud(payload,folderPath){
+  return cloudBridgeRequest("file",{
+    folderPath,
+    fileName:payload.fileName,
+    content:payload.content,
+    kind:payload.kind||"finance",
+    mimeType:payload.mimeType||"text/plain;charset=utf-8"
+  });
+}
+
+async function runFinancialExport(){
+  const payload=pendingFinancialExport;
+  if(!payload) return;
+
+  const destination=$("#financialExportDestination").value;
+  const needsCloud=destination==="cloud"||destination==="both";
+  const folder=normalizeCloudFolderPath($("#financialCloudFolder").value,payload.folderPath||CLOUD_EXPENSES_FOLDER_DEFAULT);
+
+  if(needsCloud&&!cloudBackupConfigured()){
+    toast("Primero configura Google Drive en Ajustes > Respaldo en nube.");
+    return;
+  }
+
+  $("#runFinancialExportBtn").disabled=true;
+  try{
+    if(destination==="device"||destination==="both"){
+      downloadText(payload.fileName,payload.content,payload.mimeType);
+    }
+
+    if(needsCloud){
+      const result=await saveFinancialExportToCloud(payload,folder);
+      toast(`☁ Archivo guardado en Drive · ${result.folderPath||folder}`);
+    }
+
+    if(payload.markKind) markExport(payload.markKind);
+    $("#financialExportDialog").close();
+
+    if(payload.afterSuccess) payload.afterSuccess();
+
+    if(destination==="device"){
+      toast("Archivo descargado al dispositivo.");
+    }else if(destination==="both"){
+      toast("Archivo guardado en Drive y descargado al dispositivo.");
+    }
+  }catch(err){
+    toast(err?.message||"No se pudo guardar el archivo.");
+  }finally{
+    $("#runFinancialExportBtn").disabled=false;
+  }
+}
+
+function currentExpenseExportPayload(format){
+  const period=currentExpensePeriod();
+  const list=expensesInRange(period.start,period.end);
+  const token=periodFileToken(period);
+
+  if(format==="txt"){
+    return {
+      kind:"gastos_txt",
+      title:"Exportar movimientos TXT",
+      fileName:`gastos_${token}.txt`,
+      content:buildExpensesTxt(list,`Periodo: ${dotDate(period.start)}–${dotDate(period.end)}`),
+      mimeType:"text/plain;charset=utf-8",
+      folderPath:settings.cloudExpensesFolder||CLOUD_EXPENSES_FOLDER_DEFAULT,
+      markKind:"txt"
+    };
+  }
+
+  return {
+    kind:"gastos_csv",
+    title:"Exportar movimientos CSV",
+    fileName:`gastos_${token}.csv`,
+    content:buildExpensesCsv(list),
+    mimeType:"text/csv;charset=utf-8",
+    folderPath:settings.cloudExpensesFolder||CLOUD_EXPENSES_FOLDER_DEFAULT,
+    markKind:"csv"
+  };
+}
+
+function buildExpenseLogExportPayload(){
   const selected=[...$$("[data-expense-period]:checked")].map(x=>x.dataset.expensePeriod);
   if(!selected.length){
     toast("Selecciona al menos un periodo.");
-    return;
+    return null;
   }
 
   const periods=getExpenseLogPeriods()
@@ -3259,6 +3518,7 @@ function exportSelectedExpensePeriods(){
 
   const csvRows=[["Periodo","Fecha","Tipo","Concepto","Descripcion","Monto","Moneda","Libro"]];
   const book=activeBook();
+
   rows.forEach(e=>csvRows.push([
     e._period,
     dotDate(parseDate(e.date)),
@@ -3270,14 +3530,26 @@ function exportSelectedExpensePeriods(){
     book?.name||""
   ]));
 
-  const csv="\\ufeff"+csvRows.map(r=>r.map(csvCell).join(",")).join("\\r\\n");
+  const csv="\ufeff"+csvRows.map(r=>r.map(csvCell).join(",")).join("\r\n");
   const first=periods[0].fileToken||periods[0].token;
   const last=periods[periods.length-1].fileToken||periods[periods.length-1].token;
-  const name=periods.length===1 ? `gastos_${first}.csv` : `gastos_${first}-${last}.csv`;
+  const name=periods.length===1 ? `bitacora_${first}.csv` : `bitacora_${first}-${last}.csv`;
 
-  downloadText(name,csv,"text/csv;charset=utf-8");
-  toast(`${periods.length} ${periods.length===1?"periodo exportado":"periodos exportados"}.`);
-  $("#expenseLogDialog").close();
+  return {
+    kind:"bitacora",
+    title:"Exportar Bitácora",
+    fileName:name,
+    content:csv,
+    mimeType:"text/csv;charset=utf-8",
+    folderPath:settings.cloudBitacoraFolder||CLOUD_BITACORA_FOLDER_DEFAULT,
+    afterSuccess:()=>$("#expenseLogDialog").close()
+  };
+}
+
+function exportSelectedExpensePeriods(){
+  const payload=buildExpenseLogExportPayload();
+  if(!payload) return;
+  openFinancialExportDialog(payload);
 }
 
 
@@ -3620,27 +3892,12 @@ function currentExpensePeriod(){
   return expenseCycleRange(new Date());
 }
 
-function exportExpensesTxt(){
-  const period=currentExpensePeriod();
-  const list=expensesInRange(period.start,period.end);
-  const token=periodFileToken(period);
-  const title=`Periodo: ${dotDate(period.start)}–${dotDate(period.end)}`;
-  downloadText(`gastos_${token}.txt`,buildExpensesTxt(list,title));
-  markExport("txt");
-  toast(`Movimientos del periodo ${token} exportados.`);
-}
+function exportExpensesTxt(){ openFinancialExportDialog(currentExpenseExportPayload("txt")); }
 function csvCell(v){
   const s=String(v??"").replace(/"/g,'""');
   return `"${s}"`;
 }
-function exportExpensesCsv(){
-  const period=currentExpensePeriod();
-  const list=expensesInRange(period.start,period.end);
-  const token=periodFileToken(period);
-  downloadText(`gastos_${token}.csv`,buildExpensesCsv(list),"text/csv;charset=utf-8");
-  markExport("csv");
-  toast(`Movimientos del periodo ${token} exportados.`);
-}
+function exportExpensesCsv(){ openFinancialExportDialog(currentExpenseExportPayload("csv")); }
 
 $("#taskForm").addEventListener("submit",e=>{
   e.preventDefault();
@@ -4290,7 +4547,22 @@ $("#updateAppBtn").onclick=async()=>{
 $("#saveSettingsBtn").onclick=saveSettingsFromDialog;
 $("#exportExpensesTxtBtn").onclick=exportExpensesTxt;
 $("#exportExpensesCsvBtn").onclick=exportExpensesCsv;
-$("#exportBtn").onclick=exportData;
+$("#exportBtn").onclick=openBackupDestinationDialog;
+$("#generateCloudSecretBtn").onclick=()=>{ const secret=generateCloudSecret(); $("#cloudBackupSecret").value=secret; toast("Clave generada. Copia esta misma clave en el código de Apps Script."); };
+$("#testCloudBackupBtn").onclick=testCloudBackupConnection;
+$("#backupNowBtn").onclick=openBackupDestinationDialog;
+
+$("#financialExportDestination").onchange=updateFinancialExportDestinationUI;
+$("#closeFinancialExportDialog").onclick=$("#cancelFinancialExportBtn").onclick=()=>$("#financialExportDialog").close();
+$("#runFinancialExportBtn").onclick=runFinancialExport;
+$("#financialExportDialog").addEventListener("click",e=>{
+  if(e.target===$("#financialExportDialog")) $("#financialExportDialog").close();
+});
+
+$("#backupDestinationSelect").onchange=updateManualBackupDestinationUI;
+$("#closeBackupDestinationDialog").onclick=$("#cancelBackupDestinationBtn").onclick=()=>$("#backupDestinationDialog").close();
+$("#runManualBackupBtn").onclick=runManualBackup;
+$("#backupDestinationDialog").addEventListener("click",e=>{ if(e.target===$("#backupDestinationDialog")) $("#backupDestinationDialog").close(); });
 $("#importBtn").onclick=()=>$("#importChoiceDialog").showModal();
 $("#closeImportChoiceDialog").onclick=$("#cancelImportChoiceBtn").onclick=()=>$("#importChoiceDialog").close();
 $("#chooseImportTasksBtn").onclick=()=>{
@@ -4322,7 +4594,8 @@ $("#emptyTrashBtn").onclick=async()=>{
     okText:"🗑 Vaciar"
   })){trash=[];saveTrash();renderTrash();toast("Papelera vaciada.");}
 };
-window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNotifications();});
+window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNotifications();maybeDailyCloudBackup({silent:true});});
+window.addEventListener("online",()=>maybeDailyCloudBackup({silent:true,forceRetry:true}));
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
@@ -4337,3 +4610,5 @@ applySettings();
 if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
 switchView("calendar");
 renderAll(); scheduleNotifications();
+renderCloudBackupStatus();
+setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),900);
