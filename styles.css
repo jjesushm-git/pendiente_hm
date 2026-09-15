@@ -6933,3 +6933,63 @@ dialog .comic-bubble-tail,
   opacity:.7;
   cursor:wait;
 }
+
+/* =========================================================
+   VERSION 11.9.2 — SINCRONIZACIÓN Y CORREO
+   ========================================================= */
+.task-email-switch-row{
+  margin-top:10px;
+}
+.task-email-options{
+  display:grid;
+  gap:10px;
+  margin:8px 0 12px;
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:var(--panel-2);
+}
+.task-email-options.hidden{
+  display:none !important;
+}
+.task-email-options .three-cols{
+  margin-top:0;
+}
+.task-email-hint{
+  color:var(--muted);
+  line-height:1.4;
+}
+#settingsSyncGroup .cloud-backup-buttons,
+#settingsEmailGroup .cloud-backup-buttons{
+  grid-template-columns:1fr;
+}
+#cloudSyncStatus.is-checking,
+#emailStatus.is-checking{
+  border-style:dashed;
+}
+#cloudSyncStatus.is-ok,
+#emailStatus.is-ok{
+  border-color:rgba(42,135,78,.5) !important;
+}
+#cloudSyncStatus.is-pending,
+#emailStatus.is-pending{
+  border-color:rgba(177,118,24,.55) !important;
+}
+#syncNowBtn:disabled,
+#testEmailBtn:disabled{
+  opacity:.7;
+  cursor:wait;
+}
+:root[data-theme="emerald_gold"] .task-email-options{
+  background:#fffef8 !important;
+  color:#17382b !important;
+  border-color:rgba(190,150,37,.38) !important;
+}
+:root[data-theme="emerald_gold"] .task-email-hint{
+  color:#667a70 !important;
+}
+@media(max-width:430px){
+  .task-email-options .three-cols{
+    grid-template-columns:1fr 1fr 1fr;
+  }
+}

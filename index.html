@@ -363,6 +363,44 @@
         </label>
       </div>
 
+      <div class="switch-row task-email-switch-row">
+        <div>
+          <strong>✉️ Notificación por correo</strong>
+          <small>Activa un recordatorio para esta tarea.</small>
+        </div>
+        <label class="switch"><input id="taskEmailNotify" type="checkbox"><span></span></label>
+      </div>
+
+      <section id="taskEmailOptions" class="task-email-options hidden">
+        <label>¿Cuándo quieres recibir el correo?
+          <select id="taskEmailReminderType">
+            <option value="start">En la hora que inicia</option>
+            <option value="15m">15 minutos antes</option>
+            <option value="1h">1 hora antes</option>
+            <option value="1d">1 día antes</option>
+            <option value="custom">Personalizado</option>
+          </select>
+        </label>
+
+        <div id="taskEmailCustomTime" class="three-cols hidden">
+          <label>Hora
+            <select id="taskEmailCustomHour"></select>
+          </label>
+          <label>Minutos
+            <select id="taskEmailCustomMinute"></select>
+          </label>
+          <label>A.M. / P.M.
+            <select id="taskEmailCustomPeriod">
+              <option value="AM">A.M.</option>
+              <option value="PM">P.M.</option>
+            </select>
+          </label>
+        </div>
+
+        <small id="taskEmailHint" class="task-email-hint">El correo solo se envía mientras la tarea esté pendiente. Las tareas completadas no generan correo.</small>
+      </section>
+
+
       <div class="three-cols">
         <label>Repetir
           <select id="recurrence">
@@ -413,7 +451,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.9.1.2</strong>
+      <strong id="settingsVersionTop">11.9.2</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -509,6 +547,85 @@
         </div>
       </details>
 
+      <details class="settings-group" id="settingsSyncGroup">
+        <summary><span>🔄 Sincronización</span><small>PC ↔ celular · tareas</small></summary>
+        <div class="settings-group-body">
+          <div class="cloud-backup-intro">
+            <strong>Tareas sincronizadas entre dispositivos</strong>
+            <small>Los cambios realizados en PC y celular se combinan por fecha de actualización. La sincronización usa el mismo Google Apps Script y la misma clave de Drive.</small>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <strong>Sincronización automática</strong>
+              <small>Sincroniza al guardar cambios, al abrir la app, al volver a ella y aproximadamente cada minuto mientras esté abierta.</small>
+            </div>
+            <label class="switch"><input id="cloudSyncEnabled" type="checkbox" /><span></span></label>
+          </div>
+
+          <label>Nombre de este dispositivo
+            <input id="syncDeviceName" type="text" maxlength="30" placeholder="Ej. Celular Jesús o PC Casa" />
+          </label>
+
+          <label>Carpeta de sincronización
+            <input id="cloudSyncFolder" type="text" maxlength="180" value="Mis_Tareas_respaldo/sincronizacion" placeholder="Mis_Tareas_respaldo/sincronizacion" />
+            <small>Si no existe, Apps Script la crea automáticamente.</small>
+          </label>
+
+          <div class="cloud-backup-buttons">
+            <button type="button" id="syncNowBtn" class="primary-btn">🔄 Sincronizar ahora</button>
+          </div>
+
+          <div id="cloudSyncStatus" class="cloud-backup-status is-waiting">
+            <strong>Estado de sincronización</strong>
+            <small id="cloudSyncStatusText">⏳ En espera.</small>
+          </div>
+        </div>
+      </details>
+
+      <details class="settings-group" id="settingsEmailGroup">
+        <summary><span>✉️ Notificaciones por correo</span><small>Recordatorios y tareas no completadas</small></summary>
+        <div class="settings-group-body">
+          <label>Correo que recibirá los avisos
+            <input id="notificationEmail" type="email" inputmode="email" autocomplete="email" placeholder="correo@gmail.com" />
+          </label>
+
+          <div class="switch-row">
+            <div>
+              <strong>Correo activo por defecto en tareas nuevas</strong>
+              <small>Al crear una tarea nueva, el switch de correo aparecerá encendido. Puedes apagarlo en cualquier tarea.</small>
+            </div>
+            <label class="switch"><input id="emailNotifyDefault" type="checkbox" /><span></span></label>
+          </div>
+
+          <label>Recordatorio predeterminado para tareas nuevas
+            <select id="emailReminderDefault">
+              <option value="start">En la hora que inicia</option>
+              <option value="15m">15 minutos antes</option>
+              <option value="1h">1 hora antes</option>
+              <option value="1d">1 día antes</option>
+            </select>
+          </label>
+
+          <div class="switch-row">
+            <div>
+              <strong>Avisar tareas no completadas</strong>
+              <small>Si está activo, se envía un correo 15 minutos después de que una tarea pase a “No completada”.</small>
+            </div>
+            <label class="switch"><input id="emailMissedEnabled" type="checkbox" /><span></span></label>
+          </div>
+
+          <div class="cloud-backup-buttons">
+            <button type="button" id="testEmailBtn" class="ghost-btn">✉ Enviar correo de prueba</button>
+          </div>
+
+          <div id="emailStatus" class="cloud-backup-status is-waiting">
+            <strong>Estado de correo</strong>
+            <small id="emailStatusText">⏳ En espera.</small>
+          </div>
+        </div>
+      </details>
+
       <details class="settings-group" id="settingsTransferGroup">
         <summary><span>⇅ Exportar / importar</span><small>Respaldos y archivos</small></summary>
         <div class="settings-group-body settings-actions-list">
@@ -524,7 +641,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.9.1.2</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.9.2</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>

@@ -6,7 +6,9 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.9.1.2";
+const APP_VERSION = "11.9.2";
+const SYNC_DELETED_TASKS_KEY = "mis_tareas_sync_deleted_v1";
+const CLOUD_SYNC_FOLDER_DEFAULT = "Mis_Tareas_respaldo/sincronizacion";
 const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
 const CLOUD_BITACORA_FOLDER_DEFAULT = "Mis_Tareas_respaldo/bitacora";
 const CLOUD_EXPENSES_FOLDER_DEFAULT = "Mis_Tareas_respaldo/gastos/personal";
@@ -16,6 +18,7 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 
 let tasks = loadTasks();
 let trash = loadTrash();
+let deletedTaskSync = loadSyncDeletedTasks();
 let settings = loadSettings();
 let expenses = loadExpenses();
 let books = loadBooks();
@@ -26,6 +29,10 @@ let calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(
 let weekCursor = startOfWeek(selectedDate);
 let currentView = "calendar";
 let notificationTimers = new Map();
+let cloudSyncTimer = null;
+let cloudSyncInterval = null;
+let cloudSyncInProgress = false;
+let suppressCloudSync = false;
 
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
 function pad(n){ return String(n).padStart(2,"0"); }
@@ -41,6 +48,40 @@ function compactTaskDate(d){
   return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)}`;
 }
 function dotDate(d){ return `${pad(d.getDate())}.${pad(d.getMonth()+1)}.${d.getFullYear()}`; }
+
+function defaultSyncDeviceName(){
+  const mobile=/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent||"");
+  return mobile ? "Celular" : "PC";
+}
+function browserTimeZone(){
+  try{return Intl.DateTimeFormat().resolvedOptions().timeZone||"America/Mexico_City";}catch{return "America/Mexico_City";}
+}
+function loadSyncDeletedTasks(){
+  try{
+    const data=JSON.parse(localStorage.getItem(SYNC_DELETED_TASKS_KEY))||[];
+    return Array.isArray(data)?data:[];
+  }catch{return [];}
+}
+function saveSyncDeletedTasks(){
+  localStorage.setItem(SYNC_DELETED_TASKS_KEY,JSON.stringify(deletedTaskSync));
+}
+function touchTask(task){
+  if(task) task.updatedAt=new Date().toISOString();
+  return task;
+}
+function ensureTaskSyncMetadata(){
+  let changed=false;
+  tasks.forEach(t=>{
+    if(!t.updatedAt){t.updatedAt=t.createdAt||"1970-01-01T00:00:00.000Z";changed=true;}
+    if(t.emailNotify===undefined){t.emailNotify=false;changed=true;}
+    if(!t.emailReminderType){t.emailReminderType=settings.emailReminderDefault||"15m";changed=true;}
+    if(!t.emailCustomHour){t.emailCustomHour=9;changed=true;}
+    if(t.emailCustomMinute===undefined){t.emailCustomMinute=0;changed=true;}
+    if(!t.emailCustomPeriod){t.emailCustomPeriod="AM";changed=true;}
+  });
+  if(changed) localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+}
+
 function money(n){ return Number(n||0).toLocaleString("es-MX",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function formatMoneyInput(raw){
   let s=String(raw??"").replace(/[^\d.]/g,"");
@@ -799,7 +840,19 @@ function loadSettings(){
     cloudBackupMaxBackups:30,
     lastCloudBackupDate:"",
     lastCloudBackupAt:"",
-    lastCloudBackupError:""
+    lastCloudBackupError:"",
+    cloudSyncEnabled:true,
+    cloudSyncFolder:CLOUD_SYNC_FOLDER_DEFAULT,
+    syncDeviceName:defaultSyncDeviceName(),
+    lastCloudSyncAt:"",
+    lastCloudSyncError:"",
+    notificationEmail:"",
+    emailNotifyDefault:true,
+    emailMissedEnabled:true,
+    emailReminderDefault:"15m",
+    emailTimeZone:browserTimeZone(),
+    lastEmailTestAt:"",
+    lastEmailError:""
   };
 
   try{
@@ -823,6 +876,13 @@ function loadSettings(){
     if(!merged.cloudExpensesFolder){
       merged.cloudExpensesFolder=CLOUD_EXPENSES_FOLDER_DEFAULT;
     }
+    if(!merged.cloudSyncFolder) merged.cloudSyncFolder=CLOUD_SYNC_FOLDER_DEFAULT;
+    if(!merged.syncDeviceName) merged.syncDeviceName=defaultSyncDeviceName();
+    if(merged.cloudSyncEnabled===undefined) merged.cloudSyncEnabled=true;
+    if(merged.emailNotifyDefault===undefined) merged.emailNotifyDefault=true;
+    if(merged.emailMissedEnabled===undefined) merged.emailMissedEnabled=true;
+    if(!merged.emailReminderDefault) merged.emailReminderDefault="15m";
+    if(!merged.emailTimeZone) merged.emailTimeZone=browserTimeZone();
 
     return merged;
   }catch{
@@ -1070,7 +1130,13 @@ function saveExpenses(){
 }
 
 function saveTrash(){ localStorage.setItem(TRASH_KEY, JSON.stringify(trash)); }
-function saveTasks(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); purgeExpiredTrash(); scheduleNotifications(); renderAll(); }
+function saveTasks(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  purgeExpiredTrash();
+  scheduleNotifications();
+  renderAll();
+  if(!suppressCloudSync) scheduleCloudTaskSync("cambio local");
+}
 function purgeExpiredTrash(){
   const now=Date.now();
   const before=trash.length;
@@ -1133,7 +1199,11 @@ function moveToTrash(id){
   const idx=tasks.findIndex(t=>t.id===id);
   if(idx<0) return;
   const [task]=tasks.splice(idx,1);
-  trash.unshift({...task,deletedAt:new Date().toISOString()});
+  const deletedAt=new Date().toISOString();
+  trash.unshift({...task,deletedAt});
+  deletedTaskSync=deletedTaskSync.filter(x=>x.id!==task.id);
+  deletedTaskSync.push({id:task.id,deletedAt});
+  saveSyncDeletedTasks();
   saveTrash();
   saveTasks();
 }
@@ -1143,6 +1213,9 @@ function restoreFromTrash(id){
   const [task]=trash.splice(idx,1);
   delete task.deletedAt;
   if(tasks.some(t=>t.id===task.id)) task.id=uid();
+  deletedTaskSync=deletedTaskSync.filter(x=>x.id!==task.id);
+  saveSyncDeletedTasks();
+  touchTask(task);
   tasks.push(task);
   saveTrash();
   saveTasks();
@@ -1190,10 +1263,11 @@ function normalizeStatuses(){
     if(t.status==="pending" && t.recurrence==="none" && taskDueDate(t) && taskDueDate(t) < now){
       t.status="missed";
       t.missedAt=now.toISOString();
+      touchTask(t);
       changed=true;
     }
   }
-  if(changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  if(changed){ localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); scheduleCloudTaskSync("estado vencido"); }
 }
 
 function nextDueForSort(t){
@@ -1282,6 +1356,7 @@ function renderEmojiPicker(){
       const task=tasks.find(t=>t.id===emojiEditTaskId);
       if(task){
         task.emoji=newEmoji;
+        touchTask(task);
         saveTasks();
       }
 
@@ -1876,6 +1951,7 @@ function completeTaskOutOfTime(t,occurrenceKey){
   t.boardStage="completed";
   t.completedAt=new Date().toISOString();
   t.missedAt=null;
+  touchTask(t);
 }
 
 function reopenTask(t){
@@ -1908,6 +1984,7 @@ function reopenTask(t){
   t.boardStage="pending";
   t.missedAt=null;
   t.completedAt=null;
+  touchTask(t);
 }
 
 function openEmojiOnlyEditor(taskId){
@@ -2015,6 +2092,7 @@ function bindTaskActions(root=document){
     const task=tasks.find(t=>t.id===btn.dataset.important);
     if(!task) return;
     task.highImportance=!task.highImportance;
+    touchTask(task);
     saveTasks();
     toast(task.highImportance?"Alta importancia activada.":"Alta importancia desactivada.");
   });
@@ -2045,6 +2123,7 @@ function bindTaskActions(root=document){
       t.completedAt=null;
     }
 
+    touchTask(t);
     saveTasks();
 
     if(previous==="missed" && ch.checked){
@@ -2407,6 +2486,13 @@ function openTask(t=null,occurrenceKey=""){
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
   $("#highImportance").checked=!!t?.highImportance;
+  $("#taskEmailNotify").checked=t ? (t.emailNotify!==false) : !!settings.emailNotifyDefault;
+  $("#taskEmailReminderType").value=t?.emailReminderType||settings.emailReminderDefault||"15m";
+  populateTaskEmailCustomTime();
+  $("#taskEmailCustomHour").value=String(t?.emailCustomHour||9);
+  $("#taskEmailCustomMinute").value=String(Number(t?.emailCustomMinute||0));
+  $("#taskEmailCustomPeriod").value=t?.emailCustomPeriod||"AM";
+  updateTaskEmailOptions();
   const taskMovement=(t && !editingLaterOccurrence)?findTaskMovement(t.id):null;
   $("#taskFinanceDetails").open=!!taskMovement;
   $("#taskFinanceType").value=taskMovement?movementType(taskMovement):"expense";
@@ -2514,9 +2600,37 @@ function readForm(){
     notify:false,
     notifyAmount:1,
     notifyUnit:"days",
+    emailNotify:$("#taskEmailNotify").checked,
+    emailReminderType:$("#taskEmailReminderType").value||"15m",
+    emailCustomHour:Number($("#taskEmailCustomHour").value||9),
+    emailCustomMinute:Number($("#taskEmailCustomMinute").value||0),
+    emailCustomPeriod:$("#taskEmailCustomPeriod").value||"AM",
     highImportance:$("#highImportance").checked
   };
 }
+
+function populateTaskEmailCustomTime(){
+  const hour=$("#taskEmailCustomHour"), minute=$("#taskEmailCustomMinute");
+  if(hour && !hour.options.length){
+    hour.innerHTML=[...Array(12)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
+  }
+  if(minute && !minute.options.length){
+    minute.innerHTML=[...Array(60)].map((_,i)=>`<option value="${i}">${pad(i)}</option>`).join("");
+  }
+}
+function updateTaskEmailOptions(){
+  const enabled=!!$("#taskEmailNotify")?.checked;
+  $("#taskEmailOptions")?.classList.toggle("hidden",!enabled);
+  const custom=enabled && $("#taskEmailReminderType")?.value==="custom";
+  $("#taskEmailCustomTime")?.classList.toggle("hidden",!custom);
+  const hint=$("#taskEmailHint");
+  if(hint){
+    hint.textContent=$("#allDay")?.checked
+      ? "Para una tarea de todo el día, la hora de inicio para correo se considera 9:00 A.M. Las tareas completadas no generan correo."
+      : "El correo solo se envía mientras la tarea esté pendiente. Las tareas completadas no generan correo.";
+  }
+}
+
 function toggleTimeFields(){ $("#timeFields").classList.toggle("hidden",$("#allDay").checked); }
 
 let timePickerTargetId="";
@@ -2789,7 +2903,8 @@ function addBook(){
     color,
     expenseCycleDay:1,
     expenseCycleHistory:[{from:dateKey(new Date()),day:1}],
-    createdAt:new Date().toISOString()
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString()
   });
 
   localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
@@ -3461,6 +3576,240 @@ async function runManualBackup(){
   }catch{}finally{$("#runManualBackupBtn").disabled=false;}
 }
 
+
+function setCloudSyncStatus(state,message){
+  const box=$("#cloudSyncStatus"), text=$("#cloudSyncStatusText");
+  if(!box||!text) return;
+  box.classList.remove("is-waiting","is-checking","is-ok","is-pending");
+  box.classList.add(`is-${state}`);
+  text.textContent=message;
+}
+function renderCloudSyncStatus(){
+  if(!settings.cloudSyncEnabled){
+    setCloudSyncStatus("waiting","Sincronización automática desactivada.");
+    return;
+  }
+  if(!cloudBackupConfigured()){
+    setCloudSyncStatus("pending","⚠️ Pendiente: configura primero Google Apps Script y la clave privada.");
+    return;
+  }
+  if(settings.lastCloudSyncError){
+    setCloudSyncStatus("pending",`⚠️ Pendiente: ${settings.lastCloudSyncError}`);
+    return;
+  }
+  if(settings.lastCloudSyncAt){
+    setCloudSyncStatus("ok",`✅ Sincronizado · ${formatCloudBackupStamp(settings.lastCloudSyncAt)} · ${settings.syncDeviceName||defaultSyncDeviceName()}`);
+  }else{
+    setCloudSyncStatus("waiting","⏳ En espera de la primera sincronización.");
+  }
+}
+function setEmailStatus(state,message){
+  const box=$("#emailStatus"), text=$("#emailStatusText");
+  if(!box||!text) return;
+  box.classList.remove("is-waiting","is-checking","is-ok","is-pending");
+  box.classList.add(`is-${state}`);
+  text.textContent=message;
+}
+function renderEmailStatus(){
+  if(settings.lastEmailError){
+    setEmailStatus("pending",`⚠️ Pendiente: ${settings.lastEmailError}`);
+  }else if(settings.lastEmailTestAt){
+    setEmailStatus("ok",`✅ Correo probado · ${formatCloudBackupStamp(settings.lastEmailTestAt)}`);
+  }else{
+    setEmailStatus("waiting","⏳ En espera. Configura el correo y usa “Enviar correo de prueba”.");
+  }
+}
+function syncStamp(value){
+  const n=Date.parse(value||"");
+  return Number.isFinite(n)?n:0;
+}
+function newerSyncObject(a,b,field="updatedAt"){
+  if(!a) return b;
+  if(!b) return a;
+  const at=syncStamp(a[field]||a.createdAt), bt=syncStamp(b[field]||b.createdAt);
+  return bt>at?b:a;
+}
+function mergeTaskSyncState(remoteTasks=[],remoteDeleted=[]){
+  const taskMap=new Map();
+  [...tasks,...remoteTasks].forEach(t=>{
+    if(!t?.id) return;
+    const prev=taskMap.get(t.id);
+    taskMap.set(t.id,newerSyncObject(prev,t));
+  });
+
+  const deletedMap=new Map();
+  [...deletedTaskSync,...remoteDeleted].forEach(d=>{
+    if(!d?.id) return;
+    const prev=deletedMap.get(d.id);
+    if(!prev || syncStamp(d.deletedAt)>syncStamp(prev.deletedAt)) deletedMap.set(d.id,d);
+  });
+
+  const merged=[];
+  for(const [id,t] of taskMap){
+    const tomb=deletedMap.get(id);
+    if(tomb && syncStamp(tomb.deletedAt)>=syncStamp(t.updatedAt||t.createdAt)) continue;
+    if(tomb && syncStamp(t.updatedAt||t.createdAt)>syncStamp(tomb.deletedAt)) deletedMap.delete(id);
+    merged.push(t);
+  }
+
+  tasks=merged;
+  deletedTaskSync=[...deletedMap.values()];
+  saveSyncDeletedTasks();
+}
+function mergeBookSyncState(remoteBooks=[]){
+  const map=new Map();
+  [...books,...remoteBooks].forEach(b=>{
+    if(!b?.id) return;
+    const candidate={...b,updatedAt:b.updatedAt||b.createdAt||"1970-01-01T00:00:00.000Z"};
+    const prev=map.get(b.id);
+    map.set(b.id,newerSyncObject(prev,candidate));
+  });
+  books=[...map.values()];
+  localStorage.setItem(BOOKS_KEY,JSON.stringify(books));
+  if(!books.some(b=>b.id===activeBookId) && books[0]){
+    activeBookId=books[0].id;
+    localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId);
+  }
+}
+function buildTaskSyncPayload(){
+  return {
+    syncVersion:1,
+    deviceId:localStorage.getItem("mis_tareas_device_id")||(()=>{const id=uid();localStorage.setItem("mis_tareas_device_id",id);return id;})(),
+    deviceName:settings.syncDeviceName||defaultSyncDeviceName(),
+    timeZone:settings.emailTimeZone||browserTimeZone(),
+    syncedAt:new Date().toISOString(),
+    tasks:tasks.map(t=>({...t,updatedAt:t.updatedAt||t.createdAt||"1970-01-01T00:00:00.000Z"})),
+    deletedTasks:deletedTaskSync,
+    books:books.map(b=>({...b,updatedAt:b.updatedAt||b.createdAt||"1970-01-01T00:00:00.000Z"})),
+    mailConfig:{
+      email:String(settings.notificationEmail||"").trim(),
+      missedEnabled:!!settings.emailMissedEnabled,
+      timeZone:settings.emailTimeZone||browserTimeZone(),
+      updatedAt:new Date().toISOString()
+    }
+  };
+}
+function cloudJsonpSyncPull(requestId){
+  return new Promise((resolve,reject)=>{
+    const url=normalizeAppsScriptUrl(settings.cloudBackupUrl||"");
+    if(!url){reject(new Error("Falta la URL de Google Apps Script."));return;}
+    const callbackName=`__misTareasSync_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script=document.createElement("script");
+    let settled=false;
+    const cleanup=()=>{clearTimeout(timer);try{delete window[callbackName];}catch{window[callbackName]=undefined;}script.remove();};
+    const finish=(ok,value)=>{if(settled)return;settled=true;cleanup();ok?resolve(value):reject(value instanceof Error?value:new Error(String(value||"No se pudo descargar la sincronización.")));};
+    window[callbackName]=data=>{
+      if(data?.ok && data?.syncState) finish(true,data.syncState);
+      else finish(false,new Error(data?.error||"No se pudo leer el archivo sincronizado."));
+    };
+    script.onerror=()=>finish(false,new Error("No se pudo descargar la sincronización desde Apps Script."));
+    script.src=`${url}${url.includes("?")?"&":"?"}action=sync_pull&requestId=${encodeURIComponent(requestId)}&callback=${encodeURIComponent(callbackName)}&_=${Date.now()}`;
+    const timer=setTimeout(()=>finish(false,new Error("La descarga de sincronización tardó demasiado.")),15000);
+    document.head.appendChild(script);
+  });
+}
+async function performCloudTaskSync({manual=false}={}){
+  if(cloudSyncInProgress) return false;
+  if(!settings.cloudSyncEnabled && !manual) return false;
+  if(!cloudBackupConfigured()){
+    settings.lastCloudSyncError="Falta configurar Google Apps Script o la clave privada.";
+    saveSettings();renderCloudSyncStatus();
+    if(manual) toast(settings.lastCloudSyncError);
+    return false;
+  }
+  if(!navigator.onLine){
+    settings.lastCloudSyncError="Sin conexión a Internet.";
+    saveSettings();renderCloudSyncStatus();
+    return false;
+  }
+
+  cloudSyncInProgress=true;
+  setCloudSyncStatus("checking","🔄 Sincronizando tareas...");
+  try{
+    const result=await cloudBridgeRequest("sync_tasks",{
+      folderPath:settings.cloudSyncFolder||CLOUD_SYNC_FOLDER_DEFAULT,
+      content:JSON.stringify(buildTaskSyncPayload()),
+      kind:"sync",
+      mimeType:"application/json"
+    });
+    const state=await cloudJsonpSyncPull(result.requestId);
+
+    suppressCloudSync=true;
+    try{
+      mergeTaskSyncState(state.tasks||[],state.deletedTasks||[]);
+      mergeBookSyncState(state.books||[]);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+      ensureTaskSyncMetadata();
+      renderAll();
+      renderBooks();
+      updateActiveBookSelect();
+    }finally{
+      suppressCloudSync=false;
+    }
+
+    settings.lastCloudSyncAt=new Date().toISOString();
+    settings.lastCloudSyncError="";
+    saveSettings();
+    renderCloudSyncStatus();
+    if(manual) toast("Tareas sincronizadas entre dispositivos.");
+    return true;
+  }catch(err){
+    settings.lastCloudSyncError=err?.message||"No se pudo sincronizar.";
+    saveSettings();renderCloudSyncStatus();
+    if(manual) toast(`Pendiente: ${settings.lastCloudSyncError}`);
+    return false;
+  }finally{
+    cloudSyncInProgress=false;
+  }
+}
+function scheduleCloudTaskSync(){
+  if(suppressCloudSync || !settings.cloudSyncEnabled) return;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer=setTimeout(()=>performCloudTaskSync({manual:false}),1200);
+}
+function startCloudSyncLoop(){
+  clearInterval(cloudSyncInterval);
+  cloudSyncInterval=setInterval(()=>performCloudTaskSync({manual:false}),60000);
+}
+async function testEmailConfiguration(){
+  const email=String($("#notificationEmail")?.value||settings.notificationEmail||"").trim();
+  if(!email || !/^\S+@\S+\.\S+$/.test(email)){
+    setEmailStatus("pending","⚠️ Pendiente: escribe un correo válido.");
+    return false;
+  }
+  if(!cloudBackupConfigured()){
+    setEmailStatus("pending","⚠️ Pendiente: configura primero Google Apps Script y la clave privada.");
+    return false;
+  }
+  const btn=$("#testEmailBtn");
+  if(btn){btn.disabled=true;btn.textContent="⏳ Enviando...";}
+  setEmailStatus("checking","⏳ Enviando correo de prueba...");
+  try{
+    await cloudBridgeRequest("test_email",{
+      folderPath:settings.cloudSyncFolder||CLOUD_SYNC_FOLDER_DEFAULT,
+      content:JSON.stringify({email,timeZone:settings.emailTimeZone||browserTimeZone()}),
+      kind:"email_test",
+      mimeType:"application/json"
+    });
+    settings.notificationEmail=email;
+    settings.lastEmailTestAt=new Date().toISOString();
+    settings.lastEmailError="";
+    saveSettings();
+    setEmailStatus("ok",`✅ Correo de prueba enviado a ${email}`);
+    toast("Correo de prueba enviado.");
+    scheduleCloudTaskSync();
+    return true;
+  }catch(err){
+    settings.lastEmailError=err?.message||"No se pudo enviar el correo.";
+    saveSettings();
+    setEmailStatus("pending",`⚠️ Pendiente: ${settings.lastEmailError}`);
+    toast(settings.lastEmailError);
+    return false;
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent="✉ Enviar correo de prueba";}
+  }
+}
+
 function populateSettings(){
   $("#defaultPendingFilter").value=settings.defaultPendingFilter||"upcoming";
   $("#expenseCycleDay").innerHTML=[...Array(31)].map((_,i)=>`<option value="${i+1}">${i+1}</option>`).join("");
@@ -3477,9 +3826,18 @@ function populateSettings(){
   if($("#cloudBitacoraFolder")) $("#cloudBitacoraFolder").value=settings.cloudBitacoraFolder||CLOUD_BITACORA_FOLDER_DEFAULT;
   if($("#cloudExpensesFolder")) $("#cloudExpensesFolder").value=settings.cloudExpensesFolder||CLOUD_EXPENSES_FOLDER_DEFAULT;
   if($("#cloudBackupMaxBackups")) $("#cloudBackupMaxBackups").value=String(settings.cloudBackupMaxBackups||30);
+  if($("#cloudSyncEnabled")) $("#cloudSyncEnabled").checked=settings.cloudSyncEnabled!==false;
+  if($("#syncDeviceName")) $("#syncDeviceName").value=settings.syncDeviceName||defaultSyncDeviceName();
+  if($("#cloudSyncFolder")) $("#cloudSyncFolder").value=settings.cloudSyncFolder||CLOUD_SYNC_FOLDER_DEFAULT;
+  if($("#notificationEmail")) $("#notificationEmail").value=settings.notificationEmail||"";
+  if($("#emailNotifyDefault")) $("#emailNotifyDefault").checked=settings.emailNotifyDefault!==false;
+  if($("#emailMissedEnabled")) $("#emailMissedEnabled").checked=settings.emailMissedEnabled!==false;
+  if($("#emailReminderDefault")) $("#emailReminderDefault").value=settings.emailReminderDefault||"15m";
   renderExportMarks();
   renderCloudBackupStatus();
   resetCloudConnectionStatus();
+  renderCloudSyncStatus();
+  renderEmailStatus();
 }
 function applyTheme(theme){
   const valid=["emerald_gold","midnight_violet","ocean_blue","graphite"];
@@ -3508,6 +3866,14 @@ function saveSettingsFromDialog(){
   settings.cloudBitacoraFolder=normalizeCloudFolderPath($("#cloudBitacoraFolder")?.value,CLOUD_BITACORA_FOLDER_DEFAULT);
   settings.cloudExpensesFolder=normalizeCloudFolderPath($("#cloudExpensesFolder")?.value,CLOUD_EXPENSES_FOLDER_DEFAULT);
   settings.cloudBackupMaxBackups=Math.max(1,Math.min(365,Number($("#cloudBackupMaxBackups")?.value||30)));
+  settings.cloudSyncEnabled=!!$("#cloudSyncEnabled")?.checked;
+  settings.syncDeviceName=$("#syncDeviceName")?.value.trim()||defaultSyncDeviceName();
+  settings.cloudSyncFolder=normalizeCloudFolderPath($("#cloudSyncFolder")?.value,CLOUD_SYNC_FOLDER_DEFAULT);
+  settings.notificationEmail=$("#notificationEmail")?.value.trim()||"";
+  settings.emailNotifyDefault=!!$("#emailNotifyDefault")?.checked;
+  settings.emailMissedEnabled=!!$("#emailMissedEnabled")?.checked;
+  settings.emailReminderDefault=$("#emailReminderDefault")?.value||"15m";
+  settings.emailTimeZone=browserTimeZone();
   saveSettings();
   applySettings();
   renderAll();
@@ -3517,7 +3883,11 @@ function saveSettingsFromDialog(){
   m._t=setTimeout(()=>m.classList.add("hidden"),2600);
   toast("Los cambios han sido guardados.");
   renderCloudBackupStatus();
+  renderCloudSyncStatus();
+  renderEmailStatus();
+  startCloudSyncLoop();
   setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),250);
+  setTimeout(()=>performCloudTaskSync({manual:false}),450);
 }
 
 function isFutureDate(d){
@@ -4244,9 +4614,22 @@ $("#taskForm").addEventListener("submit",e=>{
         id:uid(),
         bookId:activeBookId,
         createdAt:new Date().toISOString(),
+        updatedAt:new Date().toISOString(),
         ...data
       };
       tasks.push(savedTask);
+    }
+
+    if(savedTask.status==="missed"){
+      savedTask.missedAt=savedTask.missedAt||new Date().toISOString();
+      savedTask.completedAt=null;
+      touchTask(savedTask);
+    }else if(savedTask.status==="completed"){
+      savedTask.completedAt=savedTask.completedAt||new Date().toISOString();
+      savedTask.missedAt=null;
+      touchTask(savedTask);
+    }else{
+      savedTask.missedAt=null;
     }
 
     syncTaskMovement(savedTask,movementData);
@@ -4356,7 +4739,10 @@ $("#recurrenceDialog").addEventListener("click",e=>{
   if(e.target===$("#recurrenceDialog")) $("#recurrenceDialog").close();
 });
 
-$("#allDay").onchange=toggleTimeFields;
+$("#allDay").onchange=()=>{toggleTimeFields();updateTaskEmailOptions();};
+$("#taskEmailNotify").onchange=updateTaskEmailOptions;
+$("#taskEmailReminderType").onchange=updateTaskEmailOptions;
+
 
 function syncDueDependentFields({notify=false}={}){
   const startValue=$("#startDate").value;
@@ -4871,6 +5257,9 @@ if($("#cloudBackupSecret")){
 $("#generateCloudSecretBtn").onclick=()=>{ const secret=generateCloudSecret(); $("#cloudBackupSecret").value=secret; toast("Clave generada. Copia esta misma clave en el código de Apps Script."); };
 $("#testCloudBackupBtn").onclick=testCloudBackupConnection;
 $("#backupNowBtn").onclick=openBackupDestinationDialog;
+$("#syncNowBtn").onclick=()=>performCloudTaskSync({manual:true});
+$("#testEmailBtn").onclick=testEmailConfiguration;
+
 
 $("#financialExportDestination").onchange=updateFinancialExportDestinationUI;
 $("#closeFinancialExportDialog").onclick=$("#cancelFinancialExportBtn").onclick=()=>$("#financialExportDialog").close();
@@ -4906,7 +5295,17 @@ $("#importExpensesInput").onchange=e=>{
 $("#importChoiceDialog").addEventListener("click",e=>{
   if(e.target===$("#importChoiceDialog")) $("#importChoiceDialog").close();
 });
-$("#clearBtn").onclick=async()=>{if(await comicConfirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?",{title:"Borrar todos los datos",okText:"🗑 Borrar todo"})){tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");}};
+$("#clearBtn").onclick=async()=>{
+  if(await comicConfirm("Esto borrará todas las tareas, la papelera y los gastos. ¿Continuar?",{title:"Borrar todos los datos",okText:"🗑 Borrar todo"})){
+    const deletedAt=new Date().toISOString();
+    tasks.forEach(t=>{
+      deletedTaskSync=deletedTaskSync.filter(x=>x.id!==t.id);
+      deletedTaskSync.push({id:t.id,deletedAt});
+    });
+    saveSyncDeletedTasks();
+    tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");
+  }
+};
 $("#emptyTrashBtn").onclick=async()=>{
   if(!trash.length){toast("La papelera ya está vacía.");return;}
   if(await comicConfirm("¿Vaciar la papelera? Las tareas se eliminarán definitivamente.",{
@@ -4914,8 +5313,14 @@ $("#emptyTrashBtn").onclick=async()=>{
     okText:"🗑 Vaciar"
   })){trash=[];saveTrash();renderTrash();toast("Papelera vaciada.");}
 };
-window.addEventListener("focus",()=>{normalizeStatuses();renderAll();scheduleNotifications();maybeDailyCloudBackup({silent:true});});
-window.addEventListener("online",()=>maybeDailyCloudBackup({silent:true,forceRetry:true}));
+window.addEventListener("focus",()=>{
+  normalizeStatuses();renderAll();scheduleNotifications();maybeDailyCloudBackup({silent:true});
+  performCloudTaskSync({manual:false});
+});
+window.addEventListener("online",()=>{
+  maybeDailyCloudBackup({silent:true,forceRetry:true});
+  performCloudTaskSync({manual:false});
+});
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
 
 if("serviceWorker" in navigator){
@@ -4924,6 +5329,7 @@ if("serviceWorker" in navigator){
 ensureBookMigration();
 migrateTaskCommentsV1155();
 migrateMovementsV116();
+ensureTaskSyncMetadata();
 updateActiveBookSelect();
 populateSettings();
 applySettings();
@@ -4931,4 +5337,8 @@ if ($("#appVersion")) $("#appVersion").textContent = APP_VERSION;
 switchView("calendar");
 renderAll(); scheduleNotifications();
 renderCloudBackupStatus();
+renderCloudSyncStatus();
+renderEmailStatus();
+startCloudSyncLoop();
 setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),900);
+setTimeout(()=>performCloudTaskSync({manual:false}),1300);
