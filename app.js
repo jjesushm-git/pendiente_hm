@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.9.2";
+const APP_VERSION = "11.9.2.1";
 const SYNC_DELETED_TASKS_KEY = "mis_tareas_sync_deleted_v1";
 const CLOUD_SYNC_FOLDER_DEFAULT = "Mis_Tareas_respaldo/sincronizacion";
 const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
@@ -3689,6 +3689,7 @@ function buildTaskSyncPayload(){
     }
   };
 }
+/* Compatibilidad con v11.9.2 anterior. v11.9.2.1 ya no depende de esta segunda petición. */
 function cloudJsonpSyncPull(requestId){
   return new Promise((resolve,reject)=>{
     const url=normalizeAppsScriptUrl(settings.cloudBackupUrl||"");
@@ -3724,7 +3725,7 @@ async function performCloudTaskSync({manual=false}={}){
   }
 
   cloudSyncInProgress=true;
-  setCloudSyncStatus("checking","🔄 Sincronizando tareas...");
+  setCloudSyncStatus("checking","🔄 Enviando y recibiendo tareas...");
   try{
     const result=await cloudBridgeRequest("sync_tasks",{
       folderPath:settings.cloudSyncFolder||CLOUD_SYNC_FOLDER_DEFAULT,
@@ -3732,7 +3733,15 @@ async function performCloudTaskSync({manual=false}={}){
       kind:"sync",
       mimeType:"application/json"
     });
-    const state=await cloudJsonpSyncPull(result.requestId);
+
+    /* v11.9.2.1:
+       Apps Script devuelve el estado combinado por la MISMA respuesta de status.
+       Ya no hacemos una segunda llamada sync_pull, que fallaba en algunos
+       navegadores móviles aunque la subida a Drive sí se hubiera completado. */
+    const state=result?.syncState;
+    if(!state || !Array.isArray(state.tasks)){
+      throw new Error("Apps Script no devolvió el estado sincronizado. Publica Google_Drive_Mis_Tareas_v11_9_2_1.gs como Nueva versión.");
+    }
 
     suppressCloudSync=true;
     try{
