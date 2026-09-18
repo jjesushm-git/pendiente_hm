@@ -126,7 +126,7 @@
         </div>
         <div class="calendar panel">
           <div class="calendar-weekdays">
-            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+            <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span>
           </div>
           <div id="calendarGrid" class="calendar-grid"></div>
         </div>
@@ -439,6 +439,11 @@
         </label>
       </div>
 
+      <div id="editTaskCopyRow" class="edit-task-copy-row hidden">
+        <button type="button" id="copyTaskFromEditBtn" class="ghost-btn">⧉ Copiar esta tarea</button>
+        <small>Disponible solo al editar una tarea existente.</small>
+      </div>
+
       <div class="switch-row importance-switch-row">
         <div>
           <strong>Alta importancia</strong>
@@ -461,7 +466,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.9.2.2</strong>
+      <strong id="settingsVersionTop">11.9.2.3</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -653,7 +658,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.9.2.2</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.9.2.3</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
@@ -1044,6 +1049,12 @@
         <strong>Anual</strong>
         <small>Se repite cada año.</small>
       </button>
+
+      <button type="button" class="recurrence-option recurrence-copy-option" id="recurrenceCopyTaskBtn">
+        <span>⧉</span>
+        <strong>Copiar tarea</strong>
+        <small>Crea una copia independiente en otra fecha.</small>
+      </button>
     </div>
 
     <div class="modal-actions">
@@ -1209,6 +1220,14 @@
       <button type="button" id="calendarQuickTaskBtn" class="primary-btn">＋ Agregar tarea</button>
       <button type="button" id="calendarQuickExpenseBtn" class="ghost-btn">💰 Agregar gasto</button>
     </div>
+
+    <section id="calendarQuickTasksSection" class="calendar-quick-tasks hidden">
+      <div class="calendar-quick-tasks-head">
+        <strong id="calendarQuickTasksTitle">Tareas del día</strong>
+        <small>Toca una tarjeta para editarla.</small>
+      </div>
+      <div id="calendarQuickTasksList" class="calendar-quick-task-list"></div>
+    </section>
 
     <small id="calendarQuickExpenseNote" class="calendar-quick-note hidden">
       Los gastos e ingresos no se pueden registrar en fechas futuras.

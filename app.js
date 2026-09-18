@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.9.2.2";
+const APP_VERSION = "11.9.2.3";
 const SYNC_DELETED_TASKS_KEY = "mis_tareas_sync_deleted_v1";
 const CLOUD_SYNC_FOLDER_DEFAULT = "Mis_Tareas_respaldo/sincronizacion";
 const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
@@ -27,6 +27,8 @@ let editingBookId = null;
 let selectedDate = startOfDay(new Date());
 let calendarCursor = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
 let weekCursor = startOfWeek(selectedDate);
+let lastCalendarDayTapKey = "";
+let lastCalendarDayTapAt = 0;
 let currentView = "calendar";
 let notificationTimers = new Map();
 let cloudSyncTimer = null;
@@ -2186,6 +2188,33 @@ function bindTaskActions(root=document){
   });
 }
 
+function calendarQuickTaskCardHTML(t,dayDate){
+  const occurrenceKey=occurrenceKeyForTask(t,dayDate);
+  return `<button type="button"
+                  class="calendar-quick-task-card ${t.status} ${t.highImportance?"high-importance":""}"
+                  data-calendar-quick-edit="${t.id}"
+                  data-calendar-quick-edit-date="${occurrenceKey}">
+    <span class="calendar-quick-task-emoji">${esc(t.emoji||"📌")}</span>
+    <span class="calendar-quick-task-copy">
+      <strong>${esc(t.title)}</strong>
+      <small>${formatTimeMeta(t)} · ${statusLabel(t.status)} · ↻ ${esc(recurrenceLabel(t.recurrence||"none"))}</small>
+    </span>
+    <span class="calendar-quick-task-arrow">›</span>
+  </button>`;
+}
+
+function bindCalendarQuickTaskCards(){
+  $("#calendarQuickTasksList")?.querySelectorAll("[data-calendar-quick-edit]").forEach(card=>{
+    card.onclick=()=>{
+      const task=tasks.find(t=>t.id===card.dataset.calendarQuickEdit);
+      if(!task) return;
+      const occurrenceKey=card.dataset.calendarQuickEditDate||task.startDate||dateKey(selectedDate);
+      $("#calendarQuickAddDialog").close();
+      openTask(task,occurrenceKey);
+    };
+  });
+}
+
 function openCalendarQuickAdd(dateValue){
   const d=parseDate(dateValue);
   const future=isFutureDate(d);
@@ -2198,6 +2227,17 @@ function openCalendarQuickAdd(dateValue){
   $("#calendarQuickExpenseBtn").classList.toggle("disabled",future);
   $("#calendarQuickExpenseNote").classList.toggle("hidden",!future);
 
+  const dayTasks=expandedTasksForDate(d).sort(compareTasksByDate);
+  const taskSection=$("#calendarQuickTasksSection");
+  if(taskSection){
+    taskSection.classList.toggle("hidden",dayTasks.length===0);
+    $("#calendarQuickTasksTitle").textContent=dayTasks.length===1
+      ? "1 tarea en este día"
+      : `${dayTasks.length} tareas en este día`;
+    $("#calendarQuickTasksList").innerHTML=dayTasks.map(t=>calendarQuickTaskCardHTML(t,d)).join("");
+    bindCalendarQuickTaskCards();
+  }
+
   $("#calendarQuickAddDialog").showModal();
 }
 
@@ -2208,7 +2248,7 @@ function renderCalendar(){
   const year=calendarCursor.getFullYear();
   const month=calendarCursor.getMonth();
   const first=new Date(year,month,1);
-  const leading=(first.getDay()+6)%7;
+  const leading=first.getDay();
   const daysInMonth=new Date(year,month+1,0).getDate();
   const cellCount=Math.ceil((leading+daysInMonth)/7)*7;
   const start=addDays(first,-leading);
@@ -2256,9 +2296,15 @@ function renderCalendar(){
 
   $$("[data-caldate]").forEach(b=>b.onclick=()=>{
     const clickedKey=b.dataset.caldate;
-    const alreadySelected=clickedKey===dateKey(selectedDate);
+    const now=Date.now();
+    const isDoubleTap=lastCalendarDayTapKey===clickedKey && (now-lastCalendarDayTapAt)<=550;
 
-    if(alreadySelected){
+    lastCalendarDayTapKey=clickedKey;
+    lastCalendarDayTapAt=now;
+
+    if(isDoubleTap){
+      lastCalendarDayTapKey="";
+      lastCalendarDayTapAt=0;
       openCalendarQuickAdd(clickedKey);
       return;
     }
@@ -2500,6 +2546,7 @@ function openTask(t=null,occurrenceKey=""){
   $("#editOccurrenceDate").value=effectiveOccurrence;
   $("#taskDialogTitle").textContent=t?"Editar tarea":"Agregar tarea";
   $("#deleteTaskBtn").classList.toggle("hidden",!t);
+  $("#editTaskCopyRow")?.classList.toggle("hidden",!t);
   const defaultStartDate=dateKey(selectedDate||new Date());
   $("#title").value=t?.title||"";
   $("#description").value=t?.description||"";
@@ -4822,6 +4869,20 @@ $("#timePickerDialog").addEventListener("click",e=>{
 
 $("#closeRecurrenceDialog").onclick=$("#cancelRecurrenceDialog").onclick=()=>$("#recurrenceDialog").close();
 
+$("#recurrenceCopyTaskBtn").onclick=()=>{
+  const taskId=$("#recurrenceTaskId").value;
+  const occurrenceKey=$("#recurrenceOccurrenceDate").value;
+  if(!taskId) return;
+  openTaskCopyDialog(taskId,occurrenceKey);
+};
+
+$("#copyTaskFromEditBtn").onclick=()=>{
+  const taskId=$("#taskId").value;
+  const occurrenceKey=$("#editOccurrenceDate").value;
+  if(!taskId) return;
+  $("#taskDialog").close();
+  openTaskCopyDialog(taskId,occurrenceKey);
+};
 
 
 $("#closeTaskCopyDialog").onclick=$("#cancelTaskCopyBtn").onclick=()=>$("#taskCopyDialog").close();

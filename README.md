@@ -1,39 +1,23 @@
-# Mis Tareas — Versión 11.9.2.2
+# Mis Tareas — Versión 11.9.2.3
 
-Base: v11.9.2.1 ESTABLE.
+Base: v11.9.2.2 ESTABLE.
 
-## Cambios de esta versión
+## Cambios
 
-### Copiar tarea
-El botón **Copiar** ya no aparece dentro de Recurrencia. Ahora se encuentra en el menú de tres rayitas de la tarjeta expandida, junto a Editar / Reabrir / Eliminar.
+- Calendario de domingo a sábado.
+- Doble clic o doble toque en un día abre las acciones rápidas.
+- Debajo de “Agregar tarea” y “Agregar gasto” se muestran las tareas de ese día en tarjetas compactas.
+- Al tocar una tarjeta compacta se abre directamente la edición de esa tarea.
+- “Copiar tarea” se conserva en el menú de tres rayitas.
+- “Copiar tarea” vuelve a aparecer dentro de las opciones de recurrencia.
+- Al editar una tarea existente aparece también “Copiar esta tarea”.
+- Al crear una tarea nueva no se muestra el botón de copiar.
+- Se conserva el bloqueo de zoom por pinza en celular.
+- Se conservan sincronización, correo, respaldo, gastos/ingresos, libros, Día, Semana, Calendario y Tablero.
 
-### Zoom móvil
-Se fija la escala de la PWA para evitar que una pinza accidental cambie el tamaño de la interfaz.
+## GitHub
 
-### Calendario
-Pendientes, Completadas y Vencidas/No completadas ahora corresponden al **mes completo mostrado**. Al cambiar de mes, los contadores y listas cambian al nuevo mes.
-
-### Semana
-Pendientes, Completadas y Vencidas/No completadas corresponden a los **7 días de la semana mostrada**. Se agrega la sección de Pendientes que faltaba.
-
-### Día y Tablero
-Se conserva el comportamiento existente.
-
-### Sincronización
-Se agrega **Actualizar sincronización**.
-
-- En PC: úsalo para traer a la PC los cambios más recientes hechos en el celular sin forzar una subida previa.
-- En celular: con sincronización automática activada, la app consulta aproximadamente cada 30 segundos los cambios hechos desde PC, además de hacerlo al volver a la app.
-- Los cambios locales siguen subiendo automáticamente al guardar.
-- El estado muestra la fecha/hora de la última sincronización y el dispositivo de origen registrado por la nube.
-
-## Apps Script
-Esta versión agrega la acción `sync_read`, por lo que debes reemplazar también `Código.gs` por `Google_Drive_Mis_Tareas_v11_9_2_2.gs` y publicar **Nueva versión** de la Aplicación web.
-
-No necesitas volver a crear el activador de correo si `processMisTareasMail` ya existe cada minuto.
-
-## Archivos de GitHub
-El ZIP contiene exactamente:
+Reemplaza exactamente estos 7 archivos:
 
 - README.md
 - app.js
@@ -42,3 +26,5 @@ El ZIP contiene exactamente:
 - manifest.webmanifest
 - styles.css
 - sw.js
+
+No hay cambios en Google Apps Script en esta versión; conserva el Apps Script v11.9.2.2 publicado.
