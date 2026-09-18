@@ -6,7 +6,7 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.9.2.1";
+const APP_VERSION = "11.9.2.2";
 const SYNC_DELETED_TASKS_KEY = "mis_tareas_sync_deleted_v1";
 const CLOUD_SYNC_FOLDER_DEFAULT = "Mis_Tareas_respaldo/sincronizacion";
 const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
@@ -298,11 +298,26 @@ function bindCompactTaskExpansion(root=document){
   });
 }
 
+function taskOccurrencesInRange(start,end){
+  const out=[];
+  let cursor=startOfDay(start);
+  const limit=startOfDay(end);
+  while(cursor<=limit){
+    expandedTasksForDate(cursor).forEach(t=>out.push({t,d:new Date(cursor)}));
+    cursor=addDays(cursor,1);
+  }
+  return out;
+}
+
 function statusCountsForCurrentContext(){
   let list=[];
 
-  if(currentView==="week"){
-    list=[...Array(7)].flatMap((_,i)=>expandedTasksForDate(addDays(weekCursor,i)));
+  if(currentView==="calendar"){
+    const start=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth(),1);
+    const end=new Date(calendarCursor.getFullYear(),calendarCursor.getMonth()+1,0);
+    list=taskOccurrencesInRange(start,end).map(x=>x.t);
+  }else if(currentView==="week"){
+    list=taskOccurrencesInRange(weekCursor,addDays(weekCursor,6)).map(x=>x.t);
   }else if(currentView==="board"){
     list=activeTasks();
   }else{
@@ -846,6 +861,8 @@ function loadSettings(){
     syncDeviceName:defaultSyncDeviceName(),
     lastCloudSyncAt:"",
     lastCloudSyncError:"",
+    lastCloudSyncSourceName:"",
+    lastCloudSyncSourceAt:"",
     notificationEmail:"",
     emailNotifyDefault:true,
     emailMissedEnabled:true,
@@ -1923,6 +1940,7 @@ function taskCard(t,occurrenceDate=selectedDate){
 
         <div class="task-card-popup hidden" data-task-menu-panel>
           <button type="button" data-edit="${t.id}" data-edit-date="${occurrenceKey}">✏ Editar</button>
+          <button type="button" data-copy-task="${t.id}" data-copy-date="${occurrenceKey}">⧉ Copiar</button>
           ${t.status==="missed"?`<button type="button" data-reopen="${t.id}">↻ Reabrir</button>`:""}
           <button type="button" class="task-delete-btn" data-delete="${t.id}">🗑 Eliminar</button>
         </div>
@@ -2139,6 +2157,14 @@ function bindTaskActions(root=document){
     };
   });
 
+  root.querySelectorAll("[data-copy-task]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openTaskCopyDialog(btn.dataset.copyTask,btn.dataset.copyDate);
+    };
+  });
+
   root.querySelectorAll("[data-reopen]").forEach(btn=>{
     btn.onclick=e=>{
       e.preventDefault();
@@ -2202,17 +2228,27 @@ function renderCalendar(){
     </button>`;
   }).join("");
 
-  const renderSelectedCalendarDay=()=>{
-    const list=expandedTasksForDate(selectedDate).sort(compareTasksByDate);
-    const pending=list.filter(t=>t.status==="pending");
-    const completed=list.filter(t=>t.status==="completed");
-    const missed=list.filter(t=>t.status==="missed");
+  const renderCalendarMonthStatus=()=>{
+    const monthStart=new Date(year,month,1);
+    const monthEnd=new Date(year,month+1,0);
+    const occurrences=taskOccurrencesInRange(monthStart,monthEnd);
+    const pending=occurrences.filter(x=>x.t.status==="pending");
+    const completed=occurrences.filter(x=>x.t.status==="completed");
+    const missed=occurrences.filter(x=>x.t.status==="missed");
 
-    $("#calendarDayHeading").textContent=`Pendientes · ${shortDate(selectedDate)}`;
+    $("#calendarDayHeading").textContent=`Pendientes · ${monthName(monthStart)}`;
+    $("#calendarPendingList").innerHTML=weekOccurrenceListHTML(pending);
+    $("#calendarCompletedList").innerHTML=weekOccurrenceListHTML(completed);
+    $("#calendarMissedList").innerHTML=weekOccurrenceListHTML(missed);
 
-    $("#calendarPendingList").innerHTML=compactTaskListHTML(pending,selectedDate,"calendar-pending");
-    $("#calendarCompletedList").innerHTML=compactTaskListHTML(completed,selectedDate,"calendar-completed");
-    $("#calendarMissedList").innerHTML=compactTaskListHTML(missed,selectedDate,"calendar-missed");
+    if($("#calendarStatsGrid")){
+      $("#calendarStatsGrid").innerHTML=scopedStatusStatsHTML({
+        pending:pending.length,
+        completed:completed.length,
+        missed:missed.length
+      },"calendar");
+      bindScopedStatusButtons($("#calendarView"));
+    }
 
     bindTaskActions($("#calendarView"));
     bindCompactTaskExpansion($("#calendarView"));
@@ -2239,7 +2275,7 @@ function renderCalendar(){
     renderGlobalStatusStrip();
   });
 
-  renderSelectedCalendarDay();
+  renderCalendarMonthStatus();
 }
 function renderWeek(){
   const end=addDays(weekCursor,6);
@@ -2264,8 +2300,18 @@ function renderWeek(){
   const pending=occurrences.filter(x=>x.t.status==="pending");
   const completed=occurrences.filter(x=>x.t.status==="completed");
   const missed=occurrences.filter(x=>x.t.status==="missed");
+  $("#weekPendingList").innerHTML=weekOccurrenceListHTML(pending);
   $("#weekCompletedList").innerHTML=weekOccurrenceListHTML(completed);
   $("#weekMissedList").innerHTML=weekOccurrenceListHTML(missed);
+
+  if($("#weekStatsGrid")){
+    $("#weekStatsGrid").innerHTML=scopedStatusStatsHTML({
+      pending:pending.length,
+      completed:completed.length,
+      missed:missed.length
+    },"week");
+    bindScopedStatusButtons($("#weekView"));
+  }
 
   bindTaskActions($("#weekView"));
   bindCompactTaskExpansion($("#weekView"));
@@ -2478,11 +2524,7 @@ function openTask(t=null,occurrenceKey=""){
   refreshTimeTrigger("startTime");
   refreshTimeTrigger("dueTime");
   const recurrenceSelect=$("#recurrence");
-  const recurrenceCopyOption=$("#recurrenceCopyOption");
-  recurrenceCopyOption.hidden=!t;
-  recurrenceCopyOption.disabled=!t;
   recurrenceSelect.value=t?.recurrence||"none";
-  recurrenceSelect.dataset.lastNonCopy=recurrenceSelect.value;
   $("#status").value=t?.status||"pending";
   $("#boardStage").value=t?boardStageOf(t):"pending";
   $("#highImportance").checked=!!t?.highImportance;
@@ -3585,6 +3627,15 @@ function setCloudSyncStatus(state,message){
   text.textContent=message;
 }
 function renderCloudSyncStatus(){
+  const meta=$("#cloudSyncMeta");
+  const metaStamp=settings.lastCloudSyncSourceAt||settings.lastCloudSyncAt||"";
+  const metaSource=settings.lastCloudSyncSourceName||"";
+  if(meta){
+    meta.textContent=metaStamp
+      ? `Última sincronización: ${formatCloudBackupStamp(metaStamp)} · origen: ${metaSource||"no identificado"}`
+      : "Última sincronización: todavía no registrada.";
+  }
+
   if(!settings.cloudSyncEnabled){
     setCloudSyncStatus("waiting","Sincronización automática desactivada.");
     return;
@@ -3598,7 +3649,7 @@ function renderCloudSyncStatus(){
     return;
   }
   if(settings.lastCloudSyncAt){
-    setCloudSyncStatus("ok",`✅ Sincronizado · ${formatCloudBackupStamp(settings.lastCloudSyncAt)} · ${settings.syncDeviceName||defaultSyncDeviceName()}`);
+    setCloudSyncStatus("ok","✅ Sincronización actualizada.");
   }else{
     setCloudSyncStatus("waiting","⏳ En espera de la primera sincronización.");
   }
@@ -3709,6 +3760,78 @@ function cloudJsonpSyncPull(requestId){
     document.head.appendChild(script);
   });
 }
+function isMobileSyncDevice(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||"") || window.matchMedia("(max-width: 820px)").matches;
+}
+
+function applyCloudSyncState(state){
+  if(!state || !Array.isArray(state.tasks)){
+    throw new Error("Apps Script no devolvió un estado de sincronización válido.");
+  }
+
+  suppressCloudSync=true;
+  try{
+    mergeTaskSyncState(state.tasks||[],state.deletedTasks||[]);
+    mergeBookSyncState(state.books||[]);
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
+    ensureTaskSyncMetadata();
+    renderAll();
+    renderBooks();
+    updateActiveBookSelect();
+  }finally{
+    suppressCloudSync=false;
+  }
+
+  settings.lastCloudSyncAt=state.updatedAt||new Date().toISOString();
+  settings.lastCloudSyncSourceAt=state.updatedAt||settings.lastCloudSyncAt;
+  settings.lastCloudSyncSourceName=state.lastDeviceName||"Nube";
+  settings.lastCloudSyncError="";
+  saveSettings();
+  renderCloudSyncStatus();
+}
+
+async function refreshCloudTaskSync({manual=false}={}){
+  if(cloudSyncInProgress) return false;
+  if(!settings.cloudSyncEnabled && !manual) return false;
+  if(!cloudBackupConfigured()){
+    settings.lastCloudSyncError="Falta configurar Google Apps Script o la clave privada.";
+    saveSettings();renderCloudSyncStatus();
+    if(manual) toast(settings.lastCloudSyncError);
+    return false;
+  }
+  if(!navigator.onLine){
+    settings.lastCloudSyncError="Sin conexión a Internet.";
+    saveSettings();renderCloudSyncStatus();
+    if(manual) toast(settings.lastCloudSyncError);
+    return false;
+  }
+
+  cloudSyncInProgress=true;
+  setCloudSyncStatus("checking","↻ Consultando cambios de otros dispositivos...");
+  try{
+    const result=await cloudBridgeRequest("sync_read",{
+      folderPath:settings.cloudSyncFolder||CLOUD_SYNC_FOLDER_DEFAULT,
+      content:"",
+      kind:"sync_read",
+      mimeType:"application/json"
+    });
+    const state=result?.syncState;
+    applyCloudSyncState(state);
+    if(manual){
+      const source=state?.lastDeviceName||"la nube";
+      toast(`Sincronización actualizada desde ${source}.`);
+    }
+    return true;
+  }catch(err){
+    settings.lastCloudSyncError=err?.message||"No se pudo actualizar la sincronización.";
+    saveSettings();renderCloudSyncStatus();
+    if(manual) toast(`Pendiente: ${settings.lastCloudSyncError}`);
+    return false;
+  }finally{
+    cloudSyncInProgress=false;
+  }
+}
+
 async function performCloudTaskSync({manual=false}={}){
   if(cloudSyncInProgress) return false;
   if(!settings.cloudSyncEnabled && !manual) return false;
@@ -3743,23 +3866,7 @@ async function performCloudTaskSync({manual=false}={}){
       throw new Error("Apps Script no devolvió el estado sincronizado. Publica Google_Drive_Mis_Tareas_v11_9_2_1.gs como Nueva versión.");
     }
 
-    suppressCloudSync=true;
-    try{
-      mergeTaskSyncState(state.tasks||[],state.deletedTasks||[]);
-      mergeBookSyncState(state.books||[]);
-      localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
-      ensureTaskSyncMetadata();
-      renderAll();
-      renderBooks();
-      updateActiveBookSelect();
-    }finally{
-      suppressCloudSync=false;
-    }
-
-    settings.lastCloudSyncAt=new Date().toISOString();
-    settings.lastCloudSyncError="";
-    saveSettings();
-    renderCloudSyncStatus();
+    applyCloudSyncState(state);
     if(manual) toast("Tareas sincronizadas entre dispositivos.");
     return true;
   }catch(err){
@@ -3778,7 +3885,14 @@ function scheduleCloudTaskSync(){
 }
 function startCloudSyncLoop(){
   clearInterval(cloudSyncInterval);
-  cloudSyncInterval=setInterval(()=>performCloudTaskSync({manual:false}),60000);
+  if(!settings.cloudSyncEnabled) return;
+
+  /* En celular: recibe automáticamente cambios realizados en PC.
+     En escritorio: los cambios locales se siguen enviando al guardar,
+     y “Actualizar sincronización” sirve para traer lo hecho en el celular. */
+  if(isMobileSyncDevice()){
+    cloudSyncInterval=setInterval(()=>refreshCloudTaskSync({manual:false}),30000);
+  }
 }
 async function testEmailConfiguration(){
   const email=String($("#notificationEmail")?.value||settings.notificationEmail||"").trim();
@@ -3896,7 +4010,7 @@ function saveSettingsFromDialog(){
   renderEmailStatus();
   startCloudSyncLoop();
   setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),250);
-  setTimeout(()=>performCloudTaskSync({manual:false}),450);
+  setTimeout(()=>{if(isMobileSyncDevice()) refreshCloudTaskSync({manual:false});},450);
 }
 
 function isFutureDate(d){
@@ -4708,24 +4822,7 @@ $("#timePickerDialog").addEventListener("click",e=>{
 
 $("#closeRecurrenceDialog").onclick=$("#cancelRecurrenceDialog").onclick=()=>$("#recurrenceDialog").close();
 
-$("#recurrenceCopyBtn").onclick=()=>{
-  const taskId=$("#recurrenceTaskId").value;
-  const occurrenceKey=$("#recurrenceOccurrenceDate").value;
-  if(taskId) openTaskCopyDialog(taskId,occurrenceKey);
-};
 
-$("#recurrence").addEventListener("change",()=>{
-  const select=$("#recurrence");
-  if(select.value==="copy"){
-    const taskId=$("#taskId").value;
-    const occurrenceKey=$("#editOccurrenceDate").value;
-    const fallback=select.dataset.lastNonCopy||"none";
-    select.value=fallback;
-    if(taskId) openTaskCopyDialog(taskId,occurrenceKey);
-    return;
-  }
-  select.dataset.lastNonCopy=select.value;
-});
 
 $("#closeTaskCopyDialog").onclick=$("#cancelTaskCopyBtn").onclick=()=>$("#taskCopyDialog").close();
 $("#saveTaskCopyBtn").onclick=saveTaskCopy;
@@ -5220,10 +5317,10 @@ $("#dayDatePicker").onchange=e=>{
 };
 $("#todayBtn").onclick=()=>setSelectedDay(new Date());
 $("#pendingFilter").onchange=renderDay;
-$("#prevMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();};
-$("#nextMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar();};
-$("#prevWeek").onclick=()=>{weekCursor=addDays(weekCursor,-7);renderWeek();};
-$("#nextWeek").onclick=()=>{weekCursor=addDays(weekCursor,7);renderWeek();};
+$("#prevMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()-1);renderCalendar();renderGlobalStatusStrip();};
+$("#nextMonth").onclick=()=>{calendarCursor.setMonth(calendarCursor.getMonth()+1);renderCalendar();renderGlobalStatusStrip();};
+$("#prevWeek").onclick=()=>{weekCursor=addDays(weekCursor,-7);renderWeek();renderGlobalStatusStrip();};
+$("#nextWeek").onclick=()=>{weekCursor=addDays(weekCursor,7);renderWeek();renderGlobalStatusStrip();};
 $$("[data-view]").forEach(b=>b.onclick=()=>{switchView(b.dataset.view);renderAll();});
 $("#settingsBtnTop").onclick=()=>{
   populateSettings();
@@ -5234,7 +5331,16 @@ $("#settingsBtnTop").onclick=()=>{
 $("#closeSettings").onclick=()=>$("#settingsDialog").close();
 $("#updateAppBtn").onclick=async()=>{
   try{
-    if("serviceWorker" in navigator){
+    
+/* v11.9.2.2 — mantener escala fija en móvil al hacer pinza. */
+["gesturestart","gesturechange","gestureend"].forEach(type=>{
+  document.addEventListener(type,e=>e.preventDefault(),{passive:false});
+});
+document.addEventListener("touchmove",e=>{
+  if(e.touches && e.touches.length>1) e.preventDefault();
+},{passive:false});
+
+if("serviceWorker" in navigator){
       const reg=await navigator.serviceWorker.getRegistration();
       if(reg) await reg.update();
     }
@@ -5267,6 +5373,7 @@ $("#generateCloudSecretBtn").onclick=()=>{ const secret=generateCloudSecret(); $
 $("#testCloudBackupBtn").onclick=testCloudBackupConnection;
 $("#backupNowBtn").onclick=openBackupDestinationDialog;
 $("#syncNowBtn").onclick=()=>performCloudTaskSync({manual:true});
+$("#refreshSyncBtn").onclick=()=>refreshCloudTaskSync({manual:true});
 $("#testEmailBtn").onclick=testEmailConfiguration;
 
 
@@ -5324,13 +5431,21 @@ $("#emptyTrashBtn").onclick=async()=>{
 };
 window.addEventListener("focus",()=>{
   normalizeStatuses();renderAll();scheduleNotifications();maybeDailyCloudBackup({silent:true});
-  performCloudTaskSync({manual:false});
+  if(isMobileSyncDevice()) refreshCloudTaskSync({manual:false});
 });
 window.addEventListener("online",()=>{
   maybeDailyCloudBackup({silent:true,forceRetry:true});
+  /* Si había cambios locales sin subir, una sincronización completa los recupera. */
   performCloudTaskSync({manual:false});
+  if(isMobileSyncDevice()) setTimeout(()=>refreshCloudTaskSync({manual:false}),1600);
 });
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible" && isMobileSyncDevice()){
+    refreshCloudTaskSync({manual:false});
+  }
+});
+
 
 if("serviceWorker" in navigator){
   navigator.serviceWorker.register("sw.js").then(reg=>reg.update()).catch(()=>{});
@@ -5350,4 +5465,4 @@ renderCloudSyncStatus();
 renderEmailStatus();
 startCloudSyncLoop();
 setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),900);
-setTimeout(()=>performCloudTaskSync({manual:false}),1300);
+setTimeout(()=>{if(isMobileSyncDevice()) refreshCloudTaskSync({manual:false});},1300);

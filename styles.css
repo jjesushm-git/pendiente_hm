@@ -6993,3 +6993,20 @@ dialog .comic-bubble-tail,
     grid-template-columns:1fr 1fr 1fr;
   }
 }
+
+
+/* =========================================================
+   VERSION 11.9.2.2
+   ========================================================= */
+.cloud-sync-meta{
+  display:block;
+  margin-top:4px;
+  line-height:1.35;
+  color:var(--muted);
+}
+.sync-action-buttons{
+  grid-template-columns:1fr 1fr;
+}
+@media(max-width:430px){
+  .sync-action-buttons{grid-template-columns:1fr;}
+}

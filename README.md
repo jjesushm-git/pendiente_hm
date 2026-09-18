@@ -1,67 +1,39 @@
-# Mis Tareas — Versión 11.9.2.1
+# Mis Tareas — Versión 11.9.2.2
 
-Base: v11.9.2 ESTABLE.
+Base: v11.9.2.1 ESTABLE.
 
-## Corrección principal: sincronización PC ↔ celular
+## Cambios de esta versión
 
-La v11.9.2 podía subir correctamente las tareas a Google Drive, pero algunos navegadores móviles fallaban al hacer la segunda petición `sync_pull`.
+### Copiar tarea
+El botón **Copiar** ya no aparece dentro de Recurrencia. Ahora se encuentra en el menú de tres rayitas de la tarjeta expandida, junto a Editar / Reabrir / Eliminar.
 
-La v11.9.2.1 elimina esa dependencia.
+### Zoom móvil
+Se fija la escala de la PWA para evitar que una pinza accidental cambie el tamaño de la interfaz.
 
-Ahora el flujo es:
+### Calendario
+Pendientes, Completadas y Vencidas/No completadas ahora corresponden al **mes completo mostrado**. Al cambiar de mes, los contadores y listas cambian al nuevo mes.
 
-```text
-PC o celular
-   ↓
-envía sus cambios a Apps Script
-   ↓
-Apps Script combina tareas por updatedAt
-   ↓
-actualiza Mis_Tareas_Sync.json
-   ↓
-la MISMA respuesta de status devuelve el estado combinado
-   ↓
-la app actualiza sus tareas y libros
-```
+### Semana
+Pendientes, Completadas y Vencidas/No completadas corresponden a los **7 días de la semana mostrada**. Se agrega la sección de Pendientes que faltaba.
 
-No se hace una segunda descarga independiente para completar la sincronización.
+### Día y Tablero
+Se conserva el comportamiento existente.
 
-## Se conserva sin cambios
+### Sincronización
+Se agrega **Actualizar sincronización**.
 
-- Recordatorios por correo.
-- Avisos 15 minutos antes, 1 hora antes, 1 día antes, al inicio y personalizados.
-- Aviso de tarea no completada.
-- Activador `processMisTareasMail`.
-- Correo de prueba.
-- Respaldo automático diario.
-- Exportaciones a Google Drive.
-- Balance personalizado.
-- Libros, gastos e ingresos.
-- Borrado cruzado tarea/movimiento.
-- Calendario, Día, Semana y Tablero.
+- En PC: úsalo para traer a la PC los cambios más recientes hechos en el celular sin forzar una subida previa.
+- En celular: con sincronización automática activada, la app consulta aproximadamente cada 30 segundos los cambios hechos desde PC, además de hacerlo al volver a la app.
+- Los cambios locales siguen subiendo automáticamente al guardar.
+- El estado muestra la fecha/hora de la última sincronización y el dispositivo de origen registrado por la nube.
 
-## Google Drive
+## Apps Script
+Esta versión agrega la acción `sync_read`, por lo que debes reemplazar también `Código.gs` por `Google_Drive_Mis_Tareas_v11_9_2_2.gs` y publicar **Nueva versión** de la Aplicación web.
 
-Se siguen usando:
+No necesitas volver a crear el activador de correo si `processMisTareasMail` ya existe cada minuto.
 
-```text
-Mis_Tareas_respaldo/
-├── bitacora/
-├── gastos/
-│   └── personal/
-├── respaldos/
-└── sincronizacion/
-    ├── Mis_Tareas_Sync.json
-    └── Mis_Tareas_MailState.json
-```
-
-## Actualización necesaria
-
-Para esta corrección debes actualizar DOS partes:
-
-### 1. GitHub
-
-Reemplaza los 7 archivos del ZIP:
+## Archivos de GitHub
+El ZIP contiene exactamente:
 
 - README.md
 - app.js
@@ -70,45 +42,3 @@ Reemplaza los 7 archivos del ZIP:
 - manifest.webmanifest
 - styles.css
 - sw.js
-
-### 2. Google Apps Script
-
-Reemplaza `Código.gs` por:
-
-`Google_Drive_Mis_Tareas_v11_9_2_1.gs`
-
-Conserva tu propia clave en:
-
-```javascript
-const BACKUP_SECRET = "TU_CLAVE_PRIVADA";
-```
-
-Después:
-
-1. Guarda.
-2. Ve a `Implementar > Administrar implementaciones`.
-3. Edita la aplicación web.
-4. Selecciona `Nueva versión`.
-5. Ejecutar como: `Yo`.
-6. Acceso: `Cualquier persona`.
-7. Pulsa `Implementar`.
-8. Conserva o copia la URL `/exec`.
-
-No necesitas volver a crear el activador si ya existe `processMisTareasMail` cada minuto.
-
-## Prueba recomendada
-
-1. En PC crea una tarea llamada `PRUEBA SYNC PC`.
-2. Pulsa `Sincronizar ahora`.
-3. En celular pulsa `Sincronizar ahora`.
-4. La tarea debe aparecer en el celular.
-5. En celular cambia el título a `PRUEBA SYNC CELULAR`.
-6. Sincroniza celular.
-7. Sincroniza PC.
-8. El nuevo título debe aparecer en PC.
-
-La modificación más reciente gana mediante `updatedAt`.
-
-## Nota técnica
-
-El estado sincronizado se lee desde `Mis_Tareas_Sync.json` cuando la PWA consulta el mismo endpoint `status` que ya se usa para confirmar operaciones con Apps Script. Esto evita el fallo móvil observado con la petición separada `sync_pull`.
