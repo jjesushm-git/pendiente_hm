@@ -7164,3 +7164,109 @@ dialog .comic-bubble-tail,
   .list-items-editor-head{display:block}
   .list-items-editor-head small{display:block;text-align:left;margin-top:.2rem}
 }
+
+
+/* =========================================================
+   v12.0.1 · Reparación de menús ☰ de Listas
+   ========================================================= */
+
+/* El menú de las tarjetas compactas debe poder salir del contenedor
+   sin quedar cortado por la tarjeta/panel. */
+.lists-view,
+.lists-panel,
+.checklist-cards,
+.checklist-card,
+.list-card-menu-wrap,
+.finished-lists-panel,
+#activeListsContainer,
+#finishedListsContainer{
+  overflow:visible !important;
+}
+
+/* Menú común: fondo y texto explícitos.
+   Evita que el menú abierto dentro del encabezado verde herede texto blanco. */
+.list-menu-panel{
+  min-width:190px !important;
+  width:max-content;
+  max-width:min(260px,calc(100vw - 32px));
+  padding:.42rem !important;
+  border:1px solid var(--line,#d7c788) !important;
+  border-radius:14px !important;
+  background:var(--panel,#fff) !important;
+  color:var(--text,#17362b) !important;
+  box-shadow:0 14px 34px rgba(0,0,0,.24) !important;
+  z-index:10050 !important;
+}
+
+/* En tarjeta compacta se abre hacia ARRIBA.
+   Así las 3 opciones siempre se ven aunque la tarjeta esté cerca
+   de la barra inferior del celular. */
+.list-card-menu-wrap .list-menu-panel{
+  top:auto !important;
+  bottom:calc(100% + .4rem) !important;
+  right:0 !important;
+  left:auto !important;
+}
+
+/* Todos los textos del menú deben verse completos. */
+.list-menu-panel button{
+  display:flex !important;
+  align-items:center !important;
+  gap:.55rem !important;
+  width:100% !important;
+  min-height:44px;
+  padding:.68rem .78rem !important;
+  border:0 !important;
+  border-radius:10px !important;
+  background:transparent !important;
+  color:var(--text,#17362b) !important;
+  font:inherit !important;
+  font-size:.98rem !important;
+  font-weight:600 !important;
+  line-height:1.2 !important;
+  text-align:left !important;
+  white-space:nowrap !important;
+  opacity:1 !important;
+  visibility:visible !important;
+}
+
+.list-menu-panel button:hover,
+.list-menu-panel button:focus-visible{
+  background:color-mix(in srgb,var(--accent,#155d40) 10%,transparent) !important;
+}
+
+.list-menu-panel .danger-action{
+  color:var(--danger,#b75460) !important;
+}
+
+/* Menú dentro de la lista expandida:
+   se separa del encabezado y permanece dentro del ancho del diálogo. */
+.list-viewer-head{
+  overflow:visible !important;
+}
+.list-viewer-head>.list-menu-panel{
+  top:calc(100% + .45rem) !important;
+  right:.15rem !important;
+  left:auto !important;
+}
+
+/* El encabezado del diálogo puede ser verde, pero el dropdown
+   conserva sus propios colores legibles. */
+#listViewerMenu,
+#listViewerMenu button{
+  color:var(--text,#17362b) !important;
+}
+
+@media (max-width:640px){
+  .list-menu-panel{
+    min-width:180px !important;
+    max-width:calc(100vw - 28px) !important;
+  }
+  .list-menu-panel button{
+    font-size:1rem !important;
+    min-height:46px;
+  }
+  .list-viewer-head>.list-menu-panel{
+    right:0 !important;
+  }
+}

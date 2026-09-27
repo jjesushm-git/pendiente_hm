@@ -1,36 +1,21 @@
-# Mis Tareas — Versión 12.0.0
+# Mis Tareas — Versión 12.0.1
 
-Base: v11.9.2.3.
+Base: v12.0.0.
 
-## Nueva función: Listas
+## Corrección
+Se repararon los menús de tres rayitas (☰) del módulo **Listas**:
 
-El botón central `+ Agregar` fue reemplazado por **☑ Listas**.
+- En la tarjeta compacta el menú ya no queda cortado.
+- El menú compacto se abre hacia arriba para que Editar, Copiar y Borrar permanezcan visibles incluso cerca de la barra inferior.
+- En la lista expandida los textos de Editar, Copiar, Reabrir y Borrar usan colores explícitos y ya no heredan el texto blanco del encabezado verde.
+- Se aumentó el ancho y altura táctil de las opciones para mejorar su lectura y uso en celular.
+- Se mantienen todas las funciones de v12.0.0: listas globales, finalizadas, respaldo, sincronización y archivado a Bitácora.
 
-Las listas son globales: no pertenecen a un libro. Por eso se muestran iguales aunque cambies de Libro.
+## Actualización
+Esta corrección es solo de interfaz. **No es necesario cambiar Google Apps Script** si ya tienes instalado el de v12.0.0.
 
-### Flujo
-- `Listas` abre la pantalla de listas.
-- `Nueva lista` permite elegir fecha, título, emoticono y pendientes con casillas.
-- Al pulsar Enter en un pendiente aparece otro renglón.
-- Guardar muestra la lista en formato compacto.
-- Al tocar una tarjeta se abre la lista completa.
-- Al marcar una casilla, el texto queda tachado.
-- Cuando todas las casillas están marcadas, la lista pasa a **Listas finalizadas**.
-- Desde el menú ☰ se puede Editar, Copiar, Borrar y, cuando está finalizada, Reabrir.
-- `Mostrar todas` enseña todas las listas pendientes ordenadas desde la fecha más antigua a la más reciente.
-- Sin `Mostrar todas`, solo aparecen las listas de la fecha seleccionada.
+Reemplaza en GitHub estos 7 archivos:
 
-## Respaldo y sincronización
-Las listas se incluyen en:
-- respaldo manual;
-- respaldo automático diario;
-- importación de respaldo;
-- sincronización PC ↔ celular.
-
-Las listas finalizadas se conservan 30 días. Cuando existe conexión con Google Drive, después de 30 días se crea un JSON en la carpeta configurada de **Bitácora** y solo después de confirmar ese respaldo se elimina la lista de la app.
-
-## Archivos GitHub
-Reemplaza exactamente estos 7 archivos:
 - README.md
 - app.js
 - icon.svg
@@ -38,8 +23,3 @@ Reemplaza exactamente estos 7 archivos:
 - manifest.webmanifest
 - styles.css
 - sw.js
-
-## Google Apps Script
-Para que las listas también se sincronicen entre dispositivos, actualiza `Código.gs` con `Google_Drive_Mis_Tareas_v12_0_0.gs` y publica una **Nueva versión** de la Aplicación web.
-
-Conserva tu propia `BACKUP_SECRET`.
