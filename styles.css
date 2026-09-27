@@ -7086,3 +7086,81 @@ dialog .comic-bubble-tail,
   .edit-task-copy-row{grid-template-columns:1fr;}
   .edit-task-copy-row button{width:100%;}
 }
+
+
+/* =========================================================
+   v12.0.0 · Listas persistentes
+   ========================================================= */
+.bottom-lists span{font-size:1.35rem}
+.lists-view{padding-bottom:90px}
+.lists-heading{align-items:flex-end}
+.lists-date-label{display:block;margin-top:.25rem;opacity:.72}
+.lists-filter-row{display:flex;align-items:center;gap:.8rem;justify-content:space-between;margin:0 0 .8rem}
+.lists-filter-row small{opacity:.72;text-align:right}
+.lists-panel{padding:.75rem}
+.checklist-cards{display:grid;gap:.6rem}
+.checklist-empty{padding:1rem;text-align:center;opacity:.68}
+.checklist-card{
+  position:relative;display:flex;align-items:center;justify-content:space-between;gap:.65rem;
+  min-height:52px;padding:.65rem .7rem;border:1px solid var(--line,#d9d9d9);border-radius:14px;
+  background:var(--card,#fff);box-shadow:0 2px 10px rgba(0,0,0,.05)
+}
+.checklist-card-main{
+  flex:1;min-width:0;display:flex;align-items:center;gap:.55rem;border:0;background:transparent;
+  color:inherit;text-align:left;padding:.2rem;cursor:pointer
+}
+.checklist-card-main .checklist-emoji{font-size:1.35rem;flex:0 0 auto}
+.checklist-card-main strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.96rem}
+.checklist-card.finalized strong{text-decoration:line-through;opacity:.72}
+.list-card-menu-wrap{position:relative;flex:0 0 auto}
+.list-card-menu-btn,.list-menu-btn{font-size:1.05rem}
+.list-menu-panel{
+  position:absolute;right:.2rem;top:3rem;z-index:30;min-width:155px;padding:.35rem;
+  border:1px solid var(--line,#ddd);border-radius:12px;background:var(--card,#fff);
+  box-shadow:0 12px 30px rgba(0,0,0,.18)
+}
+.list-card-menu-wrap .list-menu-panel{top:2.4rem;right:0}
+.list-menu-panel button{
+  width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:.65rem .7rem;
+  border-radius:9px;font:inherit;cursor:pointer
+}
+.list-menu-panel button:hover{background:rgba(127,127,127,.10)}
+.list-menu-panel .danger-action{color:#b92d2d}
+.finished-lists-panel{margin-top:.8rem;padding:.8rem}
+.finished-lists-panel>summary{
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.8rem;font-weight:700
+}
+.finished-lists-note{font-size:.82rem;opacity:.68;margin:.65rem 0}
+.list-edit-dialog,.list-viewer-dialog{max-width:620px}
+.list-items-editor{display:grid;gap:.5rem;margin-top:.45rem}
+.list-item-edit-row{display:grid;grid-template-columns:auto 1fr auto;gap:.5rem;align-items:center}
+.list-item-edit-row input[type="checkbox"]{width:20px;height:20px}
+.list-item-edit-row input[type="text"]{width:100%}
+.list-item-remove{
+  border:0;background:transparent;color:#b92d2d;font-size:1.15rem;padding:.35rem;cursor:pointer
+}
+.list-items-editor-head{display:flex;justify-content:space-between;gap:.7rem;align-items:end;margin-top:.8rem}
+.list-items-editor-head small{opacity:.68;text-align:right}
+.list-add-item-btn{margin-top:.55rem;width:100%}
+.list-viewer-head{position:relative}
+.list-head-actions{display:flex;gap:.35rem}
+.list-viewer-head>.list-menu-panel{top:3.6rem;right:3rem}
+.list-viewer-items{display:grid;gap:.6rem;padding:.25rem 0 .5rem}
+.list-viewer-row{
+  display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:start;
+  padding:.65rem;border:1px solid var(--line,#ddd);border-radius:12px
+}
+.list-viewer-row input{width:21px;height:21px;margin-top:.05rem}
+.list-viewer-row span{line-height:1.35;word-break:break-word}
+.list-viewer-row.checked span{text-decoration:line-through;opacity:.62}
+.list-finalized-banner{
+  margin:.15rem 0 .7rem;padding:.55rem .7rem;border-radius:10px;background:rgba(44,160,90,.12);
+  font-size:.86rem;font-weight:700
+}
+@media (max-width:640px){
+  .lists-heading{align-items:stretch}
+  .lists-heading .primary-btn{white-space:nowrap}
+  .lists-filter-row{align-items:flex-start}
+  .list-items-editor-head{display:block}
+  .list-items-editor-head small{display:block;text-align:left;margin-top:.2rem}
+}

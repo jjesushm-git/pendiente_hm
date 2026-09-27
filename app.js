@@ -6,8 +6,11 @@ const DEFAULT_PENDING_FILTER = "upcoming";
 const EXPENSES_KEY = "mis_tareas_expenses_v1";
 const BOOKS_KEY = "mis_tareas_books_v1";
 const ACTIVE_BOOK_KEY = "mis_tareas_active_book_v1";
-const APP_VERSION = "11.9.2.3";
+const APP_VERSION = "12.0.0";
 const SYNC_DELETED_TASKS_KEY = "mis_tareas_sync_deleted_v1";
+const LISTS_KEY = "mis_tareas_lists_v1";
+const SYNC_DELETED_LISTS_KEY = "mis_tareas_sync_deleted_lists_v1";
+const LIST_ARCHIVE_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const CLOUD_SYNC_FOLDER_DEFAULT = "Mis_Tareas_respaldo/sincronizacion";
 const CLOUD_BACKUP_FOLDER_DEFAULT = "Mis_Tareas_respaldo/respaldos";
 const CLOUD_BITACORA_FOLDER_DEFAULT = "Mis_Tareas_respaldo/bitacora";
@@ -19,6 +22,8 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 let tasks = loadTasks();
 let trash = loadTrash();
 let deletedTaskSync = loadSyncDeletedTasks();
+let checklists = loadChecklists();
+let deletedListSync = loadSyncDeletedLists();
 let settings = loadSettings();
 let expenses = loadExpenses();
 let books = loadBooks();
@@ -35,6 +40,9 @@ let cloudSyncTimer = null;
 let cloudSyncInterval = null;
 let cloudSyncInProgress = false;
 let suppressCloudSync = false;
+let showAllLists = false;
+let listArchiveInProgress = false;
+let emojiListFormMode = false;
 
 function uid(){ return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2); }
 function pad(n){ return String(n).padStart(2,"0"); }
@@ -67,6 +75,29 @@ function loadSyncDeletedTasks(){
 function saveSyncDeletedTasks(){
   localStorage.setItem(SYNC_DELETED_TASKS_KEY,JSON.stringify(deletedTaskSync));
 }
+function loadChecklists(){
+  try{
+    const data=JSON.parse(localStorage.getItem(LISTS_KEY))||[];
+    return Array.isArray(data)?data:[];
+  }catch{return [];}
+}
+function loadSyncDeletedLists(){
+  try{
+    const data=JSON.parse(localStorage.getItem(SYNC_DELETED_LISTS_KEY))||[];
+    return Array.isArray(data)?data:[];
+  }catch{return [];}
+}
+function saveSyncDeletedLists(){
+  localStorage.setItem(SYNC_DELETED_LISTS_KEY,JSON.stringify(deletedListSync));
+}
+function touchChecklist(list){
+  if(list) list.updatedAt=new Date().toISOString();
+  return list;
+}
+function checklistIsFinalized(list){
+  return !!list?.finalizedAt || (!!list?.items?.length && list.items.every(item=>item.checked));
+}
+
 function touchTask(task){
   if(task) task.updatedAt=new Date().toISOString();
   return task;
@@ -1156,6 +1187,322 @@ function saveTasks(){
   renderAll();
   if(!suppressCloudSync) scheduleCloudTaskSync("cambio local");
 }
+
+function saveLists({sync=true}={}){
+  localStorage.setItem(LISTS_KEY,JSON.stringify(checklists));
+  renderLists();
+  if($("#listViewerDialog")?.open){
+    const currentId=$("#listViewerDialog").dataset.listId;
+    if(currentId) renderListViewer(currentId);
+  }
+  if(sync && !suppressCloudSync) scheduleCloudTaskSync("listas");
+  setTimeout(()=>maybeArchiveFinalizedLists(),250);
+}
+
+function listSortAsc(a,b){
+  const ad=String(a.date||"9999-12-31"), bd=String(b.date||"9999-12-31");
+  if(ad!==bd) return ad.localeCompare(bd);
+  return String(a.createdAt||"").localeCompare(String(b.createdAt||""));
+}
+function listCardHtml(list,finalized=false){
+  return `<article class="checklist-card ${finalized?"finalized":""}" data-list-card="${list.id}">
+    <button type="button" class="checklist-card-main" data-open-list="${list.id}">
+      <span class="checklist-emoji">${esc(list.emoji||"📋")}</span>
+      <strong>${esc(list.title||"Sin título")}</strong>
+    </button>
+    <div class="list-card-menu-wrap">
+      <button type="button" class="icon-btn list-card-menu-btn" data-list-menu-toggle="${list.id}" aria-label="Opciones">☰</button>
+      <div class="list-menu-panel hidden" data-list-menu="${list.id}">
+        <button type="button" data-list-action="edit" data-list-id="${list.id}">✏️ Editar</button>
+        <button type="button" data-list-action="copy" data-list-id="${list.id}">📄 Copiar</button>
+        ${finalized?`<button type="button" data-list-action="reopen" data-list-id="${list.id}">↩ Reabrir lista</button>`:""}
+        <button type="button" class="danger-action" data-list-action="delete" data-list-id="${list.id}">🗑 Borrar</button>
+      </div>
+    </div>
+  </article>`;
+}
+function renderLists(){
+  if(!$("#activeListsContainer")) return;
+  $("#listsDateLabel").textContent=`Fecha seleccionada: ${shortDate(selectedDate)}`;
+  $("#showAllListsBtn").textContent=showAllLists?"Mostrar solo este día":"Mostrar todas";
+  $("#listsFilterHint").textContent=showAllLists
+    ?"Mostrando todas las listas, de la fecha más antigua a la más reciente."
+    :"Mostrando solo las listas de la fecha seleccionada.";
+
+  const active=checklists
+    .filter(list=>!checklistIsFinalized(list))
+    .filter(list=>showAllLists || list.date===dateKey(selectedDate))
+    .sort(listSortAsc);
+
+  $("#activeListsContainer").innerHTML=active.length
+    ? active.map(list=>listCardHtml(list,false)).join("")
+    : `<div class="checklist-empty">${showAllLists?"No hay listas pendientes.":"No hay listas para esta fecha."}</div>`;
+
+  const finished=checklists
+    .filter(checklistIsFinalized)
+    .sort((a,b)=>syncStamp(b.finalizedAt)-syncStamp(a.finalizedAt));
+  $("#finishedListsCount").textContent=String(finished.length);
+  $("#finishedListsContainer").innerHTML=finished.length
+    ? finished.map(list=>listCardHtml(list,true)).join("")
+    : `<div class="checklist-empty">No hay listas finalizadas.</div>`;
+
+  bindListCardActions($("#listsView"));
+}
+
+function bindListCardActions(root=document){
+  root.querySelectorAll("[data-open-list]").forEach(btn=>{
+    btn.onclick=e=>{e.preventDefault();openListViewer(btn.dataset.openList);};
+  });
+  root.querySelectorAll("[data-list-menu-toggle]").forEach(btn=>{
+    btn.onclick=e=>{
+      e.preventDefault();e.stopPropagation();
+      const id=btn.dataset.listMenuToggle;
+      root.querySelectorAll("[data-list-menu]").forEach(menu=>{
+        menu.classList.toggle("hidden",menu.dataset.listMenu!==id || !menu.classList.contains("hidden"));
+      });
+    };
+  });
+  root.querySelectorAll("[data-list-action]").forEach(btn=>{
+    btn.onclick=async e=>{
+      e.preventDefault();e.stopPropagation();
+      await handleListAction(btn.dataset.listAction,btn.dataset.listId);
+    };
+  });
+}
+
+function createListItem(text="",checked=false){
+  return {id:uid(),text:String(text||""),checked:!!checked};
+}
+function renderListItemEditor(items,focusId=""){
+  const box=$("#listItemsEditor");
+  box.innerHTML=(items.length?items:[createListItem()]).map(item=>`
+    <div class="list-item-edit-row" data-list-edit-item="${item.id}">
+      <input type="checkbox" ${item.checked?"checked":""} aria-label="Marcar pendiente" />
+      <input type="text" maxlength="250" value="${esc(item.text||"")}" placeholder="Escribe un pendiente..." />
+      <button type="button" class="list-item-remove" title="Quitar renglón">✕</button>
+    </div>`).join("");
+  bindListItemEditor();
+  if(focusId){
+    setTimeout(()=>box.querySelector(`[data-list-edit-item="${focusId}"] input[type="text"]`)?.focus(),0);
+  }
+}
+function currentListEditorItems(){
+  return $$("#listItemsEditor [data-list-edit-item]").map(row=>({
+    id:row.dataset.listEditItem||uid(),
+    text:row.querySelector('input[type="text"]').value.trim(),
+    checked:row.querySelector('input[type="checkbox"]').checked
+  }));
+}
+function bindListItemEditor(){
+  $$("#listItemsEditor [data-list-edit-item]").forEach(row=>{
+    const textInput=row.querySelector('input[type="text"]');
+    const remove=row.querySelector(".list-item-remove");
+    textInput.onkeydown=e=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        const items=currentListEditorItems();
+        const idx=items.findIndex(x=>x.id===row.dataset.listEditItem);
+        const next=createListItem();
+        items.splice(idx+1,0,next);
+        renderListItemEditor(items,next.id);
+      }
+    };
+    remove.onclick=()=>{
+      let items=currentListEditorItems().filter(x=>x.id!==row.dataset.listEditItem);
+      if(!items.length) items=[createListItem()];
+      renderListItemEditor(items);
+    };
+  });
+}
+
+function openListEditor(list=null){
+  $("#listEditForm").reset();
+  $("#listEditId").value=list?.id||"";
+  $("#listEditTitle").textContent=list?"Editar lista":"Nueva lista";
+  $("#listDate").value=list?.date||dateKey(selectedDate);
+  $("#listTitle").value=list?.title||"";
+  $("#listEmoji").value=list?.emoji||"📋";
+  $("#listEmojiPreview").textContent=list?.emoji||"📋";
+  const items=(list?.items||[]).map(item=>({...item}));
+  renderListItemEditor(items.length?items:[createListItem()]);
+  $("#listEditDialog").showModal();
+}
+function saveListFromEditor(){
+  const id=$("#listEditId").value;
+  const title=$("#listTitle").value.trim();
+  const date=$("#listDate").value;
+  let items=currentListEditorItems().filter(item=>item.text);
+  if(!title){toast("Escribe un título para la lista.");$("#listTitle").focus();return false;}
+  if(!date){toast("Selecciona una fecha.");$("#listDate").focus();return false;}
+  if(!items.length){toast("Agrega por lo menos un pendiente.");return false;}
+
+  const now=new Date().toISOString();
+  if(id){
+    const list=checklists.find(x=>x.id===id);
+    if(!list) return false;
+    list.title=title; list.date=date; list.emoji=$("#listEmoji").value||"📋"; list.items=items;
+    list.finalizedAt=items.every(x=>x.checked)?(list.finalizedAt||now):null;
+    touchChecklist(list);
+  }else{
+    checklists.push({
+      id:uid(),date,title,emoji:$("#listEmoji").value||"📋",items,
+      createdAt:now,updatedAt:now,finalizedAt:items.every(x=>x.checked)?now:null
+    });
+  }
+  saveLists();
+  $("#listEditDialog").close();
+  toast(id?"Lista actualizada.":"Lista guardada.");
+  return true;
+}
+
+function listViewerMenuHtml(list){
+  const finalized=checklistIsFinalized(list);
+  return `
+    <button type="button" data-viewer-list-action="edit">✏️ Editar</button>
+    <button type="button" data-viewer-list-action="copy">📄 Copiar</button>
+    ${finalized?`<button type="button" data-viewer-list-action="reopen">↩ Reabrir lista</button>`:""}
+    <button type="button" class="danger-action" data-viewer-list-action="delete">🗑 Borrar</button>`;
+}
+function renderListViewer(id){
+  const list=checklists.find(x=>x.id===id);
+  if(!list){ if($("#listViewerDialog").open) $("#listViewerDialog").close(); return; }
+  const finalized=checklistIsFinalized(list);
+  $("#listViewerDialog").dataset.listId=id;
+  $("#listViewerDate").textContent=`${list.emoji||"📋"} ${shortDate(parseDate(list.date))}`;
+  $("#listViewerTitle").textContent=list.title;
+  $("#listViewerMenu").innerHTML=listViewerMenuHtml(list);
+  $("#listViewerMenu").classList.add("hidden");
+  $("#listViewerItems").innerHTML=
+    (finalized?`<div class="list-finalized-banner">✅ Lista finalizada</div>`:"")+
+    list.items.map(item=>`
+      <label class="list-viewer-row ${item.checked?"checked":""}">
+        <input type="checkbox" data-view-list-item="${item.id}" ${item.checked?"checked":""} ${finalized?"disabled":""} />
+        <span>${esc(item.text)}</span>
+      </label>`).join("");
+
+  $$("[data-view-list-item]").forEach(input=>{
+    input.onchange=()=>{
+      const item=list.items.find(x=>x.id===input.dataset.viewListItem);
+      if(!item) return;
+      item.checked=input.checked;
+      const allDone=list.items.length>0 && list.items.every(x=>x.checked);
+      if(allDone && !list.finalizedAt) list.finalizedAt=new Date().toISOString();
+      if(!allDone) list.finalizedAt=null;
+      touchChecklist(list);
+      saveLists();
+    };
+  });
+  $$("[data-viewer-list-action]").forEach(btn=>{
+    btn.onclick=()=>handleListAction(btn.dataset.viewerListAction,id);
+  });
+}
+function openListViewer(id){
+  renderListViewer(id);
+  $("#listViewerDialog").showModal();
+}
+async function handleListAction(action,id){
+  const list=checklists.find(x=>x.id===id);
+  if(!list) return;
+  if(action==="edit"){
+    if($("#listViewerDialog").open) $("#listViewerDialog").close();
+    openListEditor(list); return;
+  }
+  if(action==="copy"){
+    const now=new Date().toISOString();
+    const copy={
+      ...JSON.parse(JSON.stringify(list)),
+      id:uid(),
+      title:`Copia de ${list.title}`,
+      items:list.items.map(item=>({...item,id:uid(),checked:false})),
+      createdAt:now,updatedAt:now,finalizedAt:null
+    };
+    checklists.push(copy); saveLists(); toast("Lista copiada."); return;
+  }
+  if(action==="reopen"){
+    list.items=list.items.map(item=>({...item,checked:false}));
+    list.finalizedAt=null; touchChecklist(list); saveLists();
+    if($("#listViewerDialog").open) renderListViewer(id);
+    toast("Lista reabierta."); return;
+  }
+  if(action==="delete"){
+    const ok=await comicConfirm(`¿Borrar la lista “${list.title}”?`,{title:"Borrar lista",okText:"🗑 Borrar"});
+    if(!ok) return;
+    const deletedAt=new Date().toISOString();
+    deletedListSync=deletedListSync.filter(x=>x.id!==id);
+    deletedListSync.push({id,deletedAt});
+    saveSyncDeletedLists();
+    checklists=checklists.filter(x=>x.id!==id);
+    localStorage.setItem(LISTS_KEY,JSON.stringify(checklists));
+    if($("#listViewerDialog").open) $("#listViewerDialog").close();
+    renderLists(); scheduleCloudTaskSync("lista eliminada"); toast("Lista eliminada.");
+  }
+}
+
+function mergeChecklistSyncState(remoteLists=[],remoteDeleted=[]){
+  const map=new Map();
+  [...checklists,...remoteLists].forEach(list=>{
+    if(!list?.id) return;
+    const prev=map.get(list.id);
+    map.set(list.id,newerSyncObject(prev,list));
+  });
+  const deletedMap=new Map();
+  [...deletedListSync,...remoteDeleted].forEach(d=>{
+    if(!d?.id) return;
+    const prev=deletedMap.get(d.id);
+    if(!prev || syncStamp(d.deletedAt)>syncStamp(prev.deletedAt)) deletedMap.set(d.id,d);
+  });
+  const merged=[];
+  for(const [id,list] of map){
+    const tomb=deletedMap.get(id);
+    if(tomb && syncStamp(tomb.deletedAt)>=syncStamp(list.updatedAt||list.createdAt)) continue;
+    if(tomb && syncStamp(list.updatedAt||list.createdAt)>syncStamp(tomb.deletedAt)) deletedMap.delete(id);
+    merged.push(list);
+  }
+  checklists=merged;
+  deletedListSync=[...deletedMap.values()];
+  localStorage.setItem(LISTS_KEY,JSON.stringify(checklists));
+  saveSyncDeletedLists();
+}
+
+async function maybeArchiveFinalizedLists(){
+  if(listArchiveInProgress) return false;
+  const cutoff=Date.now()-LIST_ARCHIVE_AGE_MS;
+  const due=checklists.filter(list=>list.finalizedAt && syncStamp(list.finalizedAt)<=cutoff);
+  if(!due.length) return true;
+  if(!cloudBackupConfigured() || !navigator.onLine) return false;
+
+  listArchiveInProgress=true;
+  try{
+    const now=new Date();
+    const fileName=`Listas_Finalizadas_${dateKey(now)}_${pad(now.getHours())}-${pad(now.getMinutes())}.json`;
+    const content=JSON.stringify({
+      archiveFormat:1,appVersion:APP_VERSION,exportedAt:now.toISOString(),
+      reason:"Listas finalizadas conservadas 30 días",lists:due
+    },null,2);
+    await cloudBridgeRequest("backup",{
+      folderPath:settings.cloudBitacoraFolder||CLOUD_BITACORA_FOLDER_DEFAULT,
+      fileName,content,kind:"bitacora",mimeType:"application/json",maxBackups:365
+    });
+    const ids=new Set(due.map(x=>x.id));
+    const deletedAt=new Date().toISOString();
+    due.forEach(list=>{
+      deletedListSync=deletedListSync.filter(x=>x.id!==list.id);
+      deletedListSync.push({id:list.id,deletedAt});
+    });
+    saveSyncDeletedLists();
+    checklists=checklists.filter(list=>!ids.has(list.id));
+    localStorage.setItem(LISTS_KEY,JSON.stringify(checklists));
+    renderLists();
+    scheduleCloudTaskSync("archivo de listas");
+    toast(`☁ ${due.length} lista${due.length===1?"":"s"} archivada${due.length===1?"":"s"} en Bitácora.`);
+    return true;
+  }catch{
+    return false;
+  }finally{
+    listArchiveInProgress=false;
+  }
+}
+
 function purgeExpiredTrash(){
   const now=Date.now();
   const before=trash.length;
@@ -1371,6 +1718,14 @@ function renderEmojiPicker(){
   $$("[data-task-emoji]").forEach(b=>b.onclick=()=>{
     const newEmoji=b.dataset.taskEmoji;
 
+    if(emojiListFormMode){
+      $("#listEmoji").value=newEmoji;
+      $("#listEmojiPreview").textContent=newEmoji;
+      emojiListFormMode=false;
+      $("#emojiDialog").close();
+      return;
+    }
+
     if(emojiEditTaskId){
       const task=tasks.find(t=>t.id===emojiEditTaskId);
       if(task){
@@ -1397,7 +1752,7 @@ function renderEmojiPicker(){
 function renderAll(){
   updateActiveBookSelect();
   normalizeStatuses();
-  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderGlobalStatusStrip(); renderExpenseSummary();
+  purgeExpiredTrash(); renderWeekStrip(); renderDay(); renderCalendar(); renderWeek(); renderBoard(); renderTrash(); renderLists(); renderGlobalStatusStrip(); renderExpenseSummary();
 }
 function renderWeekStrip(){
   const week=startOfWeek(selectedDate);
@@ -3133,7 +3488,7 @@ function backupSafeSettings(){
   return safe;
 }
 function buildFullBackupObject(){
-  return {backupFormat:3,appVersion:APP_VERSION,exportedAt:new Date().toISOString(),tasks,trash,expenses,books,activeBookId,settings:backupSafeSettings()};
+  return {backupFormat:4,appVersion:APP_VERSION,exportedAt:new Date().toISOString(),tasks,trash,expenses,books,checklists,activeBookId,settings:backupSafeSettings()};
 }
 function backupJsonText(){ return JSON.stringify(buildFullBackupObject(),null,2); }
 function manualBackupFileName(){ const now=new Date(); return `Mis_Tareas_Manual_${dateKey(now)}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}.json`; }
@@ -3152,6 +3507,7 @@ async function importData(file){
       tasks=arr; trash=Array.isArray(data.trash)?data.trash:[];
       if(Array.isArray(data.expenses)) expenses=data.expenses;
       if(Array.isArray(data.books)&&data.books.length) books=data.books;
+      if(Array.isArray(data.checklists)) checklists=data.checklists;
       if(data.settings&&typeof data.settings==="object"){
         const incoming={...data.settings};
         ["cloudBackupUrl","cloudBackupSecret","lastCloudBackupDate","lastCloudBackupAt","lastCloudBackupError"].forEach(key=>delete incoming[key]);
@@ -3160,7 +3516,7 @@ async function importData(file){
       if(data.activeBookId&&books.some(b=>b.id===data.activeBookId)){ activeBookId=data.activeBookId; localStorage.setItem(ACTIVE_BOOK_KEY,activeBookId); }
     }
     ensureBookMigration(); migrateTaskCommentsV1155(); migrateMovementsV116();
-    saveTrash(); localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses)); localStorage.setItem(BOOKS_KEY,JSON.stringify(books)); saveSettings(); saveTasks(); populateSettings(); applySettings(); toast("Respaldo completo importado.");
+    saveTrash(); localStorage.setItem(EXPENSES_KEY,JSON.stringify(expenses)); localStorage.setItem(BOOKS_KEY,JSON.stringify(books)); localStorage.setItem(LISTS_KEY,JSON.stringify(checklists)); saveSettings(); saveTasks(); renderLists(); populateSettings(); applySettings(); toast("Respaldo completo importado.");
   }catch{ toast("Archivo de respaldo no válido."); }
 }
 function parseCsvRows(text){
@@ -3779,6 +4135,8 @@ function buildTaskSyncPayload(){
     tasks:tasks.map(t=>({...t,updatedAt:t.updatedAt||t.createdAt||"1970-01-01T00:00:00.000Z"})),
     deletedTasks:deletedTaskSync,
     books:books.map(b=>({...b,updatedAt:b.updatedAt||b.createdAt||"1970-01-01T00:00:00.000Z"})),
+    checklists:checklists.map(list=>({...list,updatedAt:list.updatedAt||list.createdAt||"1970-01-01T00:00:00.000Z"})),
+    deletedLists:deletedListSync,
     mailConfig:{
       email:String(settings.notificationEmail||"").trim(),
       missedEnabled:!!settings.emailMissedEnabled,
@@ -3820,6 +4178,7 @@ function applyCloudSyncState(state){
   try{
     mergeTaskSyncState(state.tasks||[],state.deletedTasks||[]);
     mergeBookSyncState(state.books||[]);
+    mergeChecklistSyncState(state.checklists||[],state.deletedLists||[]);
     localStorage.setItem(STORAGE_KEY,JSON.stringify(tasks));
     ensureTaskSyncMetadata();
     renderAll();
@@ -5364,7 +5723,34 @@ $$(".bottom-nav button").forEach(btn=>{
     setTimeout(()=>btn.classList.remove("nav-pulse"),420);
   });
 });
-$("#bottomAddBtn").onclick=()=>openTask();
+
+$("#newListBtn").onclick=()=>openListEditor();
+$("#showAllListsBtn").onclick=()=>{showAllLists=!showAllLists;renderLists();};
+$("#closeListEditDialog").onclick=$("#cancelListEditBtn").onclick=()=>$("#listEditDialog").close();
+$("#listEditForm").onsubmit=e=>{e.preventDefault();saveListFromEditor();};
+$("#addListItemBtn").onclick=()=>{
+  const items=currentListEditorItems();
+  const item=createListItem();
+  items.push(item);
+  renderListItemEditor(items,item.id);
+};
+$("#listEmojiBtn").onclick=()=>{
+  emojiListFormMode=true;
+  renderEmojiPicker();
+  $("#emojiDialog").showModal();
+};
+$("#closeListViewerDialog").onclick=()=>$("#listViewerDialog").close();
+$("#listViewerMenuBtn").onclick=e=>{
+  e.preventDefault();e.stopPropagation();
+  $("#listViewerMenu").classList.toggle("hidden");
+};
+$("#listViewerDialog").addEventListener("click",e=>{
+  if(e.target===$("#listViewerDialog")) $("#listViewerDialog").close();
+});
+$("#listEditDialog").addEventListener("click",e=>{
+  if(e.target===$("#listEditDialog")) $("#listEditDialog").close();
+});
+
 function setSelectedDay(d){
   selectedDate=startOfDay(d);
   calendarCursor=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);
@@ -5480,7 +5866,14 @@ $("#clearBtn").onclick=async()=>{
       deletedTaskSync.push({id:t.id,deletedAt});
     });
     saveSyncDeletedTasks();
-    tasks=[];trash=[];expenses=[];saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");saveTasks();renderExpenseSummary();toast("Datos eliminados.");
+    checklists.forEach(list=>{
+      deletedListSync=deletedListSync.filter(x=>x.id!==list.id);
+      deletedListSync.push({id:list.id,deletedAt});
+    });
+    saveSyncDeletedLists();
+    tasks=[];trash=[];expenses=[];checklists=[];
+    saveTrash();localStorage.setItem(EXPENSES_KEY,"[]");localStorage.setItem(LISTS_KEY,"[]");
+    saveTasks();renderLists();renderExpenseSummary();toast("Datos eliminados.");
   }
 };
 $("#emptyTrashBtn").onclick=async()=>{
@@ -5491,16 +5884,18 @@ $("#emptyTrashBtn").onclick=async()=>{
   })){trash=[];saveTrash();renderTrash();toast("Papelera vaciada.");}
 };
 window.addEventListener("focus",()=>{
-  normalizeStatuses();renderAll();scheduleNotifications();maybeDailyCloudBackup({silent:true});
+  normalizeStatuses();renderAll();scheduleNotifications();maybeDailyCloudBackup({silent:true});maybeArchiveFinalizedLists();
   if(isMobileSyncDevice()) refreshCloudTaskSync({manual:false});
 });
 window.addEventListener("online",()=>{
   maybeDailyCloudBackup({silent:true,forceRetry:true});
+  maybeArchiveFinalizedLists();
   /* Si había cambios locales sin subir, una sincronización completa los recupera. */
   performCloudTaskSync({manual:false});
   if(isMobileSyncDevice()) setTimeout(()=>refreshCloudTaskSync({manual:false}),1600);
 });
 setInterval(()=>{normalizeStatuses();renderAll();},60000);
+setInterval(()=>maybeArchiveFinalizedLists(),6*60*60*1000);
 document.addEventListener("visibilitychange",()=>{
   if(document.visibilityState==="visible" && isMobileSyncDevice()){
     refreshCloudTaskSync({manual:false});
@@ -5526,4 +5921,5 @@ renderCloudSyncStatus();
 renderEmailStatus();
 startCloudSyncLoop();
 setTimeout(()=>maybeDailyCloudBackup({silent:true,forceRetry:true}),900);
+setTimeout(()=>maybeArchiveFinalizedLists(),1800);
 setTimeout(()=>{if(isMobileSyncDevice()) refreshCloudTaskSync({manual:false});},1300);

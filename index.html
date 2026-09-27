@@ -263,17 +263,106 @@
           <div id="trashList" class="task-list"></div>
         </section>
       </section>
+
+      <section id="listsView" class="view lists-view">
+        <div class="section-heading lists-heading">
+          <div>
+            <p class="eyebrow">Listas rápidas</p>
+            <h2>Listas</h2>
+            <small id="listsDateLabel" class="lists-date-label"></small>
+          </div>
+          <button type="button" id="newListBtn" class="primary-btn">＋ Nueva lista</button>
+        </div>
+
+        <div class="lists-filter-row">
+          <button type="button" id="showAllListsBtn" class="ghost-btn">Mostrar todas</button>
+          <small id="listsFilterHint">Mostrando solo la fecha seleccionada.</small>
+        </div>
+
+        <section class="panel lists-panel">
+          <div id="activeListsContainer" class="checklist-cards"></div>
+        </section>
+
+        <details id="finishedListsDetails" class="panel finished-lists-panel">
+          <summary>
+            <span>✅ Listas finalizadas</span>
+            <b id="finishedListsCount">0</b>
+          </summary>
+          <p class="finished-lists-note">Se conservan 30 días. Después se respaldan automáticamente en Bitácora y se eliminan de la app.</p>
+          <div id="finishedListsContainer" class="checklist-cards"></div>
+        </details>
+      </section>
+
     </main>
 
 
     <nav class="bottom-nav">
       <button data-view="day" class="bottom-tab"><span>✓</span>Tareas</button>
       <button data-view="calendar" class="bottom-tab active"><span>▦</span>Calendario</button>
-      <button id="bottomAddBtn" class="bottom-add"><span>＋</span>Agregar</button>
+      <button id="listsBtn" data-view="lists" class="bottom-tab bottom-lists"><span>☑</span>Listas</button>
       <button id="booksBtn" class="bottom-tab"><span>📖</span>Libro</button>
       <button data-view="trash" class="bottom-tab"><span>🗑</span>Papelera</button>
     </nav>
   </div>
+
+
+  <dialog id="listEditDialog" class="modal list-edit-dialog">
+    <form id="listEditForm" method="dialog" novalidate>
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">Lista de pendientes</p>
+          <h2 id="listEditTitle">Nueva lista</h2>
+        </div>
+        <button type="button" class="icon-btn" id="closeListEditDialog">✕</button>
+      </div>
+
+      <input type="hidden" id="listEditId" />
+
+      <label>Fecha
+        <input id="listDate" type="date" required />
+      </label>
+
+      <label>Título
+        <input id="listTitle" maxlength="100" required placeholder="Ej. Supermercado" />
+      </label>
+
+      <div class="emoji-field">
+        <span>Emoticono</span>
+        <button type="button" id="listEmojiBtn" class="emoji-picker-btn">
+          <span id="listEmojiPreview" class="emoji-preview">📋</span>
+          <span>Elegir emoticono</span>
+        </button>
+        <input id="listEmoji" type="hidden" value="📋" />
+      </div>
+
+      <div class="list-items-editor-head">
+        <strong>Pendientes</strong>
+        <small>Escribe y pulsa Enter para agregar otro renglón.</small>
+      </div>
+      <div id="listItemsEditor" class="list-items-editor"></div>
+      <button type="button" id="addListItemBtn" class="ghost-btn list-add-item-btn">＋ Agregar renglón</button>
+
+      <div class="modal-actions">
+        <button type="button" id="cancelListEditBtn" class="ghost-btn">Cancelar</button>
+        <button type="submit" id="saveListBtn" class="primary-btn">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="listViewerDialog" class="modal list-viewer-dialog">
+    <div class="modal-head list-viewer-head">
+      <div>
+        <p id="listViewerDate" class="eyebrow"></p>
+        <h2 id="listViewerTitle"></h2>
+      </div>
+      <div class="list-head-actions">
+        <button type="button" id="listViewerMenuBtn" class="icon-btn list-menu-btn" aria-label="Opciones">☰</button>
+        <button type="button" class="icon-btn" id="closeListViewerDialog">✕</button>
+      </div>
+      <div id="listViewerMenu" class="list-menu-panel hidden"></div>
+    </div>
+    <div id="listViewerItems" class="list-viewer-items"></div>
+  </dialog>
 
   <dialog id="taskDialog" class="modal">
     <form id="taskForm" method="dialog" novalidate>
@@ -466,7 +555,7 @@
     </div>
     <div class="settings-version-top">
       <span>Versión instalada</span>
-      <strong id="settingsVersionTop">11.9.2.3</strong>
+      <strong id="settingsVersionTop">12.0.0</strong>
     </div>
     <div class="settings-stack">
       <details class="settings-group" id="settingsVisualGroup">
@@ -658,7 +747,7 @@
       <details class="settings-group" id="settingsAboutGroup">
         <summary><span>ℹ️ Acerca de</span><small>Versión y actualización</small></summary>
         <div class="settings-group-body settings-actions-list">
-          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">11.9.2.3</small></div></div>
+          <div class="settings-item"><span>ℹ️</span><div><strong>Versión instalada</strong><small id="appVersion">12.0.0</small></div></div>
           <button id="updateAppBtn" class="settings-item"><span>🔄</span><div><strong>Actualizar aplicación</strong><small>Busca y carga la versión más reciente publicada.</small></div></button>
         </div>
       </details>
